@@ -1,0 +1,25 @@
+{
+  "name": "radiance",
+  "version": "1.0.0",
+  "description": "demo server for radiantjs",
+  "author": "Scott A. Powell",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "airtable": "^0.4.2",
+    "async": "^2.0.0-rc.5",
+    "cheerio": "^0.20.0",
+    "curl": "^0.1.4",
+    "emailjs": "^1.0.5",
+    "fibers": "^1.0.14",
+    "github": "^6.1.0",
+    "gulp": "^3.9.1",
+    "gulp-concat": "^2.6.0",
+    "gulp-minify": "0.0.14",
+    "gulp-sourcemaps": "^1.6.0",
+    "journey": "^0.4.0-pre-3",
+    "request": "^2.74.0",
+    "stripe": "^4.9.0",
+    "wait.for": "^0.6.6",
+    "websocket": "^1.0.23"
+  }
+}

@@ -1,0 +1,30 @@
+Json Base
+ - index fast file storage
+
+ StorageClass{
+  var name = 'SomeClass';
+  var indice = { 'name': {}, 'id': {} };
+  var primary = 'id';
+  var defaults = { 'name': 'Steve' };
+ };
+ 
+ Todo:
+ 
+ - upgrade indexes to hashes
+  - use key functions and smaller indexes
+  - support non-exclusive indices
+ 
+ - dynamic storage base
+  - store offsets
+  - store empties as special records
+  - append to nearest end
+ 
+ - calculateFileIndex()
+  - build index from stored data
+  - build empties
+ 
+ - saving records
+  - set offset to EOF/+storage offset
+  - support rewrite for smaller records
+  - file size stored in file index
+        this.fileindex = {}; // recordno: offset, size, { index_backref } 

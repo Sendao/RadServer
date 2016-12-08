@@ -1,0 +1,47 @@
+<templates>
+
+<div xTemplate='vfs'>
+<div xData=vfs xSocket='/vfs.json'></div>
+<div xCast=vfs_dir xSet='dir=/'></div>
+</div>
+
+<div xTemplate='vfs_dir'>
+
+<div xDataname='vfs.#dir' xSocket='vfs/folds?fold=#dir'></div>
+<div xWatch2='vfs.#dir'>
+<div xLoop='vfs.#dir.files'  xKey=k xVal=v>
+<div xCast=vfs_entry xSet='path=#[dir].files.#[k]'></div>
+</div>
+<div xLoop='vfs.#dir.folds' xKey=k xVal=v>
+<div xCast=vfs_dir xSet='dir=#[dir].folds.#[k]'></div>
+</div>
+<div id=vfs_#dir></div>
+<div xCmd='addVfsFold("#dir")'>+folder</div><div xCmd='addVfsFile("#dir")'>+file</div>
+</div>
+</div>
+<!--
+<div xTemplate=vfs_newfold>
+<form method=post action='/vfs/folds.js' xForm='vfs.#dir.new'>
+<label>Name</label>
+<value></value>
+</form>
+</div>
+-->
+<div xTemplate='vfs_entry'>
+<div xCmd='vfs_openfile(#[vfs.#[dir].name])'>#[#[path].name]</div>
+</div>
+
+</templates>
+
+<script language=javascript>
+socketRegister( vfsUpdate, "vfs_update" );
+function addVfsFold(dir)
+{
+    var e = gE("vfs_" + dir);
+    e.blitzTemplate("vfs_newfold", dir);
+}
+function addVfsFile(dir)
+{
+    var e = gE("vfs_" + dir);
+}
+</script>

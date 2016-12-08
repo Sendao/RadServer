@@ -1,0 +1,190 @@
+<script language=javascript>
+/*
+function asanaSocket( event )
+{
+	console.log("Asana event: ", event);
+}
+
+function startLibrary()
+{
+	radStartup();
+	radStore( "state", "0" );
+	radStore( "oauth", { 'ready': 0 } );
+	openSocket("localhost:443", asanaSocket);
+	
+	radLoad();
+}
+
+registerStartup(startLibrary);
+
+function redirectLogin()
+{
+    window.open( radVar( "oauth.authurl" ) );
+}
+*/
+</script>
+<script language=javascript>
+
+var wsSock;
+var socket_timer = -1;
+var cookiepath = "cookie";
+var readypath = "ready";
+var closing_socket = false;
+var socketRecv = null;
+
+function openSocket( target_url, recvCb, use_secure=false, _cookiepath=null, _readypath=null )
+{
+    if( socket_timer != -1 ) {
+        clearInterval(socket_timer);
+        socket_timer = -1;
+    }
+    if( use_secure ) {
+		targetHost = "wss://" + target_url + ":443/";
+    } else {
+    	targetHost = "ws://" + target_url + "/";
+    }
+    console.log("TargetHost set to", targetHost);
+	socketRecv = recvCb;
+	if( _cookiepath != null )
+		cookiepath = _cookiepath;
+	if( _readypath != null )
+		readypath = _readypath;
+    connectSocket();
+}
+
+function socketOpen( event )
+{
+    if( socket_timer != -1 ) {
+        clearInterval(socket_timer);
+        socket_timer = -1;
+    }
+	console.log("Socket open", event);
+	radStore(cookiepath, randStr(16));
+	configSocket();
+}
+
+var socketRegistry = {};
+function socketRegister( eventType, cb, cbdata )
+{
+	if( !(eventType in socketRegistry) ) {
+		socketRegistry[eventType] = [];
+	}
+	socketRegistry[eventType].push([cb,cbdata]);
+}
+function socketRegisterFree( eventType, cb, cbdata )
+{
+	if( !(eventType in socketRegistry) ) return;
+	var i, l = socketRegistry[eventType];
+	for( i = 0; i < l.length; i++ ) {
+		if( l[i][0] == cb && (cbdata == null || l[i][1] == cbdata) ) {
+			l.splice(i,1);
+			i--;
+		}
+	}
+}
+function socketRecieve( event )
+{
+    if( socket_timer != -1 ) {
+        clearInterval(socket_timer);
+        socket_timer = -1;
+    }
+    var obj = JSON.parse(event.data);
+    var passthru=false;
+    if( obj.code == 'registered' ) {
+        console.log("Socket registered. Event: ", obj);
+        passthru=true;
+    } else if( obj.code == 'granted' ) {
+        console.log("Oauth authorized.");
+        radStore(readypath, 2);
+        passthru=true;
+    }
+    if( obj.code in socketRegistry ) {
+    	for( var i=0; i<socketRegistry[obj.code].length;++i ) {
+    		var oc = socketRegistry[obj.code][i];
+    		if( oc[0]( event, obj.code, oc[1] ) === false ) {
+    			if( !passthru )
+    				break;
+    		}
+    	}
+    } else if( typeof socketRecv == 'function' && !passthru ) {
+		socketRecv(event);
+	} else if( !passthru ) {
+		console.warn("Unhooked socket event: ", event);
+	}
+}
+
+function socketClose( event )
+{
+    console.log("Socket closed, trying to reopen.");
+    if( socket_timer == -1 ) {
+        socket_timer = setInterval("testSocket()", 5000);
+    }
+}
+
+function socketError( event )
+{
+    console.log("Socket error, trying to reopen.", event);
+    if( socket_timer == -1 ) {
+        socket_timer = setInterval("testSocket()", 5000);
+    }
+}
+
+var config_timer=-1;
+function configSocket()
+{
+    if( radVar( cookiepath ) == null ) {
+        if( config_timer == -1 ) {
+            config_timer = setInterval( 'configSocket()', 1000 );
+        }
+    } else {
+        if( config_timer != -1 ) {
+            clearInterval( config_timer );
+            config_timer = -1;
+        }
+        sendSocket( { 'code': 'reg', 'cookie': radVar(cookiepath) } );
+        console.log("Socket configuration sent.");
+    }
+}
+
+function testSocket()
+{
+	if( closing_socket ) return;
+    console.log("testSocket()");
+    if( wsSock != null ) {
+        closing_socket=true;
+        wsSock.close();
+        closing_socket=false;
+    }
+    wsSock = new WebSocket(targetHost, 'echo-protocol');
+    wsSock.onmessage = socketRecieve;
+    wsSock.onclose = socketClose;
+    wsSock.onerror = socketError;
+    wsSock.onopen = socketOpen;
+    console.log("Socket connection requested");
+}
+function connectSocket()
+{
+    console.log("connectSocket()");
+    if( wsSock != null ) {
+        closing_socket=true;
+        wsSock.close();
+        closing_socket=false;
+    }
+    wsSock = new WebSocket(targetHost, 'echo-protocol');
+    wsSock.onmessage = socketRecieve;
+    wsSock.onclose = socketClose;
+    wsSock.onerror = socketError;
+    wsSock.onopen = socketOpen;
+    console.log("Socket connection requested");
+}
+
+function sendSocket( obj )
+{
+    if( typeof obj == 'string' )
+        wsSock.send( obj );
+    else
+        wsSock.send( JSON.stringify(obj) );
+}
+
+
+</script>

@@ -1,0 +1,78 @@
+/*
+
+1. Database isolation groups.
+Before we can do anything with any data, we have to have identifiers for it. Here we
+initialize a basic database isolation.
+
+*/
+
+module.exports = function Could9DB(Database) {
+    var db = Database;
+    Database.control.call(this, 'chat');
+
+/*
+
+2. Table definitions.
+Now we can specify the name, indices, and default values for a table of data.
+
+*/
+
+    this.Users = function() {
+        this.name = 'users';
+        this.primary = "id";
+        this.unique = [ 'id' ];
+        this.indice = { 'id': {}, 'name': {}, "when": {}, "fromip": {} };
+        this.defaults = { 'id': 0, 'name': '', 'when': '0', 'fromip': '0.0.0.0' };
+        db.convey.call(this, 'chat');
+    };
+
+/*
+3. API Reference
+
+Note the calls to Database.control and db.convey. These augment the "Could9DB" and
+"Could9DB.Users" objects with data-handling functions and properties, as well as
+resolving any default settings.
+
+*/
+
+var users = new app.base.users.Users;
+
+var user = users.create( { 'name': 'Sendao' } );
+users.save(user);
+
+var user = users.get( user.id );
+user.name = 'Scott';
+users.save(user);
+
+var user_list = users.search( 'name', 'Scott' );
+if( user_list ) {
+	var user = user_list[0];
+	user.password = 'NewPass';
+	users.save(user);
+}
+
+
+/*
+
+9. Work Todo:
+ 
+ - upgrade indexes to hashes
+  - use key functions and smaller indexes
+  - support non-exclusive indices
+ 
+ - upgrade data storage unit
+  - store empties as special records
+  - append to nearest end-of-space pointer
+ 
+ - encryption
+  - dbtable.encryption = new db.Encryption( params );
+ 
+ - archiving
+  - archive-by-date rules
+  - compression
+ 
+ - replication
+  - dbtable.replica = new db.Replica( params );
+    params = { 'remote': { 'server': host, 'auth': [ username, password ] } }
+ 
+ */

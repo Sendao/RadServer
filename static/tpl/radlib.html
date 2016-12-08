@@ -1,0 +1,82 @@
+<templates>
+
+<div xTemplate=field>
+
+<div class=line xStyle='width: #titlewidth||200'>#title</div>
+<div class=line><input type=text name=#name xStyle='width: #valuewidth||100'></div>
+
+</div>
+<div xTemplate=value>
+
+<div class=line xStyle='width: #titlewidth||200'>#title</div>
+<div class=line>#value</div>
+
+</div>
+
+</templates>
+
+<script language=javascript>
+
+
+var radlib_radicle = {
+    'fbtn': { 'onclick': 'formsend(this)', 'style': 'cursor: pointer' },
+    'formbtn': { 'onclick': 'fsend(this)', 'style': 'cursor: pointer' },
+    'templates': { 'style': 'display: none', 'keepscan': 1 },
+    'submit': { 'onclick': 'fsend(this)', 'style': 'cursor: pointer' },
+    'value': { 'xCast': 'value' },
+    'field': { 'xCast': 'field' },
+
+	'main': { 'xPostDraw2': 'mainLoaded',
+		'keepscan': 1,
+		'id': 'mainscroll', 'className': 'margin-small',
+		//'xPostDraw': 'omv(["page","top","center"],1,250,1,40)',
+		'style': 'overflow:auto; float: right; padding-left: 5px; min-width: 400px',
+		'xStyle': 'width: winW-222; height: winH'
+	},
+	'view': {
+		'xSrc': '#src',
+		'xWatch2': '#src'
+	},
+	'zenbox': {
+		'id': 'zenbox',
+		'style': 'display: none'
+	},
+    'centerWidth': { 'xPostDraw3': 'function(e){ e.style.left = (winW-e.clientWidth)/2 + "px"; }' },
+    'centerHeight': { 'xPostDraw3': 'function(e){ e.style.top = (winW-e.clientHeight)/2 + "px"; }' },
+
+    /*
+    'tabhead': { 'onclick': 'structTabHeadClick(this)', 'style': 'cursor: pointer' },
+    'tablist': { 'xPostDraw': 'structTabListLoaded' },
+    'tabsection': {},
+    'tabbody': {},
+    
+    'folderhead': { 'onclick': 'structFolderHeadClick(this)', 'style': 'cursor: pointer' },
+    'folder': { 'style': 'display: none', 'keepscan': 1 },
+    'foldee': { 'style': 'display: block' },
+    
+    'menu': { 'xDraw': 'structMenuDraw' }
+    */
+};
+
+function radlibStartup()
+{
+    radClass(radlib_radicle);    
+}
+registerStartup(radlibStartup);
+
+function mainLoaded(dv)
+{
+	//! adjust to screen-center
+}
+
+
+
+function shortString(maxLen, str)
+{
+    if( typeof str != 'string' ) return '';
+    if( str.length <= maxLen ) return str;
+    return str.substr(0, maxLen-5) + '..' + str.substr( -3 );
+}
+
+
+</script>

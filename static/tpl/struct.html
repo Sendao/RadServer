@@ -1,0 +1,377 @@
+
+<div style='display: none' keepscan=1>
+<!--  struct templates -->
+
+
+<div xTemplate='struct_menu'>
+<div xSet='menu_base=#menu'>
+<div xLoop=#menu_base xKey=k xVal=v>
+<div xCast=struct_menu_item xRoot='#[menu_base].#[k]'></div>
+</div>
+</div>
+<div class=cl></div>
+</div>
+
+<div xTemplate='struct_menu_item'>
+<div class=menuitem xCmd='structMenuAction("#menu", "#root", "#target")'>#.title</div>
+<div xSet='menu_base=#[root].children, menu_of=#[root]'>
+<div xWatch='#[menu_of].open'>
+<div xTest='"#[#[menu_of].open]" == "1" && "children" in radVar("#menu_of")'>
+<div class=menuwrap xLoop=#[menu_of].children xKey=k xVal=v>
+<div xCast=struct_menu_item xRoot='#[menu_of].children.#[k]'></div>
+</div>
+</div>
+</div>
+</div>
+<div class=cl></div>
+</div>
+
+</div>
+
+<script language=javascript>
+
+
+var struct_radicle = {
+    'tabpane': { 'xPostDraw2': 'structTabPaneLoaded' },
+    'tabhead': { 'onclick': 'structTabHeadClick(this)', 'style': 'cursor: pointer' },
+    'tablist': { 'xPostDraw': 'structTabListLoaded', 'style': 'float: left; padding: 4px' },
+    'tabsection': { 'style': 'float: left; padding: 4px' },
+    'tabbody': {},
+    
+    'folderhead': { 'onclick': 'structFolderHeadClick(this)', 'style': 'cursor: pointer' },
+    'folder': { 'style': 'display: none', 'keepscan': 1 },
+    'foldee': { 'style': 'display: block' },
+    
+    'menu': { 'xCast': 'struct_menu', 'style': 'float: left', 
+    	'#menu': 'struct.menu.default', '#target': 'mainscroll' }
+    
+    /*,
+    'scrollstack': { 'xStyle': 'width: #[~winW]px; max-width: #[~winW]px' },
+    'stackpane': { 'xStyle': 'width: #[~winW]px; max-width: #[~winW]px', 'xPostDraw': 'stackRegister' },
+    'stackhead': { 'xPostDraw': 'stackRegister' },
+    'stackheadnow': { 'style': 'position: absolute; top: 0px' },
+    'stacktailnow': { 'style': 'position: absolute; bottom: 0px' },
+    'stacktail': { 'xPostDraw': 'stackRegister' },
+    'stackwrap': { } */
+};
+
+function structStartup()
+{
+    radClass(struct_radicle);    
+}
+registerStartup(structStartup);
+
+function structFolderHeadClick(div)
+{
+    var el;
+    var eldiv;
+    
+    for( eldiv = div; eldiv; eldiv = eldiv.parentElement ) {
+    	if( radIsClass( eldiv, "folderhead" ) ) {
+    		break;
+    	}
+    }
+    if( !eldiv ) {
+    	console.log("bad folder! bad");
+    }
+    
+    for( el = eldiv.nextSibling; el; el = el.nextSibling ) {
+        if( radIsClass( el, 'folder' ) ) {
+            classSwap( el, "folder", "foldee" );
+            radScanClass(el);
+            break;
+        } else if( radIsClass( el, 'foldee' ) ) {
+            classSwap( el, "foldee", "folder" );
+            radScanClass(el);
+            break;
+        }
+    }
+}
+
+function stackRegister(div)
+{
+    var parent = div.parentElement;
+    if( !radIsClass( parent, 'scrollstack' ) ) {
+        dbg("Missing scrollstack div");
+        return;
+    }
+    if( typeof parent.stackList == 'undefined' ) {
+        parent.stackList = [ div ];
+        parent.scrollHandler = -1;
+        parent.onscroll = stackScroller;
+    } else {
+        parent.stackList.push(div);
+    }
+}
+
+function stackScroller(event)
+{
+    event = event || window.event;
+    console.log(event.target);
+    
+    var obj = event.target;    
+    var st = obj.scrollTop;
+    var el;
+    var topel, tophead, toptail;
+    
+    var headnow, tailnow;
+    headnow = obj.framehead;
+    tailnow = obj.frametail;
+    
+    var i;
+    var foundHead = (headnow == null);
+    
+    for( i=0; i<obj.stackList.length; i++ ) {
+        el = obj.stackList[i];
+        if( !foundHead ) {
+            if( el == headnow )
+                foundHead=true;
+            continue;
+        }
+        if( el.clientTop < st ) {
+            if( radIsClass( el, 'tail' ) ) {
+                toptail = el;
+            } else if( radIsClass( el, "head" ) ) {
+                tophead = el;
+            } else {
+                topel = el;
+            }
+        } else {
+            break;
+        }
+    }
+    /*
+    if( !radIsClass( toptail, 'now' ) ) {
+        
+    }
+    */
+}
+
+
+function structMenu( menudata, menuid='default' )
+{
+    var i;
+    for( i=0; i<menudata.length; i++ ) {
+        if( !( 'open' in menudata[i] ) ) {
+            menudata[i]['open'] = '0';
+        }
+    }
+    radCStore( "struct.menu." + menuid, menudata );
+}
+
+function structMenuAction( menuroot, menupath, target )
+{
+    var menuitem = radVar(menupath);
+	var menubase = radVar(menuroot);
+    console.log( "structMenuAction", menupath, menuitem );
+    var act = null;
+    var view = null;
+    var menunode = null;
+    var result = false;
+
+    if( typeof menuitem.aview != 'undefined' ) {
+    	if( target != null ) {
+    		var e = gE(target);
+    		if( e != null ) {
+    			e.setAttribute('xAView', menuitem['aview'] );
+    			radLoadDiv(e);
+    			result = true;
+    		} else {
+    			console.log("target not found - " + target);
+    		}
+    	}
+    }
+    if( typeof menuitem.view != 'undefined' ) {
+    	if( target != null ) {
+    		var e = gE(target);
+    		if( e != null ) {
+    			e.setAttribute('xView', menuitem['view'] );
+    			radLoadDiv(e);
+    			result = true;
+    		} else {
+    			console.log("target not found - " + target);
+    		}
+    	}
+    }
+    if( !result && typeof menuitem.cast != 'undefined' ) {
+    	if( target != null ) {
+    		var e = gE(target);
+    		if( e != null ) {
+    			e.setAttribute('xCast', menuitem['cast'] );
+    			radLoadDiv(e);
+    			result = true;
+    		} else {
+    			console.log("target not found - " + target);
+    		}
+    	}
+    }
+    
+    if( !result ) {
+	    if( 'action' in menuitem ) {
+	        act = menuitem['action'];
+	    } else if( 'act' in menuitem ) {
+	    	act = menuitem['act'];
+	    } else if( 'onclick' in menuitem ) {
+	        act = menuitem['onclick'];
+	    } else if( 'click' in menuitem ) {
+	        act = menuitem['click'];
+	    } else if( 'command' in menuitem ) {
+	        act = menuitem['command'];
+	    } else if( 'request' in menuitem ) {
+	        act = menuitem['request'];
+	    }
+    }
+    if( act != null ) {
+        var a = eval(act);
+        result = a(menupath);
+    } else if( !result ) {
+    	console.log("No action found for menu");
+    }
+    if( !result && 'children' in menuitem ) {
+        if( menuitem.open == '1' ) {
+            radStore( menupath + ".open", "0" );
+        } else {
+            radStore( menupath + ".open", "1" );
+        }
+    }
+}
+
+function structTabParent( elin )
+{
+    while( elin ) {
+    	if( radIsClass( elin, [ 'tablist', 'tabsection' ] ) ) {
+            return elin;
+        }
+        elin = elin.parentNode;
+    }
+    return null;
+}
+
+function structTabHeadClick( elin )
+{
+    console.log( "structTabHeadClick", elin );
+    var tab = elin.getAttribute('name');
+    var tabHeadList = structTabParent(elin);
+    var tabPane = tabHeadList.parentNode;
+    var tabSection = tabPane.tabSection;
+    
+    var i, el;
+    
+    for( i = 0; i < tabHeadList.tabHeads.length; i++ ) {
+        el = tabHeadList.tabHeads[i];
+        if( el.getAttribute('name') == tab ) {
+            classSwap( el, 'tabheadlow', 'tabheadhigh' );
+        } else {
+            classSwap( el, 'tabheadhigh', 'tabheadlow' );
+        }
+        radScanClass(el);
+    }
+    
+    var found = false;
+    for( i = 0; i < tabPane.tabBodies.length; i++ ) {
+        el = tabPane.tabBodies[i];
+        if( el.getAttribute('name') == tab ) {
+            classSwap( el, 'tabbodylow', 'tabbodyhigh' );
+            found = true;
+        } else {
+            classSwap( el, 'tabbodyhigh', 'tabbodylow' );
+        }
+        radScanClass(el);
+    }
+    if( !found ) {
+        el = cE("tabbody");
+        el.setAttribute('name', tab);
+        if( elin.hasAttribute('structView') ) { // short cut
+            el.setAttribute('xAView', elin.getAttribute('structView'));
+        } else if( elin.hasAttribute('structCast') ) {
+            el.setAttribute('xCast', elin.getAttribute('structCast'));
+        }
+        el.className = el.className + " tabbodyhigh";
+        tabPane.tabBodies.push(el);
+        tabPane.tabSection.appendChild(el);
+        //radScanClass(el);
+        radLoadDiv(el);
+    }
+}
+
+function structTabPaneLoaded( el )
+{
+    var i;
+    var nkid, el2;
+
+    var found = false;
+    var reco = [ el ];
+    var tab, i;
+    
+    el.tabBodies = [];
+    
+    while( reco.length > 0 ) {
+        tab = reco.shift();
+        if( radIsClass( tab, ['tablist', 'tabhead'] ) )
+            continue;
+        if( radIsClass( tab, 'tabsection' ) ) {
+            el.tabSection = tab;
+        }
+        if( radIsClass( tab, 'tabbody' ) ) {
+            el.tabBodies.push( tab );
+            if( !found ) {
+                if( tab.style.display == 'none' ) {
+                    continue;
+                }
+                found = true;
+                classSets( tab, 'tabbodylow', 'tabbodyhigh' );
+            } else {
+                classSets( tab, 'tabbodyhigh', 'tabbodylow' );
+            }
+        } else { // add children
+            i=tab.children.length;
+            while( i>0 ) {
+                i--;
+                if( tab.children[i].hasAttribute('isForZero') )
+                    continue;
+                reco.unshift( tab.children[i] );
+            }
+        }
+    }
+    console.log( "structTabPaneLoaded", el.tabBodies.length, el.tabBodies );
+}
+
+function structTabListLoaded( el )
+{
+    console.log( "structTabListLoaded", el.children.length, el );
+
+    var found = false;
+    var reco = [ el ];
+    var tab, i;
+    
+    el.tabHeads = [];
+    
+    while( reco.length > 0 ) {
+        tab = reco.shift();
+        if( radIsClass( tab, 'tabhead' ) ) {
+            i=tab.children.length;
+            while( i>0 ) {
+                i--;
+                if( tab.children[i].hasAttribute('isForZero') )
+                    continue;
+                reco.unshift( tab.children[i] );
+            }
+        } else {
+            el.tabHeads.push( tab );
+	        if( !found ) {
+	            if( tab.style.display == 'none' ) {
+	                continue;
+	            }
+	            found = true;
+	            classSets( tab, 'tabheadlow', 'tabheadhigh' );
+	        } else {
+	            classSets( tab, 'tabheadhigh', 'tabheadlow' );
+	        }
+        }
+    }
+    console.log( "structTabListLoaded", el.tabHeads.length, el.tabHeads );
+}
+
+</script>
+
+<!--  end of struct -->

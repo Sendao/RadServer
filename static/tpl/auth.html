@@ -1,0 +1,105 @@
+<templates>
+
+<div xTemplate='signup'>
+<form xCb=auth_signup xWatch2=sess method=post action='/signup' xForm='newuser' #titlewidth=100 #valuewidth=200>
+<input type=hidden name=cookie value='#sess.cookie'>
+<field #name=username #title=Username></field> <br/>
+<field #name=password #title=Password></field> <br/>
+<field #name=email #title=Email></field> <br/>
+<submit>Signup</submit>
+</form>
+</div>
+
+<div xTemplate='signin'>
+<form xCb=auth_signin xWatch2=sess method=post action='/signin' xForm='userexist' #titlewidth=100 #valuewidth=200>
+<input type=hidden name=cookie value='#sess.cookie'>
+<field #name=username #title=Username></field> <br/>
+<field #name=password #title=Password></field> <br/>
+<submit>Signin</submit>
+</form>
+</div>
+
+<div xTemplate='verify'>
+<form xCb=auth_verify xWatch2=sess method=post action='/verify' xForm='userverify' #titlewidth=100 #valuewidth=200>
+<input type=hidden name=cookie value='#sess.cookie'>
+<field #name=username #title=Username></field> <br/>
+<field #name=code #title=Code></field> <br/>
+<submit>Verify</submit>
+</form>
+</div>
+
+<div xTemplate='logout'>
+<form xCb=auth_logout xWatch2=sess method=post action='/logout' xForm='userexits' #titlewidth=100 #valuewidth=200>
+<input type=hidden name=cookie value='#sess.cookie'>
+<submit>Logout</submit>
+</form>
+</div>
+
+</templates>
+
+<div xDataname='sess' xWatch=cookie xUrl='/session?cookie=#cookie'></div>
+
+<script language=javascript>
+
+/*
+var auth_radicle = {
+};
+
+function authStartup()
+{
+    radClass(auth_radicle);
+    
+}
+registerStartup(authStartup);
+*/
+
+function auth_signup(data) {
+	var dobj = JSON.parse(data);
+	if( dobj.status == 'ok' ) {
+		console.log("Signup successful.");
+	} else {
+		console.log("Signup", dobj.status);
+		alert(dobj.status);
+	}
+}
+function auth_signin(data) {
+	var dobj = JSON.parse(data);
+	if( dobj.status == 'ok' ) {
+		console.log("Login successful.");
+	} else {
+		console.log("Login", dobj.status);
+		alert(dobj.status);
+	}
+}
+function auth_verify(data) {
+	var dobj = JSON.parse(data);
+	if( dobj.status == 'ok' ) {
+		console.log("User account has been verified.");
+	} else {
+		console.log("Verify", dobj.status);
+		alert(dobj.status);
+	}
+}
+function auth_logout(data) {
+	var dobj = JSON.parse(data);
+	if( dobj.status == 'ok' ) {
+		console.log("Logged out.");
+	} else {
+		console.log("Logout", dobj.status);
+		alert(dobj.status);
+	}
+}
+//function prepare_session() {
+//	console.log("Registering authorized session startup with socket");
+//}
+socketRegister('register', session_start);
+
+function session_start(obj) {
+	console.log("session_start:",obj);
+	if( obj.status == 'ok' ) {
+		radStore("sess", obj.data);
+		console.log("Secure authentication token registered.");
+	}
+}
+
+</script>

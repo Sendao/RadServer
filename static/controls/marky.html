@@ -1,0 +1,44 @@
+<templates>
+
+<div xTemplate='marky'>
+Enable output:
+<div xDataname=ais xSocket='/markers.json'></div>
+<form xForm=ai>
+<select xLoop=ais xKey=ainame xVal=aiee name=ai onchange=UpdateMarkers()>
+ <option value=#ainame>#aiee</option>
+</select>
+</form>
+</div>
+
+</templates>
+
+<script language=javascript>
+
+var markers = {};
+
+function UpdateMarkers()
+{
+    var si = document.forms.ai.ai;
+    var i, siv, found=false;
+    while( !found ) {
+        found=true;
+        for( i in markers ) {
+            if( !si.options[i].checked ) {
+                delete markers[i];
+                found=false;
+                break;
+            }
+        }
+    };
+    found = false;
+    for( i=0; i < si.options.length; i++ ) {
+        if( si.options[i].checked && !(i in markers) ) {
+            siv = si.options[i].value;
+            var o = { 'socket': '/marky.json?by=' + siv };
+            radType('aitext.' + siv, o );
+            markers[i] = true;
+            found = true;
+        }
+    }
+}
+</script>
