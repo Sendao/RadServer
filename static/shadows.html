@@ -1,0 +1,234 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Radiant Cast</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+
+<!-- 
+<body style="background-image: url('dragontribe.jpg'); background-color: black; color: tan">
+ -->
+ <body class=bg2 style='color: tan'>
+ 
+#include tpl/radlib.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/auth.html
+#include controls/watch.html
+
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<!--  setup -->
+
+<menu ></menu>
+<main></main>
+
+<templates>
+
+<div xTemplate='viewer'><div xAView='#view'></div></div>
+
+<div xTemplate='spider'>
+Spider operating targets
+<ol>
+<li>site layout detection
+<ul>
+<li>url analysis</li>
+<li>page-area scanning (title/caption/date/author/byline/topic/category/etc)</li>
+<li>template matching to categories (RD?)</li>
+</ul>
+</li>
+<li>url analysis<ul>
+<li>search pages (?params=vals)</li>
+<li>index lookup pages (?index=n)</li>
+<li>being way too nice to me pages (/category/ID/forum/ID/thread/ID/message/ID)</li>
+</ul></li>
+<li>page-area scanning
+<ul>
+<li>XML descent & grouping</li>
+<li></li>
+</ul></li>
+<li>index building ( search vals => index, category+ => index )</li>
+</ol>
+</div>
+
+<div xTemplate='smatch'></div>
+
+
+<div xTemplate='news'>
+
+<div xDataname='news' xUri='/news_main.json'></div>
+
+<div xLoop=news.topics xKey=k xVal=v>
+
+<!--  tabs -->
+#topic
+
+<!--  pages -->
+<div xLoop=news.topic.#[topic].stories xKey=k xVal=v>
+#header
+#byline
+#story
+</div>
+
+</div>
+
+
+</div>
+
+
+<div xTemplate='present'>
+<!--  presentations with logged chatter (events) -->
+</div>
+
+<div xTemplate='cloud'>
+<!--  a folder -->
+</div>
+
+#include controls/console.html
+#include controls/marky.html
+#include controls/vfs.html
+#include controls/branches.html
+#include controls/spring.html
+#include controls/netutil.html
+
+</div>
+
+<div xTemplate='tool_caster'>
+<form xForm='cast' name=caster xMethod='castSpell()'>
+<div id=zenbox></div>
+<fieldarea title='Spell' name=spell></field>
+<div class=formbtn></div>
+</form>
+</div>
+
+</templates>
+
+</body>
+
+<script language=javascript>
+function castSpell()
+{
+    var f = document.forms['caster'];
+    var e = gE("zenbox");
+    e.innerHTML = eval(f.spell.value);
+    return false;
+}
+</script>
+
+
+function initSkeleton()
+{
+// Initialize any variables here radStore("x", 42);
+    var basicMenu = [
+        { 'title': 'User', 'children': [
+            { 'title': 'Signup', 'cast': 'signup' },
+            { 'title': 'Signin', 'cast': 'signin' },
+            { 'title': 'Logout', 'cast': 'logout' },
+            { 'title': 'List', 'cast': 'userlist' },
+            { 'title': 'Whiteboard', 'cast': 'whiteboard' },
+            { 'title': 'Chat', 'cast': 'chat' }
+        ] },
+        { 'title': 'Watch', 'cast': 'watch' },
+        { 'title': 'Forum', 'children': [
+            { 'title': 'Whiteboard', 'cast': 'board' },
+            { 'title': 'Topics', 'cast': 'forum' },
+            { 'title': 'Channels', 'cast': 'present' }
+        ] },
+        { 'title': 'Augment', 'children': [
+            { 'title': 'Marky', 'cast': 'marky' },
+            { 'title': 'Spider', 'cast': 'spider' },
+            { 'title': 'Caster', 'cast': 'caster' },
+            { 'title': 'Trough', 'cast': 'feed' },
+            { 'title': 'Newsroll', 'cast': 'news' },
+            { 'title': 'Stockmatch', 'cast': 'smatch' }
+//          { 'title': 'Bubblewave', 'cast': 'jrain' }
+        ] },
+        { 'title': 'Tools', 'children': [
+            { 'title': 'Console', 'cast': 'console' },
+            { 'title': 'Ping', 'cast': 'tool_ping' },
+            { 'title': 'Branch', 'cast': 'branches' },
+            { 'title': 'Spring', 'cast': 'spring' }
+        ] },
+        { 'title': 'Tracks', 'children': [
+            { 'title': 'Scrape', 'cast': 'tool_scrape' },
+            { 'title': 'Trace', 'cast': 'tool_trace' },
+            { 'title': 'Cast', 'cast': 'tool_caster' }
+        ] },
+        { 'title': 'Docs', 'children': [] },
+        { 'title': 'Profile', 'children': [
+            { 'title': 'libsendao', 'aview': 'libsendao' },
+            { 'title': 'GCommon', 'aview': 'gcommon' },
+            { 'title': 'Radiance', 'aview': 'radiance' },
+            { 'title': 'Webserver', 'aview': 'webserve' },
+            { 'title': 'Reserve', 'aview': 'reserve' },
+            { 'title': 'Xdb', 'aview': 'xdb' },
+            { 'title': 'Warpkit', 'aview': 'warpkit' },
+            { 'title': 'Links', 'aview': 'links' },
+            { 'title': 'About', 'aview': 'about' }
+        ] },
+        { 'title': 'Ais', 'children': [] },
+        { 'title': 'Data', 'children': [] },
+        { 'title': 'Web', 'children': [] },
+        { 'title': 'Scripts', 'children': [] },
+        { 'title': 'Watch', 'children': [
+            { 'title': 'Usage', 'cast': 'm_usage' },
+            { 'title': 'Github', 'cast': 'm_github' },
+            { 'title': 'Groups', 'cast': 'm_groups' }
+        ] },
+        }
+        { 'title': 'Page', 'children': [
+            { 'title': 'Background', 'act': 'cycleBodyStyles' }
+        ]}
+        ];
+    structMenu(basicMenu);
+    structStartup();    
+    var host;
+    
+    radStartup();
+    radHook( "hosts." + window.location.hostname + ".config", checkGroups )
+    host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
+    radStore( "hosts." + host.hostname, host );
+    radStore( "hostname", window.location.hostname );
+
+    radLoad();
+    cycleBodyStyles();
+    openSocket(window.location.host, chatSocket);
+}
+function cycleBodyStyles()
+{
+    var e = document.body;
+    if( typeof e.bgstate == 'undefined' )
+        e.bgstate=0;
+    e.bgstate = (e.bgstate+1)%9;
+    switch( e.bgstate ) {
+    case 1: e.className = 'bg0'; e.style.color = 'silver'; break;
+    case 2: e.className = 'bg1'; e.style.color = 'white'; break;
+    case 3: e.className = 'bg2'; e.style.color = 'black'; break;
+    case 4: e.className = 'bg3'; e.style.color = 'tan'; break;
+    case 5: e.className = 'bgsunrise'; e.style.color = 'white'; break;
+    case 6: e.className = 'bgmoonrise'; e.style.color = 'silver'; break;
+    case 7: e.className = 'bgmoonset'; e.style.color = 'silver'; break;
+    case 8: e.className = 'bgsunset'; e.style.color = 'black'; break;
+    }
+}
+function chatSocket( event )
+{
+    console.log("Socket event: ", event);
+}
+
+registerStartup(initSkeleton)
+
+</html>
