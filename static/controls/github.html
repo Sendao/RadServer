@@ -1,0 +1,26 @@
+<div xTemplate='github_project'>
+<div xRoot="#path" xWatch2="#path">
+#.name
+
+<div xLoop=.branches xKey=k xVal=v>
+<div xCast=github_branch xSet='branch: #[root].branches.#k'></div>
+
+</div>
+</div>
+
+<div xTemplate='github_branch'>
+<div xRoot="#branch" xWatch2="#branch">
+
+</div>
+</div>
+
+<div xTemplate='github_clone'>
+<div xRoot="#clone" xWatch2="#clone">
+
+</div>
+</div>
+
+<script language=javascript>
+
+
+</script>
