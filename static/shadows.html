@@ -21,7 +21,7 @@
 #include tpl/socket.html
 #include tpl/auth.html
 #include controls/watch.html
-
+#include controls/github.html
 
 <div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
 <div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
@@ -126,8 +126,6 @@ function castSpell()
     e.innerHTML = eval(f.spell.value);
     return false;
 }
-</script>
-
 
 function initSkeleton()
 {
@@ -188,7 +186,6 @@ function initSkeleton()
             { 'title': 'Github', 'cast': 'm_github' },
             { 'title': 'Groups', 'cast': 'm_groups' }
         ] },
-        }
         { 'title': 'Page', 'children': [
             { 'title': 'Background', 'act': 'cycleBodyStyles' }
         ]}
@@ -231,4 +228,5 @@ function chatSocket( event )
 
 registerStartup(initSkeleton)
 
+</script>
 </html>

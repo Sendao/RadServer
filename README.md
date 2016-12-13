@@ -39,9 +39,34 @@ something like this:
 ### lib/data - Manipulate data in the background. 2nd tier, can run in the background using 'workcycle()'.
 ### lib/base - The database object definitions and any special methods they might need.
 ### lib/singlets - Single files with URL routing, data manipulation, and tables in one file. For brief things.
-
+### lib/eccentric - Required Eccentric tooling for various integrations such as Stripe, email, events, http, object handling/string library support
+### lib/tool - deprecated code
 
 ## Examples
 
 Just snoop around, it's pretty easy reading.
+
+
+## Next Steps
+
+### Github
+
+- Authentication
+- Pulling and storing data
+- Database update events
+- Registering for db updates
+- Socket db channel
+
+
+
+
+
+
+
+
+
+
+
+
+
 

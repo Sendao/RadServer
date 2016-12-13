@@ -1,0 +1,26 @@
+- utilize app.tools.events
+ - database updates
+ - background workers
+ - information polling
+
+- gather data from the web
+ - use cheerio
+ - tracker and scanner
+  - keyword searches
+  - keyword categorizers
+  - tagcloud mesh recognition weights
+ - reimplementation pages
+
+- improve the frontend
+ - implement spring.js for branches
+ - implement editxor.js for vfs
+ - implement encryption layer for structure
+
+- db queues
+ - archival
+ - replication/encryption
+ - backup
+ 
+ 
+- mouseodom singlet
+ 
