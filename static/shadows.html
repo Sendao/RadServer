@@ -14,15 +14,8 @@
 <!-- 
 <body style="background-image: url('dragontribe.jpg'); background-color: black; color: tan">
  -->
- <body class=bg2 style='color: tan'>
+ <body class=bg4 style='color: tan'>
  
-#include tpl/radlib.html
-#include tpl/struct.html
-#include tpl/socket.html
-#include tpl/auth.html
-#include controls/watch.html
-#include controls/github.html
-
 <div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
 <div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
 <div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
@@ -31,10 +24,42 @@ Loading
 </div>
 </div>
 
-<!--  setup -->
-
 <menu ></menu>
 <main></main>
+<loadwheel></loadwheel>
+
+<!--  setup -->
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/auth.html
+#include controls/watch.html
+#include controls/github.html
+
+<div xTemplate=m_usage>
+<div xDataname=usage xSocket='/cms/db?b=users&t=users'></div>
+Process usage for local system...
+</div>
+
+<div xTemplate=m_github>
+<div xDataname=github xSocket='/github/projects.json?cookie=#cookie'></div>
+Github project list
+</div>
+
+<div xTemplate=m_groups>
+<div xDataname=groups xSocket='/cms/db?b=users&t=users&c=#cookie'></div>
+Watch group list
+</div>
+
+<div xTemplate=userlist>
+<div xDataname=users xSocket='/cms/db?b=users&t=users'></div>
+<div xEmptyLoop=users>No data found</div>
+<div xLoopHead=users>Users:</div>
+<div xLoop=users xKey=k xVal=v>
+</div>
+
 
 <templates>
 
@@ -158,7 +183,8 @@ function initSkeleton()
             { 'title': 'Console', 'cast': 'console' },
             { 'title': 'Ping', 'cast': 'tool_ping' },
             { 'title': 'Branch', 'cast': 'branches' },
-            { 'title': 'Spring', 'cast': 'spring' }
+            { 'title': 'Spring', 'cast': 'spring' },
+            { 'title': 'Netscan', 'cast': 'net_scan' }
         ] },
         { 'title': 'Tracks', 'children': [
             { 'title': 'Scrape', 'cast': 'tool_scrape' },
