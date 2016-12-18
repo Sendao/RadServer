@@ -29,6 +29,13 @@
 .bgsunset { background: linear-gradient(to bottom right, blue, green, red, orange, yellow) }
 .bgsunrise { background: linear-gradient(to top right, blue, green, red, orange, yellow) }
 
+.bg0 { background: radial-gradient(circle at top right, black, white, blue, black); color: #777777 }
+.bg1 { background: radial-gradient(circle at left, red, orange, yellow, blue, black); color: #666666 }
+.bg2 { background: linear-gradient(to bottom, #ffffff, #454545, #333333, #000000 ); color: #cc77ff }
+.bg3 { background: radial-gradient(circle at top right, #f3c969, #c9f369, #69c9f3, #ffffff ); color: black }
+.bg4 { background: linear-gradient(to top right, #f3c969, #c9f369, #69c9f3, #ffffff ); color: black }
+.bg5 { background: linear-gradient(to top, #ffffff, #454545, #333333, #000000 ); color: #cc77ff }
+
 /* Foregrounds */
 .fgblue { color: #2222FF; }
 .fgdark { color: #222222; }
@@ -137,11 +144,11 @@
 }
 
 .menuitem {
-	cursor: pointer;
+	cursor: pointer; font-size: 14pt;
 }
 
 .menuwrap {
-	padding-left: 3px;
+	padding-left: 12px; padding-bottom: 8px;
 }
 
 /* Tab panes */
@@ -189,3 +196,12 @@
 .tabbodylow {
 	display: none;
 }
+
+/* Loadwheel */
+
+._loadwheel {
+	position: fixed;border-radius: 16px; border: 1px solid gray; background-color: black;
+    top: 24px; right: 24px;
+    width: 64px; height: 64px;
+}
+

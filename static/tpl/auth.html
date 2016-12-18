@@ -1,8 +1,8 @@
 <templates>
 
 <div xTemplate='signup'>
-<form xCb=auth_signup xWatch2=sess method=post action='/signup' xForm='newuser' #titlewidth=100 #valuewidth=200>
-<input type=hidden name=cookie value='#sess.cookie'>
+<form xCb=auth_signup method=post action='/signup' xForm='newuser' #titlewidth=100 #valuewidth=200>
+<input xWatch2=sess type=hidden name=cookie value='#sess.key'>
 <field #name=username #title=Username></field> <br/>
 <field #name=password #title=Password></field> <br/>
 <field #name=email #title=Email></field> <br/>
@@ -11,8 +11,8 @@
 </div>
 
 <div xTemplate='signin'>
-<form xCb=auth_signin xWatch2=sess method=post action='/signin' xForm='userexist' #titlewidth=100 #valuewidth=200>
-<input type=hidden name=cookie value='#sess.cookie'>
+<form xCb=auth_signin method=post action='/signin' xForm='userexist' #titlewidth=100 #valuewidth=200>
+<input xWatch2=sess type=hidden name=cookie value='#sess.key'>
 <field #name=username #title=Username></field> <br/>
 <field #name=password #title=Password></field> <br/>
 <submit>Signin</submit>
@@ -20,8 +20,8 @@
 </div>
 
 <div xTemplate='verify'>
-<form xCb=auth_verify xWatch2=sess method=post action='/verify' xForm='userverify' #titlewidth=100 #valuewidth=200>
-<input type=hidden name=cookie value='#sess.cookie'>
+<form xCb=auth_verify method=post action='/verify' xForm='userverify' #titlewidth=100 #valuewidth=200>
+<input xWatch2=sess type=hidden name=cookie value='#sess.key'>
 <field #name=username #title=Username></field> <br/>
 <field #name=code #title=Code></field> <br/>
 <submit>Verify</submit>
@@ -29,8 +29,8 @@
 </div>
 
 <div xTemplate='logout'>
-<form xCb=auth_logout xWatch2=sess method=post action='/logout' xForm='userexits' #titlewidth=100 #valuewidth=200>
-<input type=hidden name=cookie value='#sess.cookie'>
+<form xCb=auth_logout method=post action='/logout' xForm='userexits' #titlewidth=100 #valuewidth=200>
+<input xWatch2=sess type=hidden name=cookie value='#sess.key'>
 <submit>Logout</submit>
 </form>
 </div>

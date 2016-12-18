@@ -379,7 +379,7 @@ function radParseAnyway( div, sMath )
 	try {
 		a = eval(sMath);
 	} catch( err ) {
-		console.warn( "radParseAnyway: error (" + sMath + ")", err );
+		console.warn( "radParseAnyway: error (" + sMath + ")", err.message );
 		throw err;
 	}
 	return a;

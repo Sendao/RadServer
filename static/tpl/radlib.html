@@ -2,13 +2,13 @@
 
 <div xTemplate=field>
 
-<div class=line xStyle='width: #titlewidth||200'>#title</div>
-<div class=line><input type=text name=#name xStyle='width: #valuewidth||100'></div>
+<div class=line xStyle='width: #titlewidth'>#title</div>
+<div class=line><input type=text name=#name xStyle='width: #valuewidth'></div>
 
 </div>
 <div xTemplate=value>
 
-<div class=line xStyle='width: #titlewidth||200'>#title</div>
+<div class=line xStyle='width: #titlewidth'>#title</div>
 <div class=line>#value</div>
 
 </div>
@@ -16,15 +16,19 @@
 </templates>
 
 <script language=javascript>
-
-
+var winW=-1;
+var winH=-1;
+var startfuncs = new Array(), resizefuncs = new Array(), kbupfuncs = [], kbfuncs2 = [], kbfuncs = new Array(), loadedfuncs = new Array();
+var startxfuncs = new Array(), resizexfuncs = new Array();
+var clickfuncs = new Array();
+var has_started=false;
 var radlib_radicle = {
     'fbtn': { 'onclick': 'formsend(this)', 'style': 'cursor: pointer' },
     'formbtn': { 'onclick': 'fsend(this)', 'style': 'cursor: pointer' },
     'templates': { 'style': 'display: none', 'keepscan': 1 },
     'submit': { 'onclick': 'fsend(this)', 'style': 'cursor: pointer' },
-    'value': { 'xCast': 'value' },
-    'field': { 'xCast': 'field' },
+    'value': { 'xCast': 'value', 'titlewidth': 200 },
+    'field': { 'xCast': 'field', 'valuewidth': 100, 'titlewidth': 200 },
 
 	'main': { 'xPostDraw2': 'mainLoaded',
 		'keepscan': 1,
@@ -70,6 +74,813 @@ function mainLoaded(dv)
 }
 
 
+function bgAlpha( div, alpha )
+{
+    var oldcolor = getStyle(div, 'backgroundColor');
+    var i, j;
+    if( oldcolor.split(",").length < 4 ) {
+        i = oldcolor.lastIndexOf(")");
+        j = 3;
+    } else {
+        var i = oldcolor.lastIndexOf(",");
+        j = 4;
+    }
+    var newcolor = "rgba" + oldcolor.substr(j,i-j)  + ", " + alpha + ")";
+    div.style.backgroundColor = newcolor;
+}
+
+
+function oFilter( obj, method )
+{
+    var i;
+    var no = {};
+    for( i in obj ) {
+        if( method( obj[i] ) ) no[i]=obj[i];
+    }
+    return no;
+}
+function aIndexOf( aa, x )
+{
+    for( var i in aa ) {
+        if( aa[i] == x ) return i;
+    }
+    return false;
+}
+function chrCount( astr, scanstr )
+{
+    var i=0, n=0;
+
+    while( (i=astr.indexOf(scanstr,i)) != -1 ) {
+        n++;
+        i++;
+    }
+    return n;
+}
+function quickSplit(astr,delim,replacer)
+{
+    var i, ax;
+    var gre = new RegExp(replacer,'g');
+
+    if( astr == "" || typeof astr == 'undefined' ) return [];
+    ax = astr.split(delim);
+    for( i=0; i<ax.length; i++ ) {
+        ax[i] = str_replace(gre,delim,ax[i]);
+    }
+    return ax;
+}
+function quickJoin(ax,delim,replacer)
+{
+    var i, astr="";
+    var gre = new RegExp(delim,'g');
+
+    if( typeof ax == 'undefined' || typeof ax.length == 'undefined' || ax.length <= 0 ) return "";
+    for( i=0; i<ax.length; i++ ) {
+        if( !isValid(ax[i]) )
+            continue;
+            //throw "join error: empty string";
+        if( astr!="" ) astr += delim;
+        astr += str_replace(gre,replacer,ax[i]);
+    }
+    return astr;
+}
+
+
+function joinNest( xn )
+{
+    var i,str="";
+
+    for(i=0;i<xn.length;i++){
+        if( i != 0 ) str += ",";
+        val = mReplace( joinImpNest(xn[i]), nest_escapes, nest_codes );
+        str += (val===""?"_":val);
+    }
+    return "!" + str;
+}
+function joinImpNest( xn )
+{
+    if( xn == null ) return "";
+    if( typeof xn.length != 'undefined' )
+        return joinNest( xn );
+    if( typeof xn != 'object' ) {
+        return mReplace( xn, nest_escapes, nest_codes );
+    }
+
+    var i, str = "", val;
+
+    for( i in xn ) {
+        if( str !== "" ) str += ",";
+        str += mReplace( i, nest_escapes, nest_codes ) + "=";
+        val = mReplace( joinImpNest(xn[i]), nest_escapes, nest_codes );
+        str += val===""?"_":val;
+    }
+    return "@" + str;
+}
+
+function splitNest( str )
+{
+    if( str.substr(0,1) == "!" )
+        str = str.substr(1);
+
+    var i, arr = [], src = str.split(/,/);
+
+    for( i=0; i<src.length; i++ ) {
+        if( src[i] === "" ) continue;
+        val = splitImpNest( mReplace(src[i],nest_codes,nest_escapes) );
+        arr.push( val === "_" ? "" : val );
+    }
+
+    return arr;
+}
+function splitImpNest( str )
+{
+    var c = str.substr(0,1);
+    if( c == "@" )
+        str = str.substr(1);
+    else if( c == "!" && str.indexOf(",") === false ) // scalar
+        return mReplace( str.substr(1), nest_codes, nest_escapes );
+    if( c == "!" || str.indexOf("=") === false ) // array
+        return splitNest( str.substr(1) );
+
+    var i, obj = {}, src = str.split(/,/);
+    var vxo, vkey, vval;
+
+    for( i=0; i<src.length; i++ ) {
+        if( src[i] === "" ) continue;
+
+        vxo = src[i].split(/=/);
+        vkey = mReplace( vxo[0], nest_codes, nest_escapes );
+        vval = splitImpNest( mReplace( vxo[1], nest_codes, nest_escapes ) ); //stringTranslate( $tx_safe_codes, $tx_safe_escapes, $vxo[1], 0 );
+        obj[vkey] = (vval==="_"?"":vval);
+    }
+    return obj;
+}
+
+
+
+function htmlesc(str)
+{
+    return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function esc(str)
+{
+    return encodeURIComponent(str);
+}
+
+function quoteesc(str)
+{
+    return str.replace(/\"/g, '\\"');
+}
+function squoteesc(str)
+{
+    if( typeof str != 'string' ) return str;
+    return str.replace(/\'/g, "&#39;");
+}
+
+
+function fmtTime(dt)
+{
+    var hr, min, ampm;
+
+    hr = dt.getHours();
+    min = dt.getMinutes();
+
+    ampm = "am";
+
+    if( min < 10 ) min = "0" + min;
+    if( hr > 12 ) { ampm = "pm"; hr -= 12; }
+
+    return hr + ":" + min + ampm;
+}
+function fmtDay(dt)
+{
+    if( dt == 0 ) return "Mon";
+    if( dt == 1 ) return "Tue";
+    if( dt == 2 ) return "Wed";
+    if( dt == 3 ) return "Thu";
+    if( dt == 4 ) return "Fri";
+    if( dt == 5 ) return "Sat";
+    if( dt == 6 ) return "Sun";
+}
+function fmtMon(mn)
+{
+    if( mn == 0 ) return "Jan";
+    if( mn == 1 ) return "Feb";
+    if( mn == 2 ) return "Mar";
+    if( mn == 3 ) return "Apr";
+    if( mn == 4 ) return "May";
+    if( mn == 5 ) return "Jun";
+    if( mn == 6 ) return "Jul";
+    if( mn == 7 ) return "Aug";
+    if( mn == 8 ) return "Sep";
+    if( mn == 9 ) return "Oct";
+    if( mn == 10 ) return "Nov";
+    if( mn == 11 ) return "Dec";
+}
+function numSuffix(n)
+{
+    if( n >= 4 && n <= 20 ) return "th";
+    if( n%10 == 1 ) return "st";
+    if( n%10 == 2 ) return "nd";
+    if( n%10 == 3 ) return "rd";
+    return "th";
+}
+function dateFormat(idt)
+{
+    var xdate = new Date();
+    var xdt = xdate.getTime() / 1000;
+    var tm = xdt - idt;
+    if( tm < 30 ) {
+        return Math.round(tm) + " seconds ago";
+    } else if( tm < 60 ) {
+        return "less than a minute ago";
+    } else if( tm < 120 ) {
+        return "about a minute ago";
+    } else if( tm < 3600 ) {
+        return Math.round(tm/60) + " minutes ago";
+    } else if( tm < 5*86400 ) {
+        var pdate = new Date( idt*1000 );
+        if( pdate.getDate() == xdate.getDate() ) {
+            return fmtTime(pdate);
+        } else {
+            return fmtDay(pdate.getDay()) + " " + fmtTime(pdate);
+        }
+    } else {
+        var pdate = new Date( idt*1000 );
+        return fmtMon( pdate.getMonth() ) + " " + pdate.getDate() + numSuffix(pdate.getDate()) + ", " + fmtTime(pdate);
+    }
+    return "unknown";
+}
+function typeOf(value) {
+    var s = typeof value;
+    if (s === 'object') {
+        if (value) {
+            if (value instanceof Array) {
+                s = 'array';
+            }
+        } else {
+            s = 'null';
+        }
+    }
+    return s;
+}
+function cloneObject(obj)
+{
+    var clone = {};
+//  var x;
+    for( var i in obj )
+    {
+        switch(typeOf(obj[i])){
+            case 'object':
+                clone[i] = cloneObject(obj[i]);
+                break;
+            case 'array':
+                clone[i] = obj[i].slice(0);
+                break;
+            case 'null':
+                break;
+            default:
+                clone[i] = obj[i];
+                break;
+        }
+    }
+    return clone;
+}
+
+function aIndex(arr,key)
+{
+    if( typeof arr == 'object' && typeof arr.indexOf == 'function' ) return arr.indexOf(key);
+    for( var i in arr ) {
+        if( arr[i] == key ) return i;
+    }
+    return -1;
+}
+function registerClick(fnc)
+{
+    if( aIndex(clickfuncs, fnc) != -1 ) return;
+    clickfuncs.push(fnc);
+}
+
+function unregClick(fnc)
+{
+    var i = aIndex(clickfuncs, fnc);
+    if( i == -1 ) return;
+    clickfuncs.splice(i,1);
+}
+function registerStartup(fnc)
+{
+    var i;
+    if( has_started ) fnc();
+    if( aIndex(startfuncs,fnc) != -1 ) return;
+    startfuncs.push(fnc);
+}
+function XRegisterStartup(xc)
+{
+    if( has_started ) eval(xc);
+    if( aIndex(startxfuncs, xc) != -1 ) return;
+    startxfuncs.push(xc);
+}
+function registerLoaded(fnc)
+{
+    if( aIndex(loadedfuncs, fnc) != -1 ) return;
+    if( has_started ) fnc();
+    loadedfuncs.push(fnc);
+}
+function XRegisterResize(xc)
+{
+    if( aIndex(resizexfuncs, xc) != -1 ) return;
+    resizexfuncs.push(xc);
+}
+function registerResize(fnc)
+{
+    if( aIndex(resizefuncs, fnc) != -1 ) return;
+    resizefuncs.push(fnc);
+}
+function unregResize(fnc)
+{
+    var i = aIndex(resizefuncs, fnc);
+    if( i == -1 ) return;
+    resizefuncs.splice(i,1);
+}
+function registerKeyUp(fnc)
+{
+    if( aIndex(kbupfuncs, fnc) != -1 ) return;
+    kbupfuncs.push(fnc);
+}
+function unregKeyUp(fnc)
+{
+    var i = aIndex(kbupfuncs, fnc);
+    if( i == -1 ) return;
+    kbupfuncs.splice(i,1);
+}
+function registerKeyboard(fnc)
+{
+    if( aIndex(kbfuncs, fnc) != -1 ) return;
+    kbfuncs.push(fnc);
+}
+function unregKeyboard(fnc)
+{
+    var i = aIndex(kbfuncs, fnc);
+    if( i == -1 ) return;
+    kbfuncs.splice(i,1);
+}
+function registerKeyboard2(fnc)
+{
+    if( aIndex(kbfuncs2, fnc) != -1 ) return;
+    kbfuncs2.push(fnc);
+}
+function unregKeyboard2(fnc)
+{
+    var i = aIndex(kbfuncs2, fnc);
+    if( i == -1 ) return;
+    kbfuncs2.splice(i,1);
+}
+function endEvent(ev)
+{
+    if( typeof ev.stopPropagation != 'undefined' ) ev.stopPropagation();
+    ev.cancelBubble = true;
+}
+document.onclick = function mouseClick()
+{
+    var i,n=false;
+    for( i = 0; i < clickfuncs.length; i++ ) {
+        if( (n=clickfuncs[i]()) > 0 ) {
+            endEvent(window.event);
+            return true;
+        } else if( n < 0 ) {
+            return true;
+        } else if( n === 0 ) {
+            return false;
+        }
+    }
+}
+window.onload = function windowStartup()
+{
+    winSize(); // find window size
+    var i; // run callbacks
+    for( i = 0; i < startfuncs.length; i++ ) {
+        startfuncs[i]();
+    }
+    for( i=0;i<startxfuncs.length;i++ ) {
+        eval( startxfuncs[i] );
+    }
+    setSize();
+    has_started=true;
+    for( i = 0; i < loadedfuncs.length; i++ ) {
+        loadedfuncs[i]();
+    }
+}
+window.onresize = function resetSize()
+{
+    winSize(); // find new size
+    setSize(); // run callbacks
+}
+function setSize()
+{
+    var i; // run resize callbacks (this is done for startup + resize events)
+    var xl=[];
+    for( i = 0; i < resizefuncs.length; i++ ) {
+        resizefuncs[i]();
+    }
+    for( i=0;i<resizexfuncs.length;i++ ) {
+        if( eval( resizexfuncs[i] ) == -1 ) {
+            xl.push(i);
+        }
+    }
+    var j;
+    for( j=xl.length-1; j>=0; j-- ) {
+        resizexfuncs.splice( xl[j], 1 );
+    }
+}
+document.onkeyup = function keyPress3(ev)
+{
+    var new_h;
+
+    var kc;
+    if (navigator.userAgent.indexOf('MSIE') !=-1) {
+        if( !ev ) ev = event;
+        kc = ev.keyCode;
+    } else {
+        kc = ev.which;
+    }
+
+    if( document.keydown_reg ) {
+        return document.keydown_reg(kc);
+    }
+    
+    var i, o; // run keyboard callbacks until we get a hit
+    for( i = 0 ; i < kbupfuncs.length; i++ ) {
+        if( (o=kbupfuncs[i](kc,ev)) == 1 ) {
+//          console.log("F");
+            return false;
+        } else if( o == -1 ) {
+//          console.log("T");
+            return true;
+        } else if( o == -2 ) {
+            if( ev.preventDefault ) {
+                ev.preventDefault();
+            }
+            if( ev.stopPropagation ) {
+                ev.stopPropagation();
+            }
+        } // else continue.
+    }
+    if( kc == 27 || kc == 13 ) {
+        dbg("default fsend1");
+        if( typeof fcel != 'undefined' && fcel != null && fcel.onchange ) {
+            fcel.onchange();
+        }
+        fsend();
+        if( form_sent )
+            return cancelEv(ev);
+    }
+    return true; // default
+}
+document.onkeypress = function keyPress2(ev)
+{
+    var new_h;
+
+    var kc;
+    if (navigator.userAgent.indexOf('MSIE') !=-1) {
+        if( !ev ) ev = event;
+        kc = ev.keyCode;
+    } else {
+        kc = ev.which;
+    }
+
+    if( document.keydown_reg ) {
+        return document.keydown_reg(kc);
+    }
+    
+    var i, o; // run keyboard callbacks until we get a hit
+    for( i = 0 ; i < kbfuncs2.length; i++ ) {
+        if( (o=kbfuncs2[i](kc,ev)) == 1 ) {
+//          alert("F");
+            return false;
+        } else if( o == -1 ) {
+//          alert("T");
+            return true;
+        } else if( o == -2 ) {
+            if( ev.preventDefault ) {
+                ev.preventDefault();
+            }
+            if( ev.stopPropagation ) {
+                ev.stopPropagation();
+            }
+        } // else continue.
+    }
+//          alert("X");
+    if( kc == 27 || kc == 13 ) {
+        dbg("okp default fsend1");
+//        if( typeof fcel != 'undefined' && fcel != null && fcel.onchange ) {
+//            fcel.onchange();
+//        }
+//      fsend();
+//      if( form_sent )
+            return cancelEv(ev);
+    }
+    return true; // default
+}
+document.onkeydown = function keyPress(ev)
+{
+    var new_h;
+
+    var kc;
+    if (navigator.userAgent.indexOf('MSIE') !=-1) {
+        if( !ev ) ev = event;
+        kc = ev.keyCode;
+    } else {
+        kc = ev.which;
+    }
+
+    if( document.keydown_reg ) {
+        return document.keydown_reg(kc);
+    }
+    
+    var i, o; // run keyboard callbacks until we get a hit
+    for( i = 0 ; i < kbfuncs.length; i++ ) {
+        if( (o=kbfuncs[i](kc,ev)) == 1 ) {
+//          alert("F");
+            return false;
+        } else if( o == -1 ) {
+//          alert("T");
+            return true;
+        } else if( o == -2 ) {
+            if( ev.preventDefault ) {
+                ev.preventDefault();
+            }
+            if( ev.stopPropagation ) {
+                ev.stopPropagation();
+            }
+        } // else continue.
+    }
+
+    if( kc == 27 || kc == 13 ) {
+        dbg("okd fsend1");
+//        if( typeof fcel != 'undefined' && fcel != null && fcel.onchange ) {
+//            fcel.onchange();
+//        }
+//      fsend();
+//      if( form_sent )
+            return cancelEv(ev);
+    }
+    return true; // default
+}
+function cancelEv(ev)
+{
+    ev.returnValue = false;
+    if( ev.preventDefault ) {
+        ev.preventDefault();
+    }
+    if( ev.stopPropagation ) {
+        ev.stopPropagation();
+    }
+    return false;
+}
+
+function winSize()
+{
+    if( typeof document.winW != 'undefined' ) {
+        winW = document.winW;
+        winH = document.winH;
+    } else if( typeof window.innerWidth != 'undefined' && window.innerWidth != 0 ) {
+        winW = window.innerWidth;
+        winH = window.innerHeight;
+    } else if( typeof document.body.clientWidth != 'undefined' && document.body.clientWidth != 0 ) {
+        winW = document.body.clientWidth;
+        winH = document.body.clientHeight;
+    } else {
+        winW = document.documentElement.clientWidth;
+        winH = document.documentElement.clientHeight;
+//if( typeof window.screen != 'undefined' ) {
+//      winW = window.screen.availWidth;
+//      winH = window.screen.availHeight;
+//  } else 
+    }
+}
+
+
+function mc(ev)
+{
+    var ev = ev||window.event;
+    return( [ document.body.scrollLeft - document.body.clientLeft + ev.clientX, 
+        document.body.scrollTop  - document.body.clientTop + ev.clientY ] ); 
+}
+
+function matchAncestor( div, tests )
+{
+    var dv = div.parentNode;
+    var i,v;
+
+    while( dv ) {
+        for ( i in tests ) {
+            if( dv.hasAttribute(i) )
+                v = dv.getAttribute(i);
+            else if( dv[i] )
+                v = dv[i];
+            else continue;
+            
+            if( tests[i] === true )
+                return dv;
+            if( typeof v != 'string' )
+                continue;
+            if( aIndex(v, tests[i]) )
+                return dv;
+        }
+        dv = dv.parentNode;
+    }
+    return null;
+}
+
+
+
+
+function randStr(len)
+{
+    return str_rand(len);
+}
+function str_rand( len )
+{
+        var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+        var str = "";
+        for( var i=0;i<len;i++ ) {
+            str += chars.substr( Math.floor(Math.random()*chars.length), 1 );
+        }
+        return str;
+}
+function digi_rand( len )
+{
+        var chars = "0123456789";
+        var str = "";
+        var has0 = false, c;
+        for( var i=0;i<len;i++ ) {
+            do
+            {
+                c = chars.substr( Math.floor(Math.random()*chars.length), 1 );
+                if( !has0 && c != '0') has0 = true;
+            } while( !has0 );            
+            str += c;
+        }
+        return str;
+}
+
+
+
+function getKeys( obj )
+{
+    var lkeys=[];
+    var j=0;
+    for( var i in obj ) {
+        lkeys[j]=i;
+        j++;
+    }
+    lkeys.sort();
+    return lkeys;
+}
+function obj2Lists( obj, sh )
+{
+    var build=[]; var j = 0
+        ;;for( var i in obj ) {
+            if( !obj[i] ) continue;
+            if( typeof obj[i].clone != 'undefined' ) build[j] = obj[i].clone();
+                else build[j] = obj[i];
+            j ++ };;
+        return build;
+}
+function obj2List2( obj, sh )
+{
+    var b=[];
+
+    for( var i in obj ) {
+        if( !obj[i] ) continue;
+        if( typeof obj[i].clone != 'undefined' ) b.push(obj[i].clone());
+        else b.push(obj[i]);
+    }
+    return b;
+}
+function obj2List( obj, sh )
+{
+    var build=[]; var j = 0
+        ;;for( var i in obj ) {
+            if( !obj[i] || typeof obj[i].clone != 'undefined' ) continue;
+            build[j] = obj[i];  j ++
+                };;
+        return build;
+}
+function objectToList( obj )
+{
+    var build=[];
+    var j=0;
+    for( var i in obj ) {
+        build[j] = i;
+        j++;
+    }
+    build.sort();
+    for( j=0;j<build.length;j++ ) {
+        build[j] = obj[ build[j] ];
+    }
+    return build;
+}
+function classSwap(div,srch,repl)
+{
+    var newClass, wasFound=false;
+    if( !isValid(div) ) return wasFound; // || !isValid(div.className) ) return wasFound;
+    if( div.nodeName.toLowerCase().indexOf(srch.toLowerCase()) != -1 ) {
+        newClass = div.nodeName.toLowerCase().replace(srch.toLowerCase(),repl);
+        div.nodeName = newClass;
+        wasFound = true;
+    }
+    if( div.className.indexOf(srch)!=-1 ) {
+        newClass = div.className.replace(srch,repl);
+        div.className = newClass;
+        wasFound = true;
+    }
+    if( typeof div.attributes != 'undefined' ) {
+        for( var i = 0; i < div.attributes.length; ++i ) {
+            if( div.attributes[i].value == '' ) {
+                if( div.attributes[i].name.indexOf(srch) != -1 ) {
+                    wasFound = true;
+                    newClass = div.attributes[i].name.replace(srch,repl);
+                    div.removeAttribute( div.attributes[i].name );
+                    i=0;
+                    div.setAttribute( newClass, '' );
+                }
+            }
+        }
+    }
+    if( wasFound ) {
+        flagSized(div);
+        if( div.hasAttribute('xPostDraw') ) {
+            var x = div.getAttribute('xPostDraw');
+            x = radTransParm(x);
+            if( x.indexOf("(") != -1 ) {
+                eval(x);
+            } else {
+                var xfunc = eval( x );
+                xfunc( div );
+            }
+        }
+    }
+    return wasFound;
+}
+
+function setFloat(dv,val)
+{
+    if( navigator.appName.indexOf("Internet Explorer") >= 0 ) {
+        dv.style.styleFloat = val;
+    } else {
+        dv.style.cssFloat = val;
+    }
+}
+
+function str_replace( needle, magnet, haystack )
+{
+    var x=0, lastx=0;
+    var vx = "";
+
+    if( typeof haystack != 'string' ) return haystack;
+
+    while( (x=haystack.indexOf(needle, x)) != -1 ) {
+        if( x != lastx ) {
+            vx += haystack.substr(lastx,x-lastx);
+        }
+        vx += magnet;
+        x = lastx = x+needle.length;
+    }
+    if( lastx < haystack.length )
+        vx += haystack.substr(lastx);
+    return vx;
+}
+
+function str_tok( brkx, str, inclbr )
+{
+    var i, j, x, lastx=0;
+    var c, cx;
+    var ox=[];
+
+    if( typeof str != 'string' ) return str;
+    cx = [];
+    for(i=0;i<brkx.length;i++){
+        cx.push( brkx[i].charAt(0).toLowerCase() );
+    }
+
+    for(i=0;i<str.length;i++){
+        c = str.charAt(i).toLowerCase();
+        for(j=0;j<brkx.length;j++){
+            if( c == cx[j] && str.substr(i,brkx[j].length).toLowerCase() == brkx[j].toLowerCase() ) {
+                if( lastx < i-1 )
+                    ox.push( str.substr(lastx,i-lastx) );
+                if( inclbr )
+                    ox.push( str.substr(i,brkx[j].length) );
+                i += brkx[j].length-1;
+                lastx=i+1;
+                break;
+            }
+        }
+    }
+    if( lastx < i ) ox.push( str.substr(lastx) );
+    return ox;
+}
 
 function shortString(maxLen, str)
 {

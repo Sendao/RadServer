@@ -58,7 +58,7 @@ function socketOpen( event )
         clearInterval(socket_timer);
         socket_timer = -1;
     }
-	console.log("Socket open", event);
+	//console.log("Socket open", event);
 	radStore(cookiepath, randStr(16));
 	configSocket();
 }
@@ -88,7 +88,7 @@ function socketRecieve( event )
         clearInterval(socket_timer);
         socket_timer = -1;
     }
-    var obj = JSON.parse(event.data);
+    var obj = event.obj = JSON.parse(event.data);
     var passthru=false;
     if( obj.code == 'registered' ) {
         console.log("Socket registered. Event: ", obj);
@@ -160,11 +160,11 @@ function testSocket()
     wsSock.onclose = socketClose;
     wsSock.onerror = socketError;
     wsSock.onopen = socketOpen;
-    console.log("Socket connection requested");
+    //console.log("Socket connection requested");
 }
 function connectSocket()
 {
-    console.log("connectSocket()");
+    //console.log("connectSocket()");
     if( wsSock != null ) {
         closing_socket=true;
         wsSock.close();
@@ -175,7 +175,7 @@ function connectSocket()
     wsSock.onclose = socketClose;
     wsSock.onerror = socketError;
     wsSock.onopen = socketOpen;
-    console.log("Socket connection requested");
+    //console.log("Socket connection requested");
 }
 
 function sendSocket( obj )
