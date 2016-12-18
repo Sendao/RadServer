@@ -25,7 +25,7 @@ if( 'hostname' in hconfig ) {
     }
 }
 app.config = hconfig;
-app.configure( [ 'clients', 'projects', 'stocks', 'chat', 'watch', 'rcs', 'vfs' ] );
+app.configure( [ 'clients', 'projects', 'stocks', 'chat', 'watch', 'rcs', 'vfs', 'ggrid' ] );
 app.routes( router );
 app_static.routes( router );
 
@@ -138,4 +138,5 @@ var wsclient = new app.tools.Websock.client("ws://" + hostname + ":" + using_por
 console.log("Initialization complete. Script stored.");
 
 app.connect_socket_clients( wsclient, wssclient );
+
 
