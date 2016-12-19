@@ -25,7 +25,7 @@ if( 'hostname' in hconfig ) {
     }
 }
 app.config = hconfig;
-app.configure( [ 'clients', 'projects', 'stocks', 'chat', 'watch', 'rcs', 'vfs', 'ggrid' ] );
+app.configure( [ 'clients', 'projects', 'stocks', 'cms', 'chat', 'watch', 'rcs', 'ggrid' ] );
 app.routes( router );
 app_static.routes( router );
 
