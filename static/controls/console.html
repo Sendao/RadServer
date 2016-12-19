@@ -1,0 +1,20 @@
+<templates>
+
+<div xTemplate=tool_console>
+<form xForm=console xMethod=sendCommand(form)>
+<textarea name=content editable=false rows=80 cols=160 style='background-color: black; color: #aaaaaa'></textarea>
+<input type=text name=commandline size=80>
+<formbtn>submit</formbtn>
+</form>
+</div>
+
+</templates>
+
+<script language=javascript>
+
+function sendCommand(fm)
+{
+    console.log(fm);
+}
+
+</script>

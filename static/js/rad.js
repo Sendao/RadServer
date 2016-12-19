@@ -258,6 +258,7 @@ function radViewHandler( responsedata, divid, requestobj )
 {
 	var rv = radViews[divid];
 	rv.status = 200;
+	rv.data = responsedata;
 	var viewdiv = gE(divid);
 	viewdiv.innerHTML = responsedata;
 }
@@ -4521,8 +4522,12 @@ function scaleDiv( idiv )
     		if( !isValid(idiv.id) || idiv.id == "" ) {
     			idiv.id = "view_" + str_rand(12);
     		}
-    		radViews[ idiv.id ] = radTranslate(x);
-    		HtmlRequestGet( radViews[idiv.id], '', radViewHandler, idiv.id );
+    		if( idiv.id in radViews ) {
+    		    radViewHandler(radViews[idiv.id].data, idiv.id, null);
+    		} else {
+    		    radViews[ idiv.id ] = { 'url': radTranslate(x), 'data': null };
+    		    HtmlRequestGet( radViews[idiv.id].url, '', radViewHandler, idiv.id );
+    		}
     	}
     }
 

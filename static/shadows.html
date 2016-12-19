@@ -37,6 +37,15 @@ Loading
 #include tpl/auth.html
 #include controls/watch.html
 #include controls/github.html
+#include controls/console.html
+#include controls/marky.html
+#include controls/vfs.html
+#include controls/branches.html
+#include controls/spring.html
+#include controls/netutil.html 
+
+<templates>
+
 
 <div xTemplate=m_usage>
 <div xDataname=usage xSocket='/cms/db?b=users&t=users'></div>
@@ -60,8 +69,6 @@ Watch group list
 <div xLoop=users xKey=k xVal=v>
 </div>
 
-
-<templates>
 
 <div xTemplate='viewer'><div xAView='#view'></div></div>
 
@@ -121,14 +128,6 @@ Spider operating targets
 <div xTemplate='cloud'>
 <!--  a folder -->
 </div>
-
-#include controls/console.html
-#include controls/marky.html
-#include controls/vfs.html
-#include controls/branches.html
-#include controls/spring.html
-#include controls/netutil.html
-
 </div>
 
 <div xTemplate='tool_caster'>
@@ -221,7 +220,8 @@ function initSkeleton()
     var host;
     
     radStartup();
-    radHook( "hosts." + window.location.hostname + ".config", checkGroups )
+    
+    //radHook( "hosts." + window.location.hostname + ".config", checkGroups )
     host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
     radStore( "hosts." + host.hostname, host );
     radStore( "hostname", window.location.hostname );

@@ -1,0 +1,37 @@
+<templates>
+
+<div xTemplate='module_edit'>
+
+</div>
+
+<div xTemplate='layout_edit'>
+
+</div>
+
+<div xTemplate='post_edit'>
+
+</div>
+
+<div xTemplate='script_edit'>
+<!--  text editor -->
+<form xForm=cms.scripts.#scriptid xMethod=updateScript(form)>
+<textarea name=content rows=80 cols=160></textarea>
+<formbtn>Update</formbtn>
+</form>
+</div>
+
+</templates>
+
+<script language=javascript>
+
+function updateScript(form)
+{
+    var x = radVar(form.xForm);
+    VstRequest('/cms/scripts.json', x, scriptUpdated);
+}
+function scriptUpdated(a,b,c,d,e)
+{
+    console.log("scriptUpdated",a,b,c,d,e);
+}
+
+</script>

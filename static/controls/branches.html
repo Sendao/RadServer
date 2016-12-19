@@ -1,7 +1,17 @@
 <templates>
 
+<div xWatch='sess.key'>
+<div xTest='"#sess.key"'>
+<div xDataname=branches xSocket='/branches.json?key=#sess.key'></div>
+</div>
+</div>
+
 <div xTemplate=branches>
 
+<div xLoop=branches xKey=k xVal=v>
+<div class=fl>#k: #v</div>
+<div class=cl></div>
+</div>
 
 </div>
 
@@ -9,5 +19,13 @@
 
 <script language=javascript>
 
+function updateBranches(a,b,c)
+{
+    console.log("updateBranches",a,b,c);
+}
+
+socketRegister("branches_update", updateBranches);
+socketRegister("branches_append", updateBranches);
+socketRegister("branches_remove", updateBranches);
 
 </script>

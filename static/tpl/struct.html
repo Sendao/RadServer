@@ -165,13 +165,21 @@ function structMenuAction( menuroot, menupath, target )
     var view = null;
     var menunode = null;
     var result = false;
+    
+    var actions = gE("zenbox");
 
     if( typeof menuitem.aview != 'undefined' ) {
     	if( target != null ) {
     		var e = gE(target);
     		if( e != null ) {
+                if( e.hasAttribute('xView') ) {
+                    e.removeAttribute('xView');
+                }
+                if( e.hasAttribute('xCast') ) {
+                    e.removeAttribute('xCast');
+                }
     			e.setAttribute('xAView', menuitem['aview'] );
-    			radLoadDiv(e);
+    			radSchedLoad(e);
     			result = true;
     		} else {
     			console.log("target not found - " + target);
@@ -182,8 +190,14 @@ function structMenuAction( menuroot, menupath, target )
     	if( target != null ) {
     		var e = gE(target);
     		if( e != null ) {
+                if( e.hasAttribute('xAView') ) {
+                    e.removeAttribute('xAView');
+                }
+                if( e.hasAttribute('xCast') ) {
+                    e.removeAttribute('xCast');
+                }
     			e.setAttribute('xView', menuitem['view'] );
-    			radLoadDiv(e);
+                radSchedLoad(e);
     			result = true;
     		} else {
     			console.log("target not found - " + target);
@@ -194,8 +208,14 @@ function structMenuAction( menuroot, menupath, target )
     	if( target != null ) {
     		var e = gE(target);
     		if( e != null ) {
+                if( e.hasAttribute('xView') ) {
+                    e.removeAttribute('xView');
+                }
+                if( e.hasAttribute('xAView') ) {
+                    e.removeAttribute('xAView');
+                }
     			e.setAttribute('xCast', menuitem['cast'] );
-    			radLoadDiv(e);
+                radSchedLoad(e);
     			result = true;
     		} else {
     			console.log("target not found - " + target);

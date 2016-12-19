@@ -34,7 +34,9 @@
 </templates>
 
 <script language=javascript>
-socketRegister( vfsUpdate, "vfs_update" );
+socketRegister( "vfs_update", vfsUpdate );
+socketRegister( "vfs_append", vfsUpdate );
+socketRegister( "vfs_remove", vfsUpdate );
 function addVfsFold(dir)
 {
     var e = gE("vfs_" + dir);
