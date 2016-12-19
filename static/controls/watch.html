@@ -1,3 +1,12 @@
+<templates>
+
+<div xWatch='sess.key'>
+<div xTest='"#sess.key"'>
+<div xDataname='watch' xSocket='/watch/cfg.json?key=#sess.key'></div>
+<div xDataname='procs' xSocket='/watch/proc.json?key=#sess.key'></div>
+</div>
+</div>
+
 <div xTemplate='watch_group'>
 
 </div>
@@ -7,13 +16,30 @@
 
 </div>
 
+<div xTemplate='watch_tail'>
+<div xTest='"#fn"!=""'>
+<div xDataname='tail.#fn' xSocket='/watch/tail.json' xSocketCode='tail_#fn' xCb=tailSocket></div>
+</div>
+
+</div>
 
 
+</templates>
 
 <script language=javascript>
-function checkGroups()
+function initWatch()
 {
 }
-
+function tailSocket(e)
+{
+    console.log("tailSocket",e);
+}
+function groupData(a,b,c)
+{
+    console.log("groupData",a,b,c);
+}
+socketRegister("groups_update", groupData);
+socketRegister("groups_append", groupData);
+socketRegister("groups_remove", groupData);
 
 </script>
