@@ -1,0 +1,123 @@
+
+<h2>NodeDb</h2>
+
+<content_header #name=intro #title='Introduction'></content_header>
+<content_header #name=terms #title='Terms Explained'></content_header>
+<content_header #name=notes #title='A few relevant Notes'></content_header>
+<content_header #name=table #title='Table Interface'></content_header>
+<content_header #name=message #title='.. Messaging'></content_header>
+<content_header #name=search #title='.. Search'></content_header>
+<content_header #name=saving #title='.. Saving Data'></content_header>
+<content_header #name=core #title='Core Interface'></content_header>
+
+</contents>
+
+
+<content #name=intro #title=Introduction></content>
+<content #name=terms #title='Terms Explained'></content>
+<p>You should have worked with databases before. However, this list may help to explain some of the structure of the storage unit.</p>
+<br></br>
+<p class=fli>Handles</i><p class=fln>are references to records. They provide a faster way to refer to records in tables.</p>
+<BR class=cl>
+<p class=fln>A</p>
+<p class=fli>record</p>
+<p class=fln>is an individually stored data item. There may be many</p> 
+<p class=fli>records</p>
+<p class=fln>in a</p> 
+<p class=fli>table.</p>
+<BR class=cl>
+<p class=fln>A</p>
+<p class=fli>table</p>
+<p class=fln>is a definition of the data structure of record. There may be many</p> 
+<p class=fli>tables</p>
+<p class=fln>in a</p> 
+<p class=fli>core.</p>
+<BR class=cl>
+<p class=fln>A</p>
+<p class=fli>base.js</p>
+<p class=fln>is a set of utilities to manipulate</p> 
+<p class=fli>records</p>
+<p class=fln>in</p>  
+<p class=fli>tables.</p>
+<BR class=cl>
+<p class=fln>The</p>
+<p class=fli>core.js</p>
+<p class=fln>contains the basic functions to store and archive data.</p>
+<BR class=cl>
+
+<content #name=notes #title='A few relevant Notes'></content>
+<p>To the extent that this is possible, records returned from searches of the database will be considered active data. In other words, if you
+modify the record you get back, the database will theorhetically update as well. In practice it is important to call save() or store() so that
+the database knows that something has changed, and can flag the index to be saved.</p>
+
+<p>Again where possible I've tried to reduce the amount of storage used. There are some ways this could be improved. However, I'm looking more
+toward archiving and encryption than compression. Thus variable names are stored for every variable, data is encrypted inside the basic structure,
+and replication occurs out of band.</p>
+
+<folderhead>
+<content #name=table #title='Table interface'></content>
+</folderhead>
+
+<div class=folder>
+<content #name=message #title='Messaging'></content>
+<p>Messaging occurs to subscribed event handlers when records are added, removed, or updated.</p>
+
+<p>base.registerClient(clientsocketconnection, message_type, condition)</p>
+<p><i>registerClient</i> will save a connection until it closes/after it reopens and 
+
+<p>message_type {</p>
+<ul>
+<li>tablename_update</li>
+<li>tablename_remove</li>
+<li>tablename_append</li>
+</ul>
+<p>}</p>
+<p>Message types are the handles which the database will send when it has notifications that data information has had work done on it.</p>
+
+<p>condition_type opcodes {</p>
+<ul>
+<li>&gt;<li>
+<li>&lt;<li>
+<li>&gt;=<li>
+<li>&lt;=<li>
+<li>=<li>
+</ul>
+<p>}</p>
+
+<content #name=search #title='Search'></content>
+<p>There are a few interfaces for search depending on what you're trying to do and what you need.</p>
+
+<p>base.js functions {</p>
+<ul>
+<li>search(indexname, indexvalue) gives back all of the full records where indexname=indexvalue. See examples.</li>
+<li>find(...) returns just the handles.</li>
+<li>fetch(...) pulls the records for a set of handles.</li>
+<li>get(...) pulls a single record for a given search.</li>
+</ul>
+<p>}</p>
+
+
+<content #name=saving #title='Saving Data'></content>
+<p>There are a few interfaces for saving data depending on what you're trying to do and what you need.</p>
+
+<p>base.js functions {</p>
+<ul>
+<li>auto</li>
+<li>edit</li>
+<li>save</li>
+<li>store</li>
+<li>write</li>
+</ul>
+<p>}</p>
+
+</div>
+
+<content #name=core #title='Core interface'></content>
+
+<p>core.js functions {</p>
+<ul>
+<li>loadRecords</li>
+<li>registerClient( base, client, code, condition )</li>
+</ul>
+<p>}</p>
+
