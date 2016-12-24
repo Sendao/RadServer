@@ -1,7 +1,7 @@
 <templates>
 
 <div xWatch='sess.key'>
-<div xTest='"#sess.key"'>
+<div xTest='"#sess.key" && ("#sess.userid" != "-1")'>
 <div xDataname='watch' xSocket='/watch/cfg.json?key=#sess.key'></div>
 <div xDataname='procs' xSocket='/watch/proc.json?key=#sess.key'></div>
 </div>

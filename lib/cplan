@@ -1,18 +1,3 @@
-Database:
-- support subtables without rebuilding them for each request.
-:: sendao.libsendao = new app.base.rcs.Base('sendao');
-   sendao.libsendao = app.base.rcs.getBase('sendao');
-or sendao.libsendao = app.base('revision', 'base', {'sendao'}); // db, table, params
-
-Controllers:
-- support permissions inside of authentication handler.
-:: authSession(params, require_permission_flags)
-
-
-Tools:
-- support including toolsets
-:: this.app.tool.refreshGithub();
-
 
 
 Systems:

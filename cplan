@@ -12,15 +12,28 @@
  - reimplementation pages
 
 - improve the frontend
- - implement spring.js for branches
- - implement editxor.js for vfs
- - implement encryption layer for structure
+ - db editor
+ - encryption/archival/replication (EAR) support
 
+- move the apps in a direction
+ - cms
+ - forum
+ - online shop
+ - dashboard
+ - web scanning
+ - search scanning
+ - tag mapping
+ 
 - db queues
  - archival
  - replication/encryption
  - backup
- 
+
+Documentation:
+ - open folders on link jump
+ - allow menu options by #targetname
+ - add/remove tabs from menu options
+ - default to url #targetname
  
 - mouseodom singlet
  

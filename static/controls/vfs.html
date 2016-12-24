@@ -16,17 +16,29 @@
 <div xCast=vfs_dir xSet='dir=#[dir].folds.#[k]'></div>
 </div>
 <div id=vfs_#dir></div>
-<div xCmd='addVfsFold("#dir")'>+folder</div><div xCmd='addVfsFile("#dir")'>+file</div>
+<div xCmd='addVfsFold("#dir")'>+folder</div><div xCmd='addVfsFile("#dir")'>+text</div><div xCmd='addVfsFiles("#dir")'>+upload</div>
 </div>
 </div>
-<!--
 <div xTemplate=vfs_newfold>
 <form method=post action='/vfs/folds.js' xForm='vfs.#dir.new'>
-<label>Name</label>
-<value></value>
+<field #title=Name #name=name></field>
+<formbtn>Create</formbtn>
 </form>
 </div>
--->
+<div xTemplate=vfs_newtext>
+<form method=post action='/vfs/files.js' xForm='vfs.#dir.new'>
+<field #title=Name #name=name></field>
+<textarea name=contents rows=16 cols=80></textarea>
+<formbtn>Save</formbtn>
+</form>
+</div>
+<div xTemplate=vfs_newfile>
+<form method=post action='/vfs/files.js' xForm='vfs.#dir.new'>
+<field #title=Name #name=name></field>
+<input type=file name=upload>
+<formbtn>Upload</formbtn>
+</form>
+</div>
 <div xTemplate='vfs_entry'>
 <div xCmd='vfs_openfile(#[vfs.#[dir].name])'>#[#[path].name]</div>
 </div>
@@ -42,9 +54,15 @@ function addVfsFold(dir)
     var e = gE("vfs_" + dir);
     e.blitzTemplate("vfs_newfold", dir);
 }
-function addVfsFile(dir)
+function addVfsText(dir)
 {
     var e = gE("vfs_" + dir);
+    e.blitzTemplate("vfs_newtext", dir);
+}
+function addVfsFiles(dir)
+{
+    var e = gE("vfs_" + dir);
+    e.blitzTemplate("vfs_newfile", dir);
 }
 function vfsUpdate(a,b)
 {

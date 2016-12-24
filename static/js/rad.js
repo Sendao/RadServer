@@ -261,6 +261,7 @@ function radViewHandler( responsedata, divid, requestobj )
 	rv.data = responsedata;
 	var viewdiv = gE(divid);
 	viewdiv.innerHTML = responsedata;
+	radSchedLoadSub( viewdiv );
 }
 var socket_wait_timer = -1;
 var socket_typenames = [];
@@ -1401,8 +1402,10 @@ function radVar( varn, xbase )
     return radVarX(rv);
 }
 
+var sched_subs = [];
 var sched_divs = [];
 var schednx_timeout = -1;
+var schedsx_timeout = -1;
 function radSchedLoadFin()
 {
     var i, dc;
@@ -1418,17 +1421,38 @@ function radSchedLoadFin()
     }
     radPost();
 }
+function radSchedLoadSubFin()
+{
+    var i, dc, j;
+    schedsx_timeout=-1;
+    while( sched_subs.length > 0 ) {
+        dc = sched_subs;
+        sched_subs = [];
+        for ( i = 0; i < dc.length; ++i )
+        {
+            for( j=0; j<dc[i].children.length; ++j ) {
+                radLoadDiv( dc[i].children[j] );
+            }
+        }
+    }
+    radPost();
+}
+function radSchedLoadSub( div )
+{
+    if( sched_subs.indexOf( div ) >= 0 )
+        return;
+    sched_subs.push(div);
+    if( schedsx_timeout != -1 )
+        clearTimeout(schedsx_timeout);
+    schedsx_timeout = setTimeout(radSchedLoadSubFin, 100);
+}
 function radSchedLoad( div )
 {
     if ( sched_divs.indexOf( div ) >= 0 )
-    {
         return;
-    }
     sched_divs.push(div);
     if ( schednx_timeout != -1 )
-    {
         clearTimeout(schednx_timeout);
-    }
     schednx_timeout = setTimeout(radSchedLoadFin, 100);
 }
 function radSchedLoadDivs( divs )

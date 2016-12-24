@@ -23,24 +23,39 @@
 <div class=cl></div>
 </div>
 
+<div xTemplate='struct_content_header'>
+<h2><a href='###name'>#title</a></h2>
+</div>
+
+<div xTemplate='struct_content'>
+<h2><a target='#name'>#title</a></h2>
+</div>
+
 </templates>
 
 <script language=javascript>
 
 
 var struct_radicle = {
+    /* Tabbed Pane */
     'tabpane': { 'xPostDraw2': 'structTabPaneLoaded' },
     'tabhead': { 'onclick': 'structTabHeadClick(this)', 'style': 'cursor: pointer' },
     'tablist': { 'xPostDraw': 'structTabListLoaded', 'style': 'float: left; padding: 4px' },
     'tabsection': { 'style': 'float: left; padding: 4px' },
     'tabbody': {},
     
+    /* Folding Text */
     'folderhead': { 'onclick': 'structFolderHeadClick(this)', 'style': 'cursor: pointer' },
     'folder': { 'style': 'display: none', 'keepscan': 1 },
     'foldee': { 'style': 'display: block' },
-    
+
+    /* Menu */
     'menu': { 'xCast': 'struct_menu', 'style': 'float: left', 
-    	'#menu': 'struct.menu.default', '#target': 'mainscroll' }
+    	'#menu': 'struct.menu.default', '#target': 'mainscroll' },
+    
+    /* Table of contents */
+    'content_header': { 'xCast': 'struct_content_header' },
+    'content': { 'xCast': 'struct_content' },
     
     /*,
     'scrollstack': { 'xStyle': 'width: #[~winW]px; max-width: #[~winW]px' },
@@ -58,6 +73,8 @@ function structStartup()
 }
 registerStartup(structStartup);
 
+// <folderhead>Something</folderhead>
+// <folder>
 function structFolderHeadClick(div)
 {
     var el;
@@ -69,10 +86,11 @@ function structFolderHeadClick(div)
     	}
     }
     if( !eldiv ) {
-    	console.log("bad folder! bad");
+    	console.error("bad folder! bad");
     }
     
     for( el = eldiv.nextSibling; el; el = el.nextSibling ) {
+        console.log("Check el", el);
         if( radIsClass( el, 'folder' ) ) {
             classSwap( el, "folder", "foldee" );
             radScanClass(el);

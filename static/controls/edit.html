@@ -1,0 +1,32 @@
+<div xTemplate='net_scan'>
+<form xWatch=net.scan xRoot='net.scan' xMethod=scannerOpenPage() xForm='net.scan'>
+<input type=hidden name=key value="#sess.key">
+<field #name=name #title=Sitename></field><br/>
+<field #name=addr #title=Address></field>
+<formbtn>Scan</formbtn>
+</form>
+<div xWatch=net.scan.addr id=scan_#[net.scan.name]_result></div>
+</div>
+
+<script language=javascript>
+function netScanned(event, code, data)
+{
+    var obj = event.obj;
+    console.info(event, code, event.obj, data);
+    var e = gE(radTranslate("scan_#[net.scan.addr]_result"));
+//    var s = JSON.parse(obj);
+    e.innerHTML = s.body;
+}
+function netutilStart()
+{
+    socketRegister("net.scan", netScanned);
+}
+registerStartup(netutilStart);
+function scannerOpenPage()
+{
+    var e = gE(radTranslate("scan_#[net.scan.addr]_result"));
+    console.info("found " + radTranslate("#[net.scan.addr]") + ": ", e);
+    HtmlObjRequest("/tool/netscan.js", radVar("net.scan"));
+    return false; // don't send a normal event
+}
+</script>
