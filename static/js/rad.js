@@ -254,9 +254,11 @@ function radTypePoll( typename, polltime )
     radClearPoll( rq['r'] );
     radQueries[typename]['r'] = radStartPoll( rq['query'], polltime, radTypeDataHandler, typename );
 }
-function radViewHandler( responsedata, divid, requestobj )
+function radViewHandler( responsedata, viewobj, requestobj )
 {
-	var rv = radViews[divid];
+    var viewid = viewobj['viewid'];
+    var divid = viewobj['divid'];
+	var rv = radViews[viewid];
 	rv.status = 200;
 	rv.data = responsedata;
 	var viewdiv = gE(divid);
@@ -4546,11 +4548,11 @@ function scaleDiv( idiv )
     		if( !isValid(idiv.id) || idiv.id == "" ) {
     			idiv.id = "view_" + str_rand(12);
     		}
-    		if( idiv.id in radViews ) {
-    		    radViewHandler(radViews[idiv.id].data, idiv.id, null);
+    		if( x in radViews ) {
+    		    radViewHandler(radViews[x].data, { 'viewid': x, 'divid': idiv.id }, null);
     		} else {
-    		    radViews[ idiv.id ] = { 'url': radTranslate(x), 'data': null };
-    		    HtmlRequestGet( radViews[idiv.id].url, '', radViewHandler, idiv.id );
+    		    radViews[ x ] = { 'url': radTranslate(x), 'data': null };
+    		    HtmlRequestGet( radViews[idiv.id].url, '', radViewHandler, { 'viewid': x, 'divid': idiv.id } );
     		}
     	}
     }

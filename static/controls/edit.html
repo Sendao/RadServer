@@ -1,32 +1,70 @@
-<div xTemplate='net_scan'>
-<form xWatch=net.scan xRoot='net.scan' xMethod=scannerOpenPage() xForm='net.scan'>
-<input type=hidden name=key value="#sess.key">
-<field #name=name #title=Sitename></field><br/>
-<field #name=addr #title=Address></field>
-<formbtn>Scan</formbtn>
-</form>
-<div xWatch=net.scan.addr id=scan_#[net.scan.name]_result></div>
+<div xTemplate='database'>
+
+<div xDataName=bases xSocket='/base.json'></div>
+
+<div xLoop=bases xKey=k xVal=v>
+<div xCast=data_base xSet='base=bases.#[k],baseid=#k'></div>
+</div>
+
+<div xTemplate='data_base'>
+<div xLoop=base.tables xKey=k xVal=v>
+<div xCast=table xSet='table=bases.#[baseid].tables.#[k],tableid=#k'></div>
+</div>
+</div>
+
+<div xTemplate='table'>
+
+<div xDataname=tables.#table xSocket='/ed.json?base=#[base]&table=#[table]&start=0&count=100'></div>
+
+<div xCast='tablerows'></div>
+<div xCmd='appendTable("#baseid", "#tableid")'>New row</div>
+
+</div>
+
+<div xTemplate='editrow'>
+
+</div>
+
+<div xTemplate='tablerows'>
+<div xWatch=tables.#[table] xTest='"#[tables.#[table]]"' xLoop=tables.#table xKey=k xVal=v>
+<div class=fl xCast=tablerow xSet='table=#table,row=#k'></div><div class=fl xCmd='removeTableRow("#base", "#table", "#k")'></div>
+<div class=cl></div>
+</div> 
+</div>
+
+<div xTemplate='tablerow'>
+
+
+</div>
+
+</div>
+
+<form xForm=bases xWatch=net.scan xRoot='net.scan' xMethod=scannerOpenPage()>
 </div>
 
 <script language=javascript>
-function netScanned(event, code, data)
+
+function editTableRow(base,table,rowid)
 {
-    var obj = event.obj;
-    console.info(event, code, event.obj, data);
-    var e = gE(radTranslate("scan_#[net.scan.addr]_result"));
-//    var s = JSON.parse(obj);
-    e.innerHTML = s.body;
 }
-function netutilStart()
+function removeTableRow(base,table,rowid)
 {
-    socketRegister("net.scan", netScanned);
 }
-registerStartup(netutilStart);
-function scannerOpenPage()
+
+function tableUpdate()
 {
-    var e = gE(radTranslate("scan_#[net.scan.addr]_result"));
-    console.info("found " + radTranslate("#[net.scan.addr]") + ": ", e);
-    HtmlObjRequest("/tool/netscan.js", radVar("net.scan"));
-    return false; // don't send a normal event
 }
+function tableAppend()
+{
+}
+function tableRemove()
+{
+}
+function startTable(name)
+{
+    socketRegister(name + "_update", tableUpdate);
+    socketRegister(name + "_append", tableAppend);
+    socketRegister(name + "_remove", tableRemove);
+}
+
 </script>

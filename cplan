@@ -1,28 +1,31 @@
-- utilize app.tools.events
- - database updates
- - background workers
- - information polling
+- verify authentication
+ - get socket reconnections working: copy all of cliconn's descriptors
+ - socket 'state' that resumes when page is reloaded 
+
+- 
 
 - gather data from the web
  - use cheerio
- - tracker and scanner
-  - keyword searches
+ x tracker and scanner
+  x keyword searches
   - keyword categorizers
   - tagcloud mesh recognition weights
  - reimplementation pages
 
 - improve the frontend
+ - fix folder/link incompatibility
  - db editor
+ - cms page/layout/script editor
  - encryption/archival/replication (EAR) support
 
 - move the apps in a direction
- - cms
- - forum
- - online shop
- - dashboard
- - web scanning
- - search scanning
- - tag mapping
+ - cms: page/layout/script
+ - forum: layouts, db
+ - online shop: layouts, db
+ - dashboard: layouts, admin, db
+ - web scanning: data, db
+ - search scanning: data, db
+ - tag mapping: data, db
  
 - db queues
  - archival

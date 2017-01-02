@@ -14,7 +14,7 @@
 <!-- 
 <body style="background-image: url('dragontribe.jpg'); background-color: black; color: tan">
  -->
- <body class=bg5 style='color: tan'>
+ <body class=bg5 style='color: tan; margin: 0px'>
  
 <div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
 <div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
@@ -35,6 +35,7 @@ Loading
 #include tpl/struct.html
 #include tpl/socket.html
 #include tpl/auth.html
+#include controls/edit.html
 #include controls/watch.html
 #include controls/github.html
 #include controls/console.html
@@ -177,10 +178,10 @@ function initSkeleton()
             { 'title': 'Trough', 'cast': 'feed' },
             { 'title': 'Newsroll', 'cast': 'news' },
             { 'title': 'Stockmatch', 'cast': 'smatch' }
-//          { 'title': 'Bubblewave', 'cast': 'jrain' }
         ] },
         { 'title': 'Tools', 'children': [
             { 'title': 'Console', 'cast': 'console' },
+            { 'title': 'Database', 'cast': 'database' },
             { 'title': 'Ping', 'cast': 'tool_ping' },
             { 'title': 'Branch', 'cast': 'branches' },
             { 'title': 'Spring', 'cast': 'spring' },
@@ -227,8 +228,8 @@ function initSkeleton()
     
     //radHook( "hosts." + window.location.hostname + ".config", checkGroups )
     host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
+    radStore( "hostname", host.hostname );
     radStore( "hosts." + host.hostname, host );
-    radStore( "hostname", window.location.hostname );
 
     radLoad();
     cycleBodyStyles();
