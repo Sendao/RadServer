@@ -1,5 +1,22 @@
 <templates>
 
+<div xTemplate='backdoor'>
+
+<form action='/backdoor.json' xForm=backdoor method=post xCb=gotBackdoor>
+<input type=hidden name=cookie value="#sess.key">
+<formbtn>Knock</formbtn>
+</form>
+
+</div>
+
+<div xTemplate='userprofile'>
+Permissions:
+<div xLoop=sess.permissions xKey=k xVal=v>
+<fl>#v</fl>
+</div>
+Username: #user.username<br>
+</div>
+
 <div xTemplate='signup'>
 <form xCb=auth_signup method=post action='/signup' xForm='newuser' #titlewidth=100 #valuewidth=200>
 <input xWatch2=sess type=hidden name=cookie value='#sess.key'>
@@ -52,11 +69,16 @@ function authStartup()
 }
 registerStartup(authStartup);
 */
-
+function gotBackdoor(data) {
+    var dobj = JSON.parse(data);
+    console.log("gotBackdoor(", dobj, ")");
+}
 function auth_signup(data) {
 	var dobj = JSON.parse(data);
 	if( dobj.status == 'ok' ) {
-		console.log("Signup successful.");
+		console.log("Signup successful. Logged in.");
+		radStore("sess", dobj.sess);
+		radStore("user", dobj.user);
 	} else {
 		console.log("Signup", dobj.status);
 		alert(dobj.status);
@@ -66,6 +88,8 @@ function auth_signin(data) {
 	var dobj = JSON.parse(data);
 	if( dobj.status == 'ok' ) {
 		console.log("Login successful.");
+		radStore("sess", dobj.sess);
+		radStore("user", dobj.user);
 	} else {
 		console.log("Login", dobj.status);
 		alert(dobj.status);
@@ -98,8 +122,14 @@ function session_start(obj) {
 	console.log("session_start:",obj);
 	if( obj.status == 'ok' ) {
 		radStore("sess", obj.data);
+		createCookie("sessKey", obj.data.key);
 		console.log("Secure authentication token registered.");
 	}
+}
+
+var scook = readCookie("sessKey");
+if( scook != false ) {
+    radStore("cookie", scook);
 }
 
 </script>

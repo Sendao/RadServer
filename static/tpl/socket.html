@@ -27,12 +27,12 @@ function redirectLogin()
 
 var wsSock;
 var socket_timer = -1;
-var cookiepath = "cookie";
+var keypath = "cookie";
 var readypath = "ready";
 var closing_socket = false;
 var socketRecv = null;
 
-function openSocket( target_url, recvCb, use_secure=false, _cookiepath=null, _readypath=null )
+function openSocket( target_url, recvCb, use_secure=false, _keypath=null, _readypath=null )
 {
     if( socket_timer != -1 ) {
         clearInterval(socket_timer);
@@ -45,8 +45,8 @@ function openSocket( target_url, recvCb, use_secure=false, _cookiepath=null, _re
     }
     console.log("TargetHost set to", targetHost);
 	socketRecv = recvCb;
-	if( _cookiepath != null )
-		cookiepath = _cookiepath;
+	if( _keypath != null )
+		keypath = _keypath;
 	if( _readypath != null )
 		readypath = _readypath;
     connectSocket();
@@ -59,7 +59,7 @@ function socketOpen( event )
         socket_timer = -1;
     }
 	//console.log("Socket open", event);
-	radStore(cookiepath, randStr(16));
+	radStore(keypath, randStr(16));
 	configSocket();
 }
 
@@ -132,7 +132,7 @@ function socketError( event )
 var config_timer=-1;
 function configSocket()
 {
-    if( radVar( cookiepath ) == null ) {
+    if( radVar( keypath ) == null ) {
         if( config_timer == -1 ) {
             config_timer = setInterval( 'configSocket()', 1000 );
         }
@@ -141,7 +141,7 @@ function configSocket()
             clearInterval( config_timer );
             config_timer = -1;
         }
-        sendSocket( { 'code': 'reg', 'cookie': radVar(cookiepath) } );
+        sendSocket( { 'code': 'reg', 'cookie': radVar(keypath) } );
         console.log("Socket configuration sent.");
     }
 }

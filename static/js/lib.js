@@ -1706,9 +1706,10 @@ function formsend(fx)
         
         if( x.indexOf("return") >= 0 )
             x = "function __quick_eval() {" + x + "}; __quick_eval();";
-
+        console.info("Running onsend == ", x);
         return eval(x);
     } else if( o.hasAttribute('action') && isValid(x=o.getAttribute('action')) ) {
+        console.info("Running onsend()");
         o.submit();
         return false;
     } else return false;

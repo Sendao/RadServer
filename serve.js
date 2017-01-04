@@ -90,6 +90,7 @@ function mainHandler( req, res ) {
                 result.headers['Content-Length'] = Buffer.byteLength( result.body, result.encoding );
             }
             res.writeHead(result.status, result.headers);
+            console.log("Finished request");
             if( result.encoding )
                 res.end(result.body, result.encoding);
             else

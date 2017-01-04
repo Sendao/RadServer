@@ -25,7 +25,7 @@ Loading
 </div>
 
 <menu ></menu>
-<main></main>
+<main style='margin-top: 16px; font-size: 14pt'></main>
 <loadwheel></loadwheel>
 
 <!--  setup -->
@@ -158,6 +158,7 @@ function initSkeleton()
 // Initialize any variables here radStore("x", 42);
     var basicMenu = [
         { 'title': 'User', 'children': [
+            { 'title': 'Profile', 'cast': 'userprofile' },
             { 'title': 'Signup', 'cast': 'signup' },
             { 'title': 'Signin', 'cast': 'signin' },
             { 'title': 'Logout', 'cast': 'logout' },
@@ -216,6 +217,7 @@ function initSkeleton()
             { 'title': 'Groups', 'cast': 'm_groups' }
         ] },
         { 'title': 'Edit', 'cast': 'dbeditor' },
+        { 'title': 'Backdoor', 'cast': 'backdoor' },
         { 'title': 'Page', 'children': [
             { 'title': 'Background', 'act': 'cycleBodyStyles' }
         ]}
