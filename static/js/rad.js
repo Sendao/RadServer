@@ -4552,7 +4552,7 @@ function scaleDiv( idiv )
     		    radViewHandler(radViews[x].data, { 'viewid': x, 'divid': idiv.id }, null);
     		} else {
     		    radViews[ x ] = { 'url': radTranslate(x), 'data': null };
-    		    HtmlRequestGet( radViews[idiv.id].url, '', radViewHandler, { 'viewid': x, 'divid': idiv.id } );
+    		    HtmlRequestGet( radViews[x].url, '', radViewHandler, { 'viewid': x, 'divid': idiv.id } );
     		}
     	}
     }
