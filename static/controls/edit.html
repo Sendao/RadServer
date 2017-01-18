@@ -7,52 +7,93 @@
 <div xDataName=bases xSocket='/base.json'></div>
 
 <div xLoop=bases xKey=k xVal=v>
-<div xCast=data_base xSet='base=bases.#[k],baseid=#k'></div>
+<div xCast=data_base xSet='baseid=#[k]'></div>
 </div>
 
 <div xTemplate='data_base'>
-<div xLoop=base.tables xKey=k xVal=v>
-<div xCast=table xSet='table=bases.#[baseid].tables.#[k],tableid=#k'></div>
+#[bases.#[baseid].name]<BR>
+<div xLoop=bases.#[baseid].tables xKey=k xVal=v>
+#[bases.#[baseid].tables.#[k].name]:<br>
+<div xCast=table xSet='baseid=#baseid,tableid=#k'></div>
 </div>
 </div>
 
 <div xTemplate='table'>
 
-<div xDataname=tables.#table xSocket='/ed.json?base=#[base]&table=#[table]&start=0&count=100'></div>
+<div id=table_#[tableid]_win>
+
+<div xWatch=tables.#tableid>
+#[tables.#[tableid].name]<BR>
+</div>
+
+<div xDataname=tables.#tableid xSocket='/ed.json?base=#[baseid]&table=#[tableid]&start=0&count=100'></div>
+
+<div id=table_#[tableid]_edit></div>
 
 <div xCast='tablerows'></div>
-<div xCmd='appendTable("#baseid", "#tableid")'>New row</div>
+<div xCmd='appendTable("#baseid", "#tableid")'>Add record</div>
 
+</div>
 </div>
 
 <div xTemplate='editrow'>
+#table #[tables.#[table].rows.#[row].id]:<BR>
+<form xForm=tables.#[table].rows.#[row] method='/ed.json'>
+<div xLoop=tables.#[table].defaults xKey=k2 xVal=v2>
+<field title=#k2 titlewidth=200 name=#k2></field>
+</div>
+<div class=formbtn>Save</div>
+</form>
+</div>
 
+<div xTemplate='removerow'>
+<form xForm=tables.#[table].rows.#[row] method='/ed.json'>
+<div class=fl>Delete #[tables.#[table].rows.#[row].id]]?</div>
+<div class=formbtn>Confirm</div>
+</form>
 </div>
 
 <div xTemplate='tablerows'>
-<div xWatch=tables.#[table] xTest='"#[tables.#[table]]"' xLoop=tables.#table xKey=k xVal=v>
-<div class=fl xCast=tablerow xSet='table=#table,row=#k'></div><div class=fl xCmd='removeTableRow("#base", "#table", "#k")'></div>
+<div xWatch=tables.#[table] xTest='"#[tables.#[table].rows]"' xLoop=tables.#[table].rows xKey=k xVal=v>
+<div class=fl xCast=tablerow xSet='table=#table,row=#k,titlefield=id'></div>
+<div class=fl xCmd='editTableRow("#base", "#table", "#k")'>edit</div>
+<div class=fl xCmd='removeTableRow("#base", "#table", "#k")'>remove</div>
 <div class=cl></div>
 </div> 
 </div>
 
 <div xTemplate='tablerow'>
+<div class=fl>#[tables.#[table].rows.#[row].#[titlefield]]</div>
+<div class=cl></div>
+</div>
 
-
+<div xTemplate='tableview'>
+<div xLoop=tables.#[table].defaults xKey=k2 xVal=v2></div>
+<div class=fl style='width: 120px'>#k2</div>
+<div class=fl>#[tables.#[table].rows.#[row].#[k2]]</div>
+<div class=cl></div>
+</div>
+<div class=cl></div>
 </div>
 
 </div>
 
-<form xForm=bases xWatch=net.scan xRoot='net.scan' xMethod=scannerOpenPage()>
+<!-- <form xForm=bases xWatch=net.scan xRoot='net.scan' xMethod=scannerOpenPage()>
+</form> -->
+
 </div>
 
 <script language=javascript>
 
 function editTableRow(base,table,rowid)
 {
+    var e = gE("table_" + base + "_" + table + "_edit");
+    blitzTemplate(e,"editrow");
 }
 function removeTableRow(base,table,rowid)
 {
+    var e = gE("table_" + base + "_" + table + "_edit");
+    blitzTemplate(e,"removerow");
 }
 
 function tableUpdate()

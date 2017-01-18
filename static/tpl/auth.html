@@ -10,11 +10,15 @@
 </div>
 
 <div xTemplate='userprofile'>
+<div xWatch=sess>
 Permissions:
 <div xLoop=sess.permissions xKey=k xVal=v>
 <fl>#v</fl>
 </div>
-Username: #user.username<br>
+<div xWatch=user>
+</div>
+Username: #user.name<br>
+</div>
 </div>
 
 <div xTemplate='signup'>
