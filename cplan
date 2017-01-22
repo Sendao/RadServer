@@ -1,8 +1,8 @@
-- verify authentication
- - get socket reconnections working: copy all of cliconn's descriptors
- - socket 'state' that resumes when page is reloaded 
 
-- 
+- records are being written multiple times due to EOF recalculation.
++ make a better index recalculator
+ - create an empty space where the record was
+ - use empty spaces
 
 - gather data from the web
  - use cheerio
@@ -38,5 +38,4 @@ Documentation:
  - add/remove tabs from menu options
  - default to url #targetname
  
-- mouseodom singlet
  
