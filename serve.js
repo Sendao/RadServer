@@ -6,12 +6,15 @@ var journey = require('journey');
 var router = new(journey.Router);
 var hostname = "spiritshare";
 var App = require('./lib/app.js');
+var Tester = require('./lib/test.js');
 app = new App();
+tester = new Tester(app);
 var app_static = require('./lib/static.js');
 var hconfig = require('./lib/config.js');
 var default_port = 80, default_ssl_port = 443;
 var using_port, using_ssl_port;
 var hostname;
+
 if( 'port' in hconfig )
     default_port = hconfig['port'];
 if( 'sslport' in hconfig )
@@ -25,6 +28,7 @@ if( 'hostname' in hconfig ) {
     }
 }
 app.config = hconfig;
+
 app.configure( [ 'clients', 'projects', 'stocks', 'cms', 'chat', 'watch', 'rcs', 'ggrid', 'ed' ] );
 app.routes( router );
 app_static.routes( router );
@@ -80,7 +84,7 @@ function mainHandler( req, res ) {
       //console.log(req, body);
         router.handle(req, body, function (result) {
             if( result.status != 200 ) {
-//                console.log("Increment load counter for " + whoisit);
+                console.info("Error status: ", result.status);
                 closeLoadHandler(whoisit, true);
             } else {
                 closeLoadHandler(whoisit, false);
@@ -115,6 +119,12 @@ if( fs.existsSync( hconfig['ssl'] ) ) {
 	https_server = https.createServer( { pfx: fs.readFileSync(hconfig['ssl']) }, mainHandler );
 }
 
+
+tester.runTests();
+
+
+
+
 if( https_server ) {
 	wssserver = new app.tools.Websock.server(https_server);
 	https_server.listen(using_ssl_port);
@@ -139,5 +149,6 @@ var wsclient = new app.tools.Websock.client("ws://" + hostname + ":" + using_por
 console.log("Initialization complete. Script stored.");
 
 app.connect_socket_clients( wsclient, wssclient );
+
 
 
