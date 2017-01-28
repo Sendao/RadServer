@@ -1,7 +1,6 @@
 
-- records are being written multiple times due to EOF recalculation.
-+ make a better index recalculator
- - create an empty space where the record was
+- make a better index recalculator
+ x create an empty space where the record was
  - use empty spaces
 
 - gather data from the web
