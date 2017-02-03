@@ -4,7 +4,7 @@
 
 <div xTemplate='database'>
 
-<div xDataName=bases xSocket='/base.json'></div>
+<div xDataName=bases xUrl='/base.json?key=#cookie' xSocketCode='bases' xCb='databaseRows'></div>
 
 <div xLoop=bases xKey=k xVal=v>
 <div xCast=data_base xSet='baseid=#[k]'></div>
@@ -22,13 +22,13 @@
 
 <div xTemplate='table'>
 
-<div id=table_#[tableid]_win>
+<div id=table_#[tableid]_win xWatch=tables.#tableid>
 
-<div xWatch=tables.#tableid>
+<div>
 #[tables.#[tableid].name]<BR>
 </div>
 
-<div xDataname=tables.#tableid xSocket='/ed.json?base=#[baseid]&table=#[tableid]&start=0&count=100'></div>
+<div xDataname=tables.#tableid xUrl='/ed.json?base=#[baseid]&table=#[tableid]&start=0&count=100' xSocketCode='tables' xCb='tableRows'></div>
 
 <div id=table_#[tableid]_edit></div>
 
@@ -96,6 +96,16 @@ function removeTableRow(base,table,rowid)
 {
     var e = gE("table_" + base + "_" + table + "_edit");
     blitzTemplate(e,"removerow");
+}
+
+function databaseRows(a,b)
+{
+    console.info("dbRows",a,b);
+}
+
+function tableRows(a,b)
+{
+    console.info("tableRows",a,b);
 }
 
 function tableUpdate()

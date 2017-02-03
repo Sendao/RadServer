@@ -70,13 +70,14 @@ function socketRegister( eventType, cb, cbdata )
 		socketRegistry[eventType] = [];
 	}
 	socketRegistry[eventType].push([cb,cbdata]);
+	console.info(eventType + " registered");
 }
 function socketRegisterFree( eventType, cb, cbdata )
 {
 	if( !(eventType in socketRegistry) ) return;
 	var i, l = socketRegistry[eventType];
 	for( i = 0; i < l.length; i++ ) {
-		if( l[i][0] == cb && (cbdata == null || l[i][1] == cbdata) ) {
+		if( l[i][0] === cb && (cbdata == null || l[i][1] === cbdata) ) {
 			l.splice(i,1);
 			i--;
 		}

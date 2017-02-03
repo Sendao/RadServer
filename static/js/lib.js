@@ -1,6 +1,7 @@
 // Copyright 2012-2014 Scott Powell, all rights reserved
 // Please feel free to modify and use this code for your own purposes.
 
+
 var rxCmd={};
 function logCommandHandler( reqid, handler, data )
 {

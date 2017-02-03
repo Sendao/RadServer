@@ -54,6 +54,53 @@ function radStartup()
     XRegisterResize('radResize();');
 }
 
+
+function radIsClass( dv, cls )
+{
+    var classNames = [];
+    if ( isValid(dv.className) )
+    {
+        classNames = dv.className.split(' ');
+    }
+    
+    if( 'id' in dv && dv.id != '' )
+        classNames.unshift( '#' + dv.id );
+    classNames.unshift( dv.nodeName.toLowerCase() );
+
+    // does the head splash here? no, but that's a good idea. thanks!
+    if( typeof dv.attributes != 'undefined' ) {
+        for( var i = 0; i < dv.attributes.length; ++i ) {
+            if( dv.attributes[i].value == '' ) {
+                classNames.unshift( dv.attributes[i].name );
+            }
+        }
+    }
+    for ( var i = 0; i < classNames.length; ++i )
+    {
+        if( typeof cls != 'string' ) {
+            if( Array.isArray(cls) ) {
+                if( cls.indexOf(classNames[i]) != -1 )
+                    return true;
+            } else if( classNames[i] in cls )
+                return true;
+        } else if ( classNames[i] == cls )
+            return true;
+    }
+    return false;
+}
+
+function radClass( cls )
+{
+    for ( var i in cls )
+    {
+        if ( i in radicle )
+        {
+            delete radicle[i];
+        }
+        radicle[i] = cloneObject(cls[i]);
+    }
+}
+
 /*
  * radScanClass: scan an element and set params from defaults
  * based on element name, class name, and/or id
@@ -131,80 +178,7 @@ function radScanClass( dv, preloadStage=false )
     return found;
 }
 
-function radIsClass( dv, cls )
-{
-	var classNames = [];
-    if ( isValid(dv.className) )
-    {
-    	classNames = dv.className.split(' ');
-    }
-    
-    if( 'id' in dv && dv.id != '' )
-    	classNames.unshift( '#' + dv.id );
-    classNames.unshift( dv.nodeName.toLowerCase() );
 
-    // does the head splash here? no, but that's a good idea. thanks!
-    if( typeof dv.attributes != 'undefined' ) {
-	    for( var i = 0; i < dv.attributes.length; ++i ) {
-	    	if( dv.attributes[i].value == '' ) {
-	    		classNames.unshift( dv.attributes[i].name );
-	    	}
-	    }
-    }
-    for ( var i = 0; i < classNames.length; ++i )
-    {
-    	if( typeof cls != 'string' ) {
-    		if( Array.isArray(cls) ) {
-    			if( cls.indexOf(classNames[i]) != -1 )
-    				return true;
-    		} else if( classNames[i] in cls )
-    			return true;
-    	} else if ( classNames[i] == cls )
-        	return true;
-    }
-    return false;
-}
-
-function radClass( cls )
-{
-    for ( var i in cls )
-    {
-        if ( i in radicle )
-        {
-            delete radicle[i];
-        }
-        radicle[i] = cloneObject(cls[i]);
-    }
-}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
-//  *** EXPERIMENTAL CODE BOUNDARY *** //
 
 function radType( typename, defs )
 {
@@ -216,13 +190,15 @@ function radType( typename, defs )
         radQueries[typename][i] = defs[i];
     }
     if( defs['socket'] ) {
+        var socketName;
 		// connect handler for type data
 		if( 'socket_code' in defs ) {
-			socketRegister( defs['socket_code'], radSocketDataHandler, typename );
+		    socketName = defs['socket_code'];
 		} else {
-			socketRegister( typename, radSocketDataHandler, typename );
+		    socketName = typename;
 		}
-		console.log("Registered socket handler 'socket:'");
+        socketRegister( defs['socket_code'], radSocketDataHandler, typename );
+		console.info("Registered socket handler '" + socketName+ "'");
 		HtmlRequestGet( defs['socket'], '', radSocketRequestHandler, typename );
         return;
     }
@@ -282,6 +258,10 @@ function radSocketRequestHandler( responsedata, typename, requestobj )
 		console.warn("Invalid socket response: ", resobj);
 		return;
 	}
+	if( 'data' in resobj ) {
+	    console.info("socket request returned data", resobj.data);
+	    radSocketDataHandler( {'data': resobj.data }, typename, typename );
+	}
 	if( typeof wsSock == 'undefined' ) {
 		console.log("Socket handler not registered - waiting for socket library include..");
 		if( socket_wait_timer == -1 ) {
@@ -314,14 +294,13 @@ function retryConnectSocketHandler( typenames ) {
 function radSocketDataHandler( event, code, typename )
 {
 	var rq = radQueries[typename];
-	console.log("socket: ", event, code, typename);
+	console.info("socket: ", event, code, typename);
+    radCStore( rq['dataname'], JSON.parse(event['data'])['event'] );
     if( rq['datacb'] ) {
         var fc = rq['datacb'];
         if( typeof fc == 'string' )
             fc = eval(fc);
         fc( JSON.parse(event['data']), rq );
-    } else {
-        radCStore( rq['dataname'], JSON.parse(event['data'])['event'] );
     }
 }
 function radTypeDataHandler( responsedata, typename, requestobj )
@@ -2999,6 +2978,8 @@ function readDiv(idiv, pdiv)
         if( isValid(y = getAttribute(idiv, 'xSockCode')) )
         {
         	rqo['socket_code'] = y;
+        } else if( isValid(y = getAttribute(idiv, 'xSocketCode')) ) {
+            rqo['socket_code'] = y;
         }
         if( isValid(y = getAttribute(idiv, 'xSocket')) )
         {
@@ -5634,6 +5615,8 @@ function radStyle(idiv)
         continue;                
     }
 }
+
+
 
 var radsort_key = '';
 function radSortArray(a, b)

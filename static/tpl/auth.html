@@ -12,9 +12,9 @@
 <div xTemplate='userprofile'>
 <div xWatch=sess>
 Permissions:
-<div xLoop=sess.permissions xKey=k xVal=v>
+<fl xLoop=sess.permissions xKey=k xVal=v>
 <fl>#v</fl>
-</div>
+</fl>
 <div xWatch=user>
 </div>
 Username: #user.name<br>
@@ -120,20 +120,34 @@ function auth_logout(data) {
 //function prepare_session() {
 //	console.log("Registering authorized session startup with socket");
 //}
+function auth_setkey( cookieval )
+{
+    radCStore("cookie", cookieval);
+    if( typeof(Storage) !== 'undefined' ) {
+        localStorage.cookie = cookieval;
+    }
+    createCookie("sessKey", cookieval);
+}
+
+var scook = readCookie("sessKey");
+if (scook != null) {
+
+} else if( typeof(Storage) !== "undefined" ) {
+    if( 'cookie' in localStorage  )
+        scook = localStorage.cookie;
+}
+if( scook != false ) {
+    auth_setkey(scook);
+}
 socketRegister('register', session_start);
 
 function session_start(obj) {
 	console.log("session_start:",obj);
 	if( obj.status == 'ok' ) {
 		radStore("sess", obj.data);
-		createCookie("sessKey", obj.data.key);
+		auth_setkey(obj.data.key);
 		console.log("Secure authentication token registered.");
 	}
-}
-
-var scook = readCookie("sessKey");
-if( scook != false ) {
-    radStore("cookie", scook);
 }
 
 </script>
