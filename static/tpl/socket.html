@@ -32,6 +32,7 @@ var readypath = "ready";
 var closing_socket = false;
 var socketRecv = null;
 
+//openSocket: open the socket connection to the database server
 function openSocket( target_url, recvCb, use_secure=false, _keypath=null, _readypath=null )
 {
     if( socket_timer != -1 ) {
@@ -52,6 +53,7 @@ function openSocket( target_url, recvCb, use_secure=false, _keypath=null, _ready
     connectSocket();
 }
 
+// socketOpen: receive opened socket event
 function socketOpen( event )
 {
     if( socket_timer != -1 ) {
@@ -59,10 +61,15 @@ function socketOpen( event )
         socket_timer = -1;
     }
 	//console.log("Socket open", event);
-	radStore(keypath, randStr(16));
+	if( "cookie" in localStorage && localStorage.cookie != null && localStorage.cookie != false ) {
+	    radStore(keypath, localStorage.cookie);
+	} else {
+	    radStore(keypath, randStr(16));
+	}
 	configSocket();
 }
 
+// socketRegister: callback registry, events by eventType
 var socketRegistry = {};
 function socketRegister( eventType, cb, cbdata )
 {
@@ -72,6 +79,8 @@ function socketRegister( eventType, cb, cbdata )
 	socketRegistry[eventType].push([cb,cbdata]);
 	console.info(eventType + " registered");
 }
+
+// socketRegisterFree: release registry for event eventType
 function socketRegisterFree( eventType, cb, cbdata )
 {
 	if( !(eventType in socketRegistry) ) return;
@@ -83,6 +92,7 @@ function socketRegisterFree( eventType, cb, cbdata )
 		}
 	}
 }
+// socketRecieve: handle socket data events via socketRegistry 
 function socketRecieve( event )
 {
     if( socket_timer != -1 ) {
@@ -114,6 +124,7 @@ function socketRecieve( event )
 	}
 }
 
+// socketClose: socket was closed
 function socketClose( event )
 {
     console.log("Socket closed, trying to reopen.");
@@ -122,6 +133,7 @@ function socketClose( event )
     }
 }
 
+// socketError: socket was errored closed
 function socketError( event )
 {
     console.log("Socket error, trying to reopen.", event);
@@ -130,39 +142,19 @@ function socketError( event )
     }
 }
 
-var config_timer=-1;
+// configSocket: Prepare for connection by getting any session key
 function configSocket()
 {
-    if( radVar( keypath ) == null ) {
-        if( config_timer == -1 ) {
-            config_timer = setInterval( 'configSocket()', 1000 );
-        }
+    var ix = radVar(keypath);
+    if( ix == null ) {
+        radHook(keypath, configSocket, null);
     } else {
-        if( config_timer != -1 ) {
-            clearInterval( config_timer );
-            config_timer = -1;
-        }
-        sendSocket( { 'code': 'reg', 'cookie': radVar(keypath) } );
-        console.log("Socket configuration sent.");
+        radUnhook( keypath, configSocket, null );
+        sendSocket( { 'code': 'reg', 'cookie': ix } );
+        //console.log("Socket configuration sent.");
     }
 }
 
-function testSocket()
-{
-	if( closing_socket ) return;
-    console.log("testSocket()");
-    if( wsSock != null ) {
-        closing_socket=true;
-        wsSock.close();
-        closing_socket=false;
-    }
-    wsSock = new WebSocket(targetHost, 'echo-protocol');
-    wsSock.onmessage = socketRecieve;
-    wsSock.onclose = socketClose;
-    wsSock.onerror = socketError;
-    wsSock.onopen = socketOpen;
-    //console.log("Socket connection requested");
-}
 function connectSocket()
 {
     //console.log("connectSocket()");

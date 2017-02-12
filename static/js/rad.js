@@ -48,6 +48,25 @@ function radHook( path, func, obj )
         radWHooks[path] = [[func,obj]];
     }
 }
+function radUnhook( path, func, obj )
+{
+    var i, ix, len;
+    
+    if( !(path in radWHooks) ) {
+        radWHooks[path] = [];
+        return;
+    }
+    ix = radWHooks[path];
+    len = ix.length;
+    
+    for( i=0; i<len; ++i ) {
+        if( ix[i][1] == obj && ix[i][0] == func ) {
+            radWHooks[path].splice(i,1);
+            return;
+        }
+    }
+    console.info("radUnhook() :", path, func, obj, ": failed");
+}
 
 function radStartup()
 {

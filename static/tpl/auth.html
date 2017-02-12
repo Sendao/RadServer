@@ -18,6 +18,7 @@ Permissions:
 <div xWatch=user>
 </div>
 Username: #user.name<br>
+Session key: #cookie<br>
 </div>
 </div>
 
@@ -58,7 +59,7 @@ Username: #user.name<br>
 
 </templates>
 
-<div xDataname='sess' xWatch=cookie xUrl='/session?cookie=#cookie'></div>
+<div xDataname='sess' xWatch=cookie xUrl='/session?cookie=#cookie' xCb='getSession'></div>
 
 <script language=javascript>
 
@@ -136,7 +137,7 @@ if (scook != null) {
     if( 'cookie' in localStorage  )
         scook = localStorage.cookie;
 }
-if( scook != false ) {
+if( scook != false && scook != null ) {
     auth_setkey(scook);
 }
 socketRegister('register', session_start);
@@ -148,6 +149,11 @@ function session_start(obj) {
 		auth_setkey(obj.data.key);
 		console.log("Secure authentication token registered.");
 	}
+}
+
+function getSession(obj,req) {
+    radStore("sess", obj);
+    auth_setkey(obj.key);
 }
 
 </script>

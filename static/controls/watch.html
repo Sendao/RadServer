@@ -1,9 +1,26 @@
 <templates>
 
+
+<div xTemplate=m_usage>
+<div xDataname=usage xSocket='/cms/db?b=users&t=users&c=#cookie'></div>
+Process usage for local system...
+</div>
+
+<div xTemplate=m_github>
+<div xDataname=github xSocket='/github/projects.json?cookie=#cookie'></div>
+Github project list
+</div>
+
+<div xTemplate=m_groups>
+<div xDataname=groups xSocket='/cms/db?b=users&t=users&c=#cookie'></div>
+Watch group list
+</div>
+
+
 <div xWatch='sess.key'>
 <div xTest='"#sess.key" && ("#sess.userid" != "-1")'>
-<div xDataname='watch' xSocket='/watch/cfg.json?key=#sess.key'></div>
-<div xDataname='procs' xSocket='/watch/proc.json?key=#sess.key'></div>
+<div xDataname='watch' xWatch=cookie xSocket='/watch/cfg.json?key=#cookie'></div>
+<div xDataname='procs' xWatch=cookie xSocket='/watch/proc.json?key=#cookie'></div>
 </div>
 </div>
 
