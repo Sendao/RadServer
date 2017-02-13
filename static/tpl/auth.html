@@ -123,6 +123,9 @@ function auth_logout(data) {
 //}
 function auth_setkey( cookieval )
 {
+    if( cookieval == 'undefined' && typeof cookieval != 'undefined' ) {
+        console.error("cookieval", cookieval);
+    }
     radCStore("cookie", cookieval);
     if( typeof(Storage) !== 'undefined' ) {
         localStorage.cookie = cookieval;
@@ -131,13 +134,13 @@ function auth_setkey( cookieval )
 }
 
 var scook = readCookie("sessKey");
-if (scook != null) {
+if (scook != null && typeof scook != 'undefined' ) {
 
 } else if( typeof(Storage) !== "undefined" ) {
     if( 'cookie' in localStorage  )
         scook = localStorage.cookie;
 }
-if( scook != false && scook != null ) {
+if( typeof scook != 'undefined' && scook != false && scook != null ) {
     auth_setkey(scook);
 }
 socketRegister('register', session_start);
@@ -152,8 +155,10 @@ function session_start(obj) {
 }
 
 function getSession(obj,req) {
-    radStore("sess", obj);
-    auth_setkey(obj.key);
+    console.log("getSession:",obj);
+    radStore("sess", obj.sess);
+    auth_setkey(obj.sess.key);
+    radStore("user", obj.user);
 }
 
 </script>
