@@ -216,7 +216,7 @@ function radType( typename, defs )
 		} else {
 		    socketName = typename;
 		}
-        socketRegister( defs['socket_code'], radSocketDataHandler, typename );
+        socketRegister( socketName, radSocketDataHandler, typename );
 		console.info("Registered socket handler '" + socketName+ "'");
 		HtmlRequestGet( defs['socket'], '', radSocketRequestHandler, typename );
         return;

@@ -102,10 +102,10 @@ function socketRecieve( event )
     var obj = event.obj = JSON.parse(event.data);
     var passthru=false;
     if( obj.code == 'registered' ) {
-        console.log("Socket registered. Event: ", obj);
+        console.info("Socket registered. Event: ", obj);
         passthru=true;
     } else if( obj.code == 'granted' ) {
-        console.log("Oauth authorized.");
+        console.info("Oauth authorized.");
         radStore(readypath, 2);
         passthru=true;
     }
@@ -127,7 +127,7 @@ function socketRecieve( event )
 // socketClose: socket was closed
 function socketClose( event )
 {
-    console.log("Socket closed, trying to reopen.");
+    console.warn("Socket closed, trying to reopen.");
     if( socket_timer == -1 ) {
         socket_timer = setInterval("testSocket()", 5000);
     }
@@ -136,7 +136,7 @@ function socketClose( event )
 // socketError: socket was errored closed
 function socketError( event )
 {
-    console.log("Socket error, trying to reopen.", event);
+    console.warn("Socket error, trying to reopen.", event);
     if( socket_timer == -1 ) {
         socket_timer = setInterval("testSocket()", 5000);
     }
@@ -155,9 +155,19 @@ function configSocket()
     }
 }
 
+function testSocket()
+{
+    if( wsSock != null ) {
+        clearTimeout(socket_timer);
+    } else {
+        clearTimeout(socket_timer);
+        connectSocket();
+    }
+}
+
 function connectSocket()
 {
-    //console.log("connectSocket()");
+    console.info("connectSocket()");
     if( wsSock != null ) {
         closing_socket=true;
         wsSock.close();
