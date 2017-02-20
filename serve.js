@@ -43,10 +43,10 @@ function openLoadHandler( ipaddr ) { // tests for connections that stay open
     } else {
         app.opensockets[ipaddr]++;
     }
-    if( app.opensockets[ipaddr] > 5 ) {
-        console.log("Too many open requests from " + ipaddr + ", blocking it.");
-        system("iptables -I INPUT -s " + ipaddr + " -j DROP");
-        app.opensockets[ipaddr] = 0;
+    if( app.opensockets[ipaddr] > 500 ) {
+        console.log("Too many open requests from " + ipaddr);// + ", blocking it.");
+        //system("iptables -I INPUT -s " + ipaddr + " -j DROP");
+        //app.opensockets[ipaddr] = 0;
     }
 }
 function closeLoadHandler( ipaddr, doLoadTest ) { // tests for open connections and many non-200 statuses
@@ -65,10 +65,10 @@ function closeLoadHandler( ipaddr, doLoadTest ) { // tests for open connections 
         app.myloads[ipaddr] = 1;
     }
     app.loadtimes[ipaddr] = tmn;
-    if( app.myloads[ipaddr] > 8 ) {
-        console.log("Too many malformed requests from " + ipaddr + ", blocking it.");
-        system("iptables -I INPUT -s " + ipaddr + " -j DROP");
-        app.myloads[ipaddr] = 0;
+    if( app.myloads[ipaddr] > 4 ) {
+        console.log("Too many malformed requests from " + ipaddr);// + ", blocking it.");
+        //system("iptables -I INPUT -s " + ipaddr + " -j DROP");
+        //app.myloads[ipaddr] = 0;
     }
 }
 

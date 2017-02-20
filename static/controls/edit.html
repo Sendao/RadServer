@@ -5,34 +5,43 @@
 <div xTemplate='database'>
 
 <div xDataName=bases xUrl='/base.json?key=#cookie' xSocketCode='bases' xCb='databaseRows'></div>
-
-<div xLoop=bases xKey=k xVal=v>
+Home<BR>
+Databases:<BR>
+<div xWatch=bases>
+<div xLoop=bases xInd=k xVal=v>
+<folderhead>
+<div class=fl>#k</div>
+</folderhead>
+<div class=cl></div>
+<div class=folder>
 <div xCast=data_base xSet='baseid=#[k]'></div>
 </div>
-
+<div class=cl></div>
+</div>
+</div>
 </div>
 
 <div xTemplate='data_base'>
 #[bases.#[baseid].name]<BR>
-<div xLoop=bases.#[baseid].tables xKey=k xVal=v>
-#[bases.#[baseid].tables.#[k].name]:<br>
-<div xCast=table xSet='baseid=#baseid,tableid=#k'></div>
+Tables:<BR>
+<div xLoop=bases.#[baseid].tables xInd=k xVal=v>
+<div xCast=db_table xSet='baseid=#baseid,tableid=#k'></div>
 </div>
 </div>
 
-<div xTemplate='table'>
+<div xTemplate='db_table'>
 
 <div id=table_#[tableid]_win xWatch=tables.#tableid>
 
 <div>
-#[tables.#[tableid].name]<BR>
+"#[bases.#[baseid].tables.#[tableid].name]" rows<BR>
 </div>
 
-<div xDataname=tables.#tableid xUrl='/ed.json?base=#[baseid]&table=#[tableid]&start=0&count=100' xSocketCode='tables' xCb='tableRows'></div>
+<div xDataname=bases.#[baseid].tables.#[tableid].rows xUrl='/ed.json?key=#[cookie]&base=#[baseid]&table=#[tableid]&start=0&count=100' xSocketCode='tables' xCb='tableRows'></div>
 
-<div id=table_#[tableid]_edit></div>
+<div id=table_#[baseid]_#[tableid]_edit></div>
 
-<div xCast='tablerows'></div>
+<div xCast='db_tablerows'></div>
 <div xCmd='appendTable("#baseid", "#tableid")'>Add record</div>
 
 </div>
@@ -40,8 +49,9 @@
 
 <div xTemplate='editrow'>
 #table #[tables.#[table].rows.#[row].id]:<BR>
-<form xForm=tables.#[table].rows.#[row] method='/ed.json'>
-<div xLoop=tables.#[table].defaults xKey=k2 xVal=v2>
+<form xForm=bases.#[baseid].tables.#[tableid].rows.#[row] method='/ed.json'>
+<input type=hidden name=key value=#cookie>
+<div xLoop=bases.#[baseid].tables.#[tableid].defaults xKey=k2 xVal=v2>
 <field title=#k2 titlewidth=200 name=#k2></field>
 </div>
 <div class=formbtn>Save</div>
@@ -49,26 +59,28 @@
 </div>
 
 <div xTemplate='removerow'>
-<form xForm=tables.#[table].rows.#[row] method='/ed.json'>
-<div class=fl>Delete #[tables.#[table].rows.#[row].id]]?</div>
+<form xForm=bases.#[baseid].tables.#[tableid].rows.#[row] method='/ed.json'>
+<input type=hidden name=key value=#cookie>
+<div class=fl>Delete #[bases.#[baseid].tables.#[table].rows.#[row].id]]?</div>
 <div class=formbtn>Confirm</div>
 </form>
 </div>
 
-<div xTemplate='tablerows'>
-<div xWatch=tables.#[table] xTest='"#[tables.#[table].rows]"' xLoop=tables.#[table].rows xKey=k xVal=v>
-<div class=fl xCast=tablerow xSet='table=#table,row=#k,titlefield=id'></div>
-<div class=fl xCmd='editTableRow("#base", "#table", "#k")'>edit</div>
-<div class=fl xCmd='removeTableRow("#base", "#table", "#k")'>remove</div>
+<div xTemplate='db_tablerows'>
+<div xWatch=bases.#[baseid].tables.#[tableid] xTest='"#[bases.#[baseid].tables.#[tableid].rows]"' xLoop=bases.#[baseid].tables.#[tableid].rows xKey=k xVal=v>
+<div class=fl xCast=db_tablerow xSet='base=#baseid,table=#tableid,row=#k,titlefield=id'></div>
+<div class=fl xCmd='editTableRow("#base", "#tableid", "#k")'>edit</div>
+<div class=fl xCmd='removeTableRow("#base", "#tableid", "#k")'>remove</div>
 <div class=cl></div>
 </div> 
 </div>
 
-<div xTemplate='tablerow'>
-<div class=fl>#[tables.#[table].rows.#[row].#[titlefield]]</div>
+<div xTemplate='db_tablerow'>
+<div class=fl>#[bases.#[base].tables.#[table].rows.#[row].#[titlefield]]</div>
 <div class=cl></div>
 </div>
 
+<!-- 
 <div xTemplate='tableview'>
 <div xLoop=tables.#[table].defaults xKey=k2 xVal=v2></div>
 <div class=fl style='width: 120px'>#k2</div>
@@ -77,7 +89,8 @@
 </div>
 <div class=cl></div>
 </div>
-
+ -->
+ 
 </div>
 
 <!-- <form xForm=bases xWatch=net.scan xRoot='net.scan' xMethod=scannerOpenPage()>
@@ -98,9 +111,16 @@ function removeTableRow(base,table,rowid)
     blitzTemplate(e,"removerow");
 }
 
-function databaseRows(a,b)
+var db = {};
+function databaseRows(rows,b)
 {
-    console.info("dbRows",a,b);
+    rows = JSON.parse(rows);
+    console.info("dbRows",rows);
+    radStore("bases", rows);
+    for( var i in rows ) {
+        db[i] = rows[i];
+        //radStore("bases." + i, rows[i]);
+    }
 }
 
 function tableRows(a,b)
@@ -110,12 +130,15 @@ function tableRows(a,b)
 
 function tableUpdate()
 {
+    console.info("tableUpdate");
 }
 function tableAppend()
 {
+    console.info("tableAppend");
 }
 function tableRemove()
 {
+    console.info("tableRemove");
 }
 function startTable(name)
 {

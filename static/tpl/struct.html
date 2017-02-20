@@ -92,10 +92,12 @@ function structFolderHeadClick(div)
     for( el = eldiv.nextSibling; el; el = el.nextSibling ) {
         console.log("Check el", el);
         if( radIsClass( el, 'folder' ) ) {
+            console.log("was_folder");
             classSwap( el, "folder", "foldee" );
             radScanClass(el);
             break;
         } else if( radIsClass( el, 'foldee' ) ) {
+            console.log("was_foldee");
             classSwap( el, "foldee", "folder" );
             radScanClass(el);
             break;
