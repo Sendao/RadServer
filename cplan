@@ -1,3 +1,20 @@
+- watch
+ - app.data.startup()
+  x load configuration file
+  - store in config db
+ - load groups, then processes, then logfiles
+  - groups: from config db
+  - processes: from usage data
+   - socket handler for process change
+   - workcycle(): refresh process data
+  - logfiles: startLiveTail
+   - socket handler for file change
+   - workcycle(): refresh livetail
+
+- github
+ - app.data.startup()
+  - load configuration table
+
 
 - make a better index recalculator
  x create an empty space where the record was
