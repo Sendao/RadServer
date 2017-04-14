@@ -319,9 +319,12 @@ function structTabHeadClick( elin )
         el = cE("tabbody");
         el.setAttribute('name', tab);
         if( elin.hasAttribute('structView') ) { // short cut
-            el.setAttribute('xAView', elin.getAttribute('structView'));
+            el.setAttribute('xAView', radTranslateFrom(elin, elin.getAttribute('structView')));
         } else if( elin.hasAttribute('structCast') ) {
-            el.setAttribute('xCast', elin.getAttribute('structCast'));
+            el.setAttribute('xCast', radTranslateFrom(elin, elin.getAttribute('structCast')));
+        }
+        if( elin.hasAttribute('structSet') ) {
+        	el.setAttribute('xSet', radTranslateFrom(elin, elin.getAttribute('structSet')));
         }
         el.className = el.className + " tabbodyhigh";
         tabPane.tabBodies.push(el);

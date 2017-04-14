@@ -67,12 +67,14 @@ Tables:<BR>
 </div>
 
 <div xTemplate='db_tablerows'>
-<div xWatch=bases.#[baseid].tables.#[tableid] xTest='"#[bases.#[baseid].tables.#[tableid].rows]"' xLoop=bases.#[baseid].tables.#[tableid].rows xKey=k xVal=v>
+<div xWatch=bases.#[baseid].tables.#[tableid]>
+<div xLoop=bases.#[baseid].tables.#[tableid].rows xKey=k xVal=v>
 <div class=fl xCast=db_tablerow xSet='base=#baseid,table=#tableid,row=#k,titlefield=id'></div>
 <div class=fl xCmd='editTableRow("#base", "#tableid", "#k")'>edit</div>
 <div class=fl xCmd='removeTableRow("#base", "#tableid", "#k")'>remove</div>
 <div class=cl></div>
 </div> 
+</div>
 </div>
 
 <div xTemplate='db_tablerow'>
@@ -126,6 +128,9 @@ function databaseRows(rows,b)
 function tableRows(a,b)
 {
     console.info("tableRows",a,b);
+    if( a !== false ) {
+        radCStore( b.title, a );
+    }
 }
 
 function tableUpdate()

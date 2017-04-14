@@ -314,7 +314,7 @@ function radSocketDataHandler( event, code, typename )
 {
 	var rq = radQueries[typename];
 	console.info("socket: ", event, code, typename);
-    radCStore( rq['dataname'], JSON.parse(event['data'])['event'] );
+    radCStore( rq['dataname'], event['data'] );
     if( rq['datacb'] ) {
         var fc = rq['datacb'];
         if( typeof fc == 'string' )
