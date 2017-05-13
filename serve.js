@@ -7,6 +7,7 @@ var router = new(journey.Router);
 var hostname = "spiritshare";
 var App = require('./lib/app.js');
 var Tester = require('./lib/test.js');
+
 app = new App();
 tester = new Tester(app);
 var app_static = require('./lib/static.js');

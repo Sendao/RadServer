@@ -1,5 +1,20 @@
 <templates>
 
+<div xTemplate='markygen'>
+<form xForm=marky method=post action='/markygen.js'>
+<field #name=subject #title=Subject: #titlewidth=100 #valuewidth=420></field>
+<div class=cl></div>
+<div class=fl style='width: 100px'>Text:</div>
+<div class=line style='min-height: 240px'>
+<textarea rows=5 cols=57 name=text></textarea>
+</div>
+<div class=cl></div>
+<div class=line>
+<input type=submit value=Send>
+</div>
+</form>
+</div>
+
 <div xTemplate='marky'>
 Enable output:
 <div xDataname=ais xSocket='/markers.json'></div>
