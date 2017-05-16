@@ -188,6 +188,20 @@ function structMenuAction( menuroot, menupath, target )
     
     var actions = gE("zenbox");
 
+    if( typeof menuitem.set != 'undefined' ) {
+        if( target != null ) {
+            var e = gE(target);
+            if( e != null ) {
+                if( e.hasAttribute('xSet') ) {
+                    e.removeAttribute('xSet');
+                }
+                e.setAttribute('xSet', menuitem['set'] );
+            } else {
+                console.log("target not found - " + target);
+            }
+        }
+    }
+
     if( typeof menuitem.aview != 'undefined' ) {
     	if( target != null ) {
     		var e = gE(target);

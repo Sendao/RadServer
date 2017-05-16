@@ -16,7 +16,7 @@
 </form>
 </div>
 
-<div xTemplate='marky'>
+<div xTemplate='markylist'>
 Enable output:
 <div xDataname=ais xSocket='/markers.json'></div>
 <form xForm=ai>
@@ -24,6 +24,17 @@ Enable output:
  <option value=#ainame>#aiee</option>
 </select>
 </form>
+</div>
+
+<div xTemplate='marky'>
+<div class=fl>#m</div>
+<div class=cl></div>
+<div xDataname='marky.#m' xUrl='/marky.js?c=#cookie&m=#m' xRefresh=20></div>
+
+<div xWatch='marky.#m'>
+<div class=fl>#[marky.#m]</div>
+</div>
+
 </div>
 
 </templates>

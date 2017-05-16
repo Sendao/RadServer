@@ -24,7 +24,10 @@ Loading
 </div>
 </div>
 
+<div xWatch=menu_reset>
+<div xPostdraw='console.info'></div>
 <menu ></menu>
+</div>
 <main style='margin-top: 16px; font-size: 14pt'></main>
 <loadwheel></loadwheel>
 
@@ -35,6 +38,9 @@ Loading
 #include tpl/struct.html
 #include tpl/socket.html
 #include tpl/auth.html
+
+<templates>
+
 #include controls/edit.html
 #include controls/watch.html
 #include controls/github.html
@@ -45,9 +51,6 @@ Loading
 #include controls/spring.html
 #include controls/netutil.html 
 #include controls/edit.html
-
-<templates>
-
 
 
 <div xTemplate=userlist>
@@ -134,9 +137,45 @@ Spider operating targets
 
 </templates>
 
+<dataforms>
+
+<div xDataname='ais' xUrl='/markers.json?c=#cookie' xCb='loadedAis'></div>
+
+</dataforms>
+
 </body>
 
 <script language=javascript>
+var basicMenu = [];
+
+function loadedAis(obj,req)
+{
+    var i;
+    
+    for( i=0; i<basicMenu.length; ++i ) {
+        if( basicMenu[i].title == 'Ais' ) {
+            break;
+        }
+    }
+    if( i >= basicMenu.length ) {
+        console.info("loadedAis", "Cannot write to menu");
+        return;
+    }
+    radStore("ais", obj);
+    var ais = obj;
+    if( ais == null )
+        return;
+    var menuItem = i;
+    for( i=0; i<ais.length; ++i ) {
+        basicMenu[menuItem].children.push( { 'title': ais[i].name, 'cast': 'marky', 'set': 'm=' + ais[i].name } );
+    }
+    structMenu(basicMenu);
+    if( radVar("menu_reset") == 1 )
+        radCStore("menu_reset", 0);
+    else
+        radCStore("menu_reset", 1);
+    console.info("Finish startup", basicMenu);
+}
 function castSpell()
 {
     var f = document.forms['caster'];
@@ -148,7 +187,7 @@ function castSpell()
 function initSkeleton()
 {
 // Initialize any variables here radStore("x", 42);
-    var basicMenu = [
+    basicMenu = [
         { 'title': 'User', 'children': [
             { 'title': 'Profile', 'cast': 'userprofile' },
             { 'title': 'Signup', 'cast': 'signup' },
@@ -215,7 +254,6 @@ function initSkeleton()
             { 'title': 'Background', 'act': 'cycleBodyStyles' }
         ]}
         ];
-    structMenu(basicMenu);
     structStartup();    
     var host;
     
@@ -225,6 +263,8 @@ function initSkeleton()
     host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
     radStore( "hostname", host.hostname );
     radStore( "hosts." + host.hostname, host );
+
+    structMenu(basicMenu);
 
     radLoad();
     cycleBodyStyles();
