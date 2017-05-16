@@ -2,6 +2,7 @@
 
 <div xTemplate='markygen'>
 <form xForm=marky method=post action='/markygen.js'>
+<input type=hidden name=c value=#cookie>
 <field #name=subject #title=Subject: #titlewidth=100 #valuewidth=420></field>
 <div class=cl></div>
 <div class=fl style='width: 100px'>Text:</div>
@@ -10,7 +11,7 @@
 </div>
 <div class=cl></div>
 <div class=line>
-<input type=submit value=Send>
+<div class=formbtn>Send</div>
 </div>
 </form>
 </div>

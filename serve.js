@@ -30,7 +30,7 @@ if( 'hostname' in hconfig ) {
 }
 app.config = hconfig;
 
-app.configure( [ 'clients', 'projects', 'stocks', 'cms', 'chat', 'watch', 'rcs', 'ggrid', 'ed' ] );
+app.configure( [ 'clients', 'projects', 'stocks', 'cms', 'chat', 'watch', 'rcs', 'ggrid', 'ed', 'marky' ] );
 app.routes( router );
 app_static.routes( router );
 
