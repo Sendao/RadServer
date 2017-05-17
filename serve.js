@@ -7,6 +7,7 @@ var router = new(journey.Router);
 var hostname = "spiritshare";
 var App = require('./lib/app.js');
 var Tester = require('./lib/test.js');
+var phpCGI = require("php-cgi");
 
 app = new App();
 tester = new Tester(app);
@@ -83,6 +84,16 @@ function mainHandler( req, res ) {
     req.addListener('data', function (chunk) { body += chunk });
     req.addListener('end', function () {
       //console.log(req, body);
+        if( req.url.substr( -4 ) == ".php" ) {
+            console.info("Detected php code");
+            phpCGI.detectBinary();//on windows get a portable php to run.
+            phpCGI.env['DOCUMENT_ROOT'] = __dirname+'/php/spirits/';
+            phpCGI.env['REDIRECT_STATUS'] = 1;
+            phpCGI.serveResponse(req, res, phpCGI.paramsForRequest(req));
+            //res.end();
+            //console.info("Trailing php");
+            return;
+        }
         router.handle(req, body, function (result) {
             if( result.status != 200 ) {
                 console.info("Error status: ", result.status);
