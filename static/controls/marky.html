@@ -29,10 +29,13 @@ Enable output:
 <div xTemplate='marky'>
 <div class=fl>#m</div>
 <div class=cl></div>
-<div xDataname='marky.#m' xUrl='/marky.js?c=#cookie&m=#m' xRefresh=20></div>
+<div xDataname='marky.#m' xUrl='/marky.js?c=#cookie&m=#m' xRefresh=20 xCb=UpdateMarker></div>
 
 <div xWatch='marky.#m'>
-<div class=fl>#[marky.#m]</div>
+<div xLoop=marky.#m xKey=k xVal=v>
+<div class=fl>#v</div>
+<div class=cl></div>
+</div>
 </div>
 
 </div>
@@ -43,6 +46,21 @@ Enable output:
 
 var markers = {};
 
+function UpdateMarker(row,req)
+{
+	if( row == null ) return;
+	console.info(row,req);
+	var radRows = radVar(req.title);
+	if( radRows == null ) {
+		radStore(req.title, [row]);
+	} else {
+		radRows.push(row);
+		if( radRows.length > 30 ) {
+			radRows.shift();
+		}
+		radChange(req.title);
+	}
+}
 function UpdateMarkers()
 {
     var si = document.forms.ai.ai;
