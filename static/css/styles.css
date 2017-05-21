@@ -63,7 +63,15 @@
 
 
 /* Widths */
-.w1 { width: 66px }
+.w1 { width: 10px }
+.w2 { width: 20px }
+.w3 { width: 30px }
+.w4 { width: 40px }
+.w5 { width: 50px }
+.w6 { width: 60px }
+.w7 { width: 70px }
+.w8 { width: 80px }
+.w9 { width: 90px }
 .w10 { width: 100px }
 .w11 { width: 111px }
 .w15 { width: 150px }

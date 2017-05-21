@@ -8,7 +8,7 @@ Process usage for local system...
 
 <div xTemplate=m_groups>
 
-<div xWatch=groups>
+<div xWatch=watch.groups>
 Watch group list
 <div xLoop=watch.groups xKey=k xVal=v>
 <div xCast=watch_group xSet="groupn:#k"></div>
@@ -24,25 +24,31 @@ Watch group list
 </div>
 
 <div xTemplate='watch_group'>
+
+<div class=cl></div>
 <div class=fl>Group: #[watch.groups.#[groupn].name]</div>
+<div class=cl></div>
 <div xLoophead=watch.groups.#[groupn].requires>Requires:</div>
 <div xLoop=watch.groups.#[groupn].requires xKey=k2 xVal=v2>
 <div class=fl>#v2</div>
 </div>
-<div xLoophead=watch.groups.#[groupn].requires>
 <div class=cl></div>
-</div>
 <div xLoophead=watch.groups.#[groupn].processes class=fl>
 Processes:
 </div>
 <div xLoop=watch.groups.#[groupn].processes xKey=k2 xVal=v2>
+<div class=cl></div>
 <div xCast=watch_process xSet="procn:#k2"></div>
+<div class=cl></div>
 </div>
 <div xLoophead=watch.groups.#[groupn].logfiles class=fl>
 Logfiles:
+<div class=cl></div>
 </div>
 <div xLoop=watch.groups.#[groupn].logfiles xKey=k2 xVal=v2>
+<div class=cl></div>
 <div xCast=watch_logfile xSet="logn:#k2"></div>
+<div class=cl></div>
 </div>
 </div>
 
@@ -55,20 +61,105 @@ Logfiles:
 <div xTemplate='watch_process'>
 <div xRoot=watch.groups.#[groupn].processes.#[procn]>
 <div class=fl>Process: #.name</div>
-<div xCast=process_usage></div>
-<div xCast=process_status></div>
+<div class=cl></div>
+<div xCast=process_config xRoot=watch.groups.#[groupn].processes.#[procn]></div>
+<div xCast=process_usage xRoot=watch.groups.#[groupn].processes.#[procn]></div>
+<div xCast=process_status xRoot=watch.groups.#[groupn].processes.#[procn]></div>
 </div>
+</div>
+
+<div xTemplate='process_config'>
+<div xTest='"#.autostart"'>
+<div class=fl style='width: 100px'>Autostart:</div>
+<div class=fl>#.autostart</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.cmdstate"'>
+<div class=fl style='width: 100px'>Cmdstate:</div>
+<div class=fl>#.cmdstate</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.crashlines"'>
+<div class=fl style='width: 100px'>Crashlines:</div>
+<div class=fl>#.crashlines</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.cwd"'>
+<div class=fl style='width: 100px'>Cwd:</div>
+<div class=fl>#.cwd</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.env"'>
+<div class=fl style='width: 100px'>Env:</div>
+<div class=fl>#.env</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.mainpid"'>
+<div class=fl style='width: 100px'>Mainpid:</div>
+<div class=fl>#.mainpid</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.newsid"'>
+<div class=fl style='width: 100px'>Newsid:</div>
+<div class=fl>#.newsid</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.noshell"'>
+<div class=fl style='width: 100px'>Noshell:</div>
+<div class=fl>#.noshell</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.psgrep"'>
+<div class=fl style='width: 100px'>Psgrep:</div>
+<div class=fl>#.psgrep</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.runstate"'>
+<div class=fl style='width: 100px'>Runstate:</div>
+<div class=fl>#.runstate</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.startcmd"'>
+<div class=fl style='width: 100px'>Start:</div>
+<div class=fl>#.startcmd</div>
+</div>
+<div class=cl></div>
+
+<div xTest='"#.stopcmd"'>
+<div class=fl style='width: 100px'>Stop:</div>
+<div class=fl>#.stopcmd</div>
+</div>
+<div class=cl></div>
+
 </div>
 
 <div xTemplate='process_usage'>
-<div xRoot=watch.groups.#[groupn].processes.#[procn]>
 <div class=fl></div>
+<div xLoop=.pids xInd=kk xVal=vv>
+<div xCast=process_pid xRoot=watch.groups.#[groupn].processes.#[procn].pids.#[kk]></div>
 </div>
 </div>
 
-<div xTemplate='process_status'>
-<div xRoot=watch.groups.#[groupn].processes.#[procn]>
+<div xTemplate='process_pid'>
+<div class='fl w6'>Pid:</div><div class='fl w6'>#.pid</div>
+<div class='fl w6'>CPU1:</div><div class='fl w6'>#.cpu</div>
+<div class='fl w6'>CPU2:</div><div class='fl w6'>#.cpu2</div>
+<div class='fl w6'>CPU3:</div><div class='fl w6'>#.cpu3</div>
+<div class='fl w6'>Cmd:</div><div class=fl>#.cmdline</div>
+<div class=cl></div>
 </div>
+
+<div xTemplate='process_status'>
 </div>
 
 <div xTemplate='watch_tail'>
