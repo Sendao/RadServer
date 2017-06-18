@@ -8,6 +8,7 @@ var hostname = "spiritshare";
 var App = require('./lib/app.js');
 var Tester = require('./lib/test.js');
 var phpCGI = require("php-cgi");
+var FB = require('fb');
 
 app = new App();
 tester = new Tester(app);
@@ -29,6 +30,8 @@ if( 'hostname' in hconfig ) {
     	hostname = hconfig['default_hostname'];
     }
 }
+
+app.fb = new FB.Facebook({appId: hconfig['fbid'], appSecret: hconfig['fbsecret'], timeout: 30000});
 app.config = hconfig;
 
 app.configure( [ 'clients', 'projects', 'stocks', 'cms', 'chat', 'watch', 'rcs', 'ggrid', 'ed', 'marky' ] );

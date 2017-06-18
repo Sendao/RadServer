@@ -1,0 +1,13 @@
+<div xTemplate='fbauth'>
+<iframe id=myfbframe#user.id src='about:blank' style='width: 600px; height: 400px'></iframe>
+</div>
+
+<script language=javascript>
+
+function fbauth()
+{
+    var frame = gE("myfbframe" + radTranslate("#user.id"));
+    frame.src = 'http://spiritshare.ns01.info/fblogin?c=' + radTranslate("#cookie");
+}
+
+</script>
