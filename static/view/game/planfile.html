@@ -1,0 +1,449 @@
+<pre>Catchup:
+ - planes are wrong in the cubes and probably the sphere
+ - rain still does not show up
+ - objects still look weird
+ - rebuilding object drawables may not be optimal
+ - object joint movement needs child/parent sizes... some are zero?
+
+Technology Tree:
+ * Terrain
+  x Planetoid
+  - Slope near the plate borders; more slopes when plates>2
+  - Patches
+ * Water
+  - Surfacemap
+   - Channels
+   - Erosion
+ * Objects
+  - Vertices
+  - Surfaces
+   - Planes
+ * Creatures
+  - Skin
+  - Walking
+ * Plants
+  - Types
+  - Seeding
+ * Advance Research
+  - Weapons
+  - Physics
+  - Optimization
+  - Metaforming
+  - Structures
+  - Civilizations
+   - Towns
+
+
+
+patching:
+ - figure out neighbors for htm
+ - figure out patches for htm
+
+new stuff:
+ - surface water map
+ - animated surface water map
+  - slope detection
+  - scanning surroundings
+  - utilize neighbors?
+
+
+Wak 9: (December starts)
+ - gathering
+ - kinetics
+ - collisions and avoidance
+ - multiple actors (creatures) doing things in-game on the map
+ - actor locations and memories
+
+Creatures:
+ - remove above v4
+ - just check out the legs and get that working again
+ - get everything working again
+ - provide room for variations on models
+ - looking and walking animations
+ - skin
+  - mass distributions?
+ - add accumulation layers (on top of skin??)
+
+Plants:
+ - get the branches touching the edges
+ - expand the definitions
+ - interact w/ wind
+ - change colors w/ situations
+ - add accumulation layers
+
+Terrain:
+ - patch the holes
+  - sub[4] patch[3] both must be navigatable
+  - locate neighbors
+  - neighbors may be patches
+  - subdivision may cause neighbor's patches to be unneeded
+  - complete subdivision before patching? still will have to mind the unpatching
+
+Weather:
+ x generate rain particles
+ - affect the water flow
+
+Water:
+ - support water flow
+  - return to ocean
+  - puddle joining
+  - channels
+  - barriers
+   - terrain slope
+   - physical objects (dams/walls/rocks)
+   - bouyancy, water velocity, and rocks (omg)
+  - cyclic animation
+ - water spouts (aerial)
+ - water springs (subsurface)
+
+creatures:
+  - expand the eyes: include iris
+  - animate eyes during look
+  - trigger 'turn' animation when turning
+  - trigger 'walk' animation when walking
+  - move in walk animation; turn in turn animation.
+ - trigger a reset once animation is complete
+
+plant seeding:
+ - initial stage
+  - check water level
+  - check soil condition
+  - generate v2_inside regional seed painting by gentypes
+   - gentype might include mixed seedbag; generate randomly
+ - continual development
+  - fertilize and gestate seeds
+  - distribute seeds by wind/creature attachment
+
+walking:
+ - creature->walk_cycle % 100
+ - staged stepping/weight balancing/arm shifting
+ - tentative motion/collision detection/kinesthetics
+ - use an animation fc_walk_step
+
+looking:
+ - head angle
+ - eye angle
+ - distance before turning
+ - reset after turning
+
+camera drag:  
+ - look should rotate left/right after 66 degrees while sticking camera
+ - walk should rotate left/right and camera back to straight
+ - up/down ignored for now, later it will move the head and eyes as will xa
+
+camera, 3rd person:
+ - toggle key
+ - look at player location
+ - look from mobile camera
+ - shift to freeze player rotation for full 3rd person rotation
+
+kinematics:
+ - palm-to-target
+ - wrap-fingers
+ - pluck-fruit
+ - pickup-itinerant
+ - carry-a-log
+ - take-a-stick
+ - chop-a-tree
+ - break-a-branch
+
+
+turning:
+ - lift leg
+ - turn body
+ - drop leg
+ - shift other leg
+
+animation system:
+ - configure timeline to work properly with events (100%)
+    2) change values are added to timeline to be evaluated later, at the time of the actual event
+     - for this we will need a time machine.
+  - rotate shoulders
+  - rotate head
+  - shift weight
+  - scratch head
+
+timeline upgrades:
+ - 'running' -> 'runtime'; 'upcoming' -> 'eventime'
+ - time machine
+ - change proc
+
+ - trees and grass
+  - grass root pod & mat
+
+Thanksgiving (3 waks) tasks
+ - Plants
+  - Bushes (75%)
+  - Trees
+  - Grass (5%)
+ - Terrain
+  - Accumulations
+   - Dirt
+   - Mud
+   - Leaves
+ - Animation
+  - System (80%)
+  - Idler (80%)
+  - Rotation (70%)
+  - Animations (60%)
+
+Creatures Milestones
+ x working skeletons
+ x upright creatures
+ - walking animation (complete with arms)
+ - walking surface location map
+  - 2d shared surface map w/ slopes
+  - remove 3d collision frames for nearby objects (eg trees, walls)
+ - pathing
+  - 2 point: target-destination
+  - n point: route planning
+
+Process Management:
+ - runtime tasks (events)
+  - measure cpu if possible at some point
+ - deferred tasks (idling)
+  - measure cpu during execution
+  - pick up where we left off
+  x done for weather
+   - abstract from there
+ - timeline tasks
+  - measure cycles during runtime
+  - report cycle difference from estimation
+
+Water:
+ - erosion mapping
+ - river formation
+ - water ripple mapping
+ - white water/falls mapping
+ - ocean logics (beach, waves, etc)
+
+Formular Construction
+ - apply a limit function to an axis
+  - mirror for both sides
+  - allow for either side
+  - apply to any axis
+ - use normal construction functions
+ - evaluate for each axis
+ - walk borders
+ - merge variants
+ - script-math evaluation
+ - script-math configuration
+
+Script Library
+ - implement into the vfs
+ - root scripts: init, login?
+ - folders: user, system, lib, env
+  - lib = library functions shared between scripts, sorted by library
+  - user = scripts a user has written for running user systems, sorted by user
+  - system = scripts for running the main systems, sorted by system
+  - env = environmental scripts, sorted by project
+ - scripts need the ability to read,write, include, and import
+
+village todo
+ - mapping
+  - surfaces
+  - exploration & storage
+  - pathing & prediction (shortcut seeking)
+ - rolesets
+  - loner
+   - peasant, hunting, defense, cooking, fishing...
+   - witch, troll, giant
+  - family
+   - gathering, hauling
+   - kobold
+  - village
+   - farming, pub, bank, council
+   - goblin
+ - activities
+  - building
+   - tools
+    - mud, clay and thatch
+    - cord from thatch
+    - collect stones
+    - primitive tools: hammer, axe, pick, saw, torch
+    - wood, hammer and nails
+   - location data
+    - owner, town, purpose (residence/workshop/pub/shop/warehouse)
+   - construction patterns
+    - house
+    - room (inside house)
+    - extension (outside house)
+    - bridge?
+    - work bench
+    - tool rack
+    - furnace
+   - 
+  - 
+
+
+Christmas (4 waks) tasks
+ - Solar Neighborhood
+  - Sun
+  - Planets
+  - Moons
+ - Weather Upgrades
+  - Cloud types
+   - Basic puffy fluffy
+   - Stretched thick or thin
+  - Sunrise/sunsetting
+   - Water reflection
+   - Cloud reflection
+   - Light changing
+  - Temperature
+   - Snow and Ice
+ - Erosion
+  - Rivers
+ - Formular Construction
+ - Animations
+  - cutting down a tree
+  - fishing
+  - bear fishing
+  - eagle fishing
+  - bear fighting
+ - Creatures
+  - bear, fish, eagle
+
+Birthday (3 waks):
+ - server rebuild
+ - player creature
+ - skill tree
+ - wood crafting
+ - start villages
+
+ - here i'd like to have a friends-only beta release. but make sure there's enough to amuse people.
+
+Easter:
+ - mining
+ - metal crafting
+ - villages
+ - clothing
+ - wilderness enemies
+ - materials and terrains
+ - interplanetary gate network
+
+Summerfire:
+ - scripting systems
+ - npc chat and quests
+ - classes
+ - weather++
+ - earthquakes
+ - volcanoes
+ - floods
+ - cities
+ - interstellar travel
+
+Hallowed Return:
+ - a lot more creatures and plants and materials and resources
+ - more advanced plant distribution - soil tainting, deserts, underwater flora
+ - magic. more skills and spells, for the creature, villager, templar, and player
+ - better combat.
+
+ - at this point, a first actual release.
+
+
+Next Thanksgiving:
+ - fully dynamic clothing, combat, and weather/rain/erosion systems
+ - modular planet + civilization maintenance
+ - distributed clientside server helper
+
+Next Christmas:
+ - detailed custom multi-level homes
+ - resource management, trade, and redistribution
+ - banks and repair
+
+2019 And Beyond:
+ - web forum and world scope
+ - maintain your properties from the www
+ - remote cameras and gps tracers
+ - per-world map render inworld and on web; track ownership, possessions, gps tracers, fav locations, current location, compass
+ - vehicles and space travel
+ - a lot more weapons and gear (gravity boots, infravision goggles, directional microphone, laser mic, remote encephalogram)
+ - locks and picks, digital locks
+ - personal subdimensional portal
+ - locational subdimensional portals (ie it's bigger on the inside)
+ - track people who can compile the game and run compiles there. except the main server ofc.
+ - make the main server totally unnecessary. like, if it goes offline, nobody even notices, ever.
+ - allow code to be 'voted in' procedurally.
+ - import and export with various formats. consider a builder script that imports a blueprint and then creates it.
+ - "a lot more magic."
+ - more creature and plant intelligence
+ - better graphics (always better graphics) and support for older systems
+
+
+
+Terrain Height:
+ - use sine waves to create landscape waves
+ - use random seed-based dirt movement
+ - offset by erosion value and accumulation value
+
+Terrain Augment:
+ - 2d angular map per triangle
+ - erosion/accumulation is a list of 2d points and offset values per triangle
+ - terraintriangle::getAccuData() get ero and accu
+ - terraintriangle::calculateHeight
+   - average ero/accu data
+
+Targets:
+
+* System
+ - creatures
+ - plants
+ - animation
+ - skills
+ - serverside reboot
+ - distributed server processing
+ - timeline
+
+* Globe
+ - rain
+ - erosion
+ - mountain ranges
+ - hills
+ - possibly valleys?
+
+* Villagery
+ - libraries
+ - farming
+ - markets
+ - families
+
+* Countryside
+ - plants
+ - forest
+ - rivers
+ - desert and plains
+ - islands and beaches
+ - valleys
+
+* Caverns
+ - undermesh
+ - mushrooms
+ - fungi
+ - lichen
+ - giant worms
+
+* Space
+ - overmap (system map)
+ - starmap (interstellar map)
+ - wormholes
+ - gates
+ - speedways
+ - pirates
+
+Long Range Targets:
+
+* Content
+ - clothing
+  - sewing patterns
+  - try to do formulaic expansion for creatures
+ - characters
+  - heroes and villains
+  - archetypes and lore
+  - status and history
+ - monstrous phantasmagorality
+  - manifest monsters from npc's demons
+ - robotic destroyers
+ - 
+
+
+</pre>

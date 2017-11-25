@@ -1,0 +1,80 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Radiant Demo</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body style='background: black; color: tan'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<!--  setup -->
+<loadwheel></loadwheel>
+
+
+<!--  main view screen on -->
+<div xSect=main id=mainscroll class="margin-small">
+<a href='https://spiritshare.ns01.info/client.html'>New Client Registration</a>
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+
+<tabpane id=tg123>
+
+<tablist style='max-width: 400px'>
+
+<h2>GGEARS</h2>
+
+<tabhead name=about structView=about>About</tabhead>
+<tabhead name=vidprofile structView=vidprofile>Video Profiles</tabhead>
+<tabhead name=sendao structView=libsendao>libsendao</tabhead>
+<tabhead name=common structView=gcommon>GCommon</tabhead>
+<tabhead name=radiance structView=radiance>Radiance</tabhead>
+<tabhead name=webserve structView=webserve>Webserve</tabhead>
+<tabhead name=reserve structView=reserve>Reserve</tabhead>
+<tabhead name=xdb structView=xdb>Xdb</tabhead>
+<tabhead name=warpkit structView=warpkit>Warpkit</tabhead>
+<tabhead name=links structView=links>Links</tabhead>
+</tablist>
+
+<tabsection id=maintabs xPostDraw='omv(["page","top","center"],1,400,1,40)' style='overflow:auto; float: right; min-width: 400px'>
+</tabsection>
+
+</tabpane>
+
+<div class=cl>&nbsp;</div>
+
+</div>
+<!--  main view screen off -->
+
+<zenbox></zenbox>
+
+</body>
+
+<script language=javascript>
+
+function initSkeleton()
+{
+	radClass( { 'zenbox': { 'style': 'display: none', 'keepscan': 1 } } );
+	structStartup();    
+    radStartup();
+    radLoad();
+}
+
+registerStartup(initSkeleton)
+
+</script>
+</html>

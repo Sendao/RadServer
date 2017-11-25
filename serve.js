@@ -88,15 +88,16 @@ function mainHandler( req, res ) {
     var body = "", whoisit = 'remoteAddress' in req.connection ? req.connection.remoteAddress : "unknown";
     whoisit = whoisit.split(":")[3];
     
-    console.log("Request from", whoisit, "for", req.url, "at", new Date());
+    app_static.reportrequest(req.url, whoisit);
+    //console.log("Request from", whoisit, "for", req.url, "at", new Date());
     openLoadHandler(whoisit);
 
     req.addListener('data', function (chunk) { body += chunk });
     req.addListener('end', function () {
       //console.log(req, body);
         if( req.url.substr( -4 ) == ".php" ) {
-            console.info("Detected php code");
-            console.info(req.url);
+            //console.info("Detected php code");
+            //console.info(req.url);
             phpCGI.env['DOCUMENT_ROOT'] = __dirname+'/php/spirits/';
             phpCGI.env['REDIRECT_STATUS'] = 1;
             phpCGI.env['REQUEST_URI'] = req.url;
@@ -107,7 +108,8 @@ function mainHandler( req, res ) {
         }
         router.handle(req, body, function (result) {
             if( result.status != 200 ) {
-                console.info("Error status: ", result.status);
+                //console.info("Error status: ", result.status);
+            	app_static.reportError(result.status, req.url, whoisit);
                 closeLoadHandler(whoisit, true);
             } else {
                 closeLoadHandler(whoisit, false);
@@ -117,7 +119,7 @@ function mainHandler( req, res ) {
                 result.headers['Content-Length'] = Buffer.byteLength( result.body, result.encoding );
             }
             res.writeHead(result.status, result.headers);
-            console.log("Finished request");
+            //console.log("Finished request");
             if( result.encoding )
                 res.end(result.body, result.encoding);
             else
