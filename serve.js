@@ -71,18 +71,11 @@ function closeLoadHandler( ipaddr, doLoadTest ) { // tests for open connections 
     }
     app.loadtimes[ipaddr] = tmn;
     if( app.myloads[ipaddr] > 4 ) {
-        console.log("Too many malformed requests from " + ipaddr);// + ", blocking it.");
+        //console.log("Too many malformed requests from " + ipaddr);// + ", blocking it.");
         //system("iptables -I INPUT -s " + ipaddr + " -j DROP");
         //app.myloads[ipaddr] = 0;
     }
 }
-
-/*
-var phpmid = require('node-phpcgi')({
-    documentRoot: __dirname+'/php/spirits/',
-    handler: '/usr/bin/php-cgi'
-});
-*/
 
 function mainHandler( req, res ) {
     var body = "", whoisit = 'remoteAddress' in req.connection ? req.connection.remoteAddress : "unknown";
@@ -105,6 +98,28 @@ function mainHandler( req, res ) {
             phpCGI.serveResponse(req, res, phpCGI.paramsForRequest(req));
 //            phpmid(req, res, function(err) {console.info("Error php", err);});
             return;
+        }
+        // ... detector
+        // look for numeric requests
+        var isnumbers = false;
+        var parts = req.url.split('/');
+        var i = parts.length;
+        while( i > 0 ) {
+        	--i;
+        	if( app.util.isDigit(parts[i]) ) {
+        		isnumbers = true;
+        		break;
+        	}
+        }
+        if( isnumbers ) {
+        	// bad request type (journey cannot handle it lulz)
+        	app_static.reportError('Numeric URL', req.url, whoisit);
+        	app_static.report404(req.url,whoisit);
+        	closeLoadHandler(whoisit, true);
+
+        	res.writeHead(404, { 'Content-Type': 'text/html' });
+        	res.end('<html><body>File not found.</body></html>');
+        	return;
         }
         router.handle(req, body, function (result) {
             if( result.status != 200 ) {
