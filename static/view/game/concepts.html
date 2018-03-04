@@ -1,0 +1,232 @@
+<pre>
+#include "../gluton.h"
+
+/*
+ * Chapter 1. Overview
+ *
+ * Shimmed interfaces
+ *  - concept manager
+ *  - linguistic input/output
+ *  - file processor
+ *  - database processor
+ *  - visual input/output
+ *  - robotic kinetics
+ *  - movement planning
+ *
+ * Basic functionality
+ *  - express a pattern
+ *  - activate connections
+ *  - explore a concept
+ *  - apply a pattern
+ *  - save a concept and relate it to relevant triggers
+ *
+ * Core patterns
+ *  - integrity loop
+ *  - emotion subcircuits
+ *  - curiousity subroutine
+ *  - problem solving (workspace engine)
+ *
+ * Fiddly bits
+ *  - structural operations on nested data concepts
+ *  -
+ *
+ */
+
+
+
+/*
+ * Chapter 2. Shimmed interfaces
+ *
+ * Concept manager
+ * - explore concept connections
+ *  - circle graph?
+ * -
+ *
+ * Linguistic input/output
+ * - use a chat interface
+ * - show chat history
+ * - link to concept manager
+ * - commandline to pattern detectors
+ * - english to pattern detectors
+ *
+ * File processor
+ * - input to pattern detectors
+ *
+ * Database processor
+ * - map data paths to concepts
+ * - streaming to pattern manager
+ *
+ * Visual input/output
+ * - snapshots using file processor
+ * - input to pattern detectors
+ * - 'tagging' visual interface
+ * - tags to concept manager
+ * - video stream concept mapper
+ *  - continuous image pattern detectors
+ *  - image data processing patterns
+ *  - environment virtualization patterns
+ *
+ * Robotic kinetics
+ * - identity
+  * - active concept/motor/sensor connections and handler loops
+ *  - robot skeletal armature
+ * - control
+ *  - motor concept patterns
+ *  - angle patterns
+ *
+ * Movement planning
+ * - surface mapping patterns
+ * - movement projection patterns
+ *
+ */
+
+
+
+
+/*
+ * Chapter 3. Basic functionality
+ *
+ * Express a pattern
+ *
+ * Activate connections
+ *
+ * Explore a concept
+ *
+ * Apply a pattern
+ *
+ * Save a concept and relate it to relevant triggers
+ *
+ */
+
+
+
+
+/*
+ * Chapter 4. Core patterns
+ *
+ * Integrity loop
+ * - patterns for testing circuitry for integrity
+ *  - expected input/output types and ranges
+ *  - expected input/output values
+ *
+ * Input loop
+ *  - iterative interface
+ *  - streaming interface
+ *  - mapped concepts
+ *  - workspacing inputs
+ *
+ * Output loop
+ *
+ * Curiousity subroutine
+ * - results from integrity loop
+ *
+ * Problem solving (workspace handler)
+ * - patterns for decomposing problems into stages
+ * - search nearby and latent activity map for applicable patterns
+ * - additional pattern selection heuristics (solution and path values)
+ *
+ * Focal engine
+ * - running saved patterns with varying levels of focus and dynamics
+ * - pattern walking ("execution of a stored solution")
+ *
+ * Emotion subcircuits
+ * - emotional associations for concepts
+ * - emote scenes/patterns
+ * - perceived needs and solutions
+ *
+ */
+
+
+
+
+/*
+ * Chapter 5. Fiddly bits
+ *
+ * Structural operations on nested data concepts
+ *
+ */
+
+
+
+/*
+typedef struct _concept
+{
+    // layers
+    // organization
+    // relations
+    // data
+} Concept;
+*/
+
+//typedef class Concept Concept;
+typedef class OpConcept OpConcept;
+typedef class StaticConcept StaticConcept;
+typedef class PatternConcept PatternConcept;
+
+class Concept
+{
+public:
+    Concept();
+    ~Concept();
+
+public:
+    uint16_t type; // concept*s
+
+    tlist *netConcepts(tlist *sources); // multi activator
+    DMap *net; // net(Key(concept)) = tlist<Concept*>
+
+};
+
+class OpConcept: public Concept
+{
+public:
+    OpConcept();
+    ~OpConcept();
+
+public:
+    uint16_t type; // static programmed map to classdef* opers?
+    int inputs; // 0 = none, -1 = many, n = n
+};
+
+class StaticConcept: public Concept
+{
+public:
+    StaticConcept();
+    ~StaticConcept();
+
+public:
+    sint32_t type; // classdef*s
+    void *data;
+};
+
+class PatternConcept: public Concept
+{
+public:
+    PatternConcept();
+    ~PatternConcept();
+
+public:
+    tlist *concepts; // sub PatternConcept*s, OpConcept*s, and StaticConcept*s
+};
+/* Pattern operations
+ *
+ * templates - use inputs to come up with an output solution
+ *  eg 'add' input1 + input2 = output
+ *
+ *
+ *
+ */
+
+
+class WorkspaceConcept : public Concept
+{
+public:
+    WorkspaceConcept();
+    ~WorkspaceConcept();
+
+public:
+    Concept *source;
+    float processed; // 0.0-1.0 network strength measurement
+    Concept *result;
+};
+</pre>

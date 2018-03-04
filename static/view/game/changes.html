@@ -1,286 +1,358 @@
 <pre>  
-* Leftover
- - more terrain.
-  - subdivision near plate borders
- - rain
-  - condensation limit to trigger rain
-  - water level defined per terrain triangle
-  - draw the rain
- - terrain refinement
-  - allow subdivision mapped with htm
-  - draw water separately from terrain (draw both at their proper heights)
- - 2d
-  - shell command interpreter
-  - improve the redraw to be more specific (list per window)
- - materials
-  - implement the coefficients
-   - friction
-   - spring
- - collision
-  - give everything colliders
- - inquire as to bsp logging details/processing (it currently doesn't work after all)
 
-* Wak 1
- fix main 2d bugs (100%)
- get planet up (100%)
- be a bouncy ball (100%)
- make stuff nearby (100%)
+Plans for the next few months/major todo items:
 
-day 1: (after a weekend of working on similar area)
- x got the 2d interface cleaned up
- x fixed the redraw for elements
- x fixed 2d focus controls
- x fixed element widths overflowing
- x added shell command interpreter
- x verified HTM will work for sorting planets
- x fixed htm::seekall for the time being, it will work (sort of) haha
+Now We're Rolling: (Dec 17-23)
+ - catchup
+ - trees
+ - fruit
+ - goal-oriented walking
+ - fruit gathering
+ - village center/food store
+ - creature aging
+ - grass
+ - hills
 
-day 2: (had a shot)
- x htm::toLeafList to see just the edges of a tree
- + terrain generation for a simple sphere
- / visual range separators
-  * activate and use for display limit
- x moved basic physics from player to object
- x player now has a basic object
- x destroyed the obsolete world_data and terrain_data premises.
- x destroyed all code related to world_data and terrain_data premises.
- x PlanetTerrain class, contains height, water level, vertices, soil type.
- x track terrains in htm.
- x rewrote world generation to use planet
- x placed objects on surface
- x functions to calculate surface positions
- x drawTerrain and calls to it for terrains in 'vision'
- x htm_include and htm_remove
- x planet->addObject and removeObject
- x buildTerrains and calls to it
- x spheremesh now calls htm_include/remove properly
+Ridiculously On Time??? (Dec 25-30)
+ - collision detection redux
+ - sticks
+ - rocks
+ - building
 
-day 3: (was kinda tired and sore from the shot)
- x fixed first-level HTM search being wrong
- x fixed start crash
- x fix terrain not in visual range
- x fixed scaling and heights
- x fixed selecting a spherical range
- x planets.. planets... more planets
+Getting Rational Again (Dec 31-Jan 6)
+ - get the server working
+ - the 2d interface too
+ - handle creature intelligence serverside!
 
-day 4: (mostly amazed at what is done now)
- x give the player an actual sphere
- x apply gravity and gravity-bounce
- x create collision primitives
- x cleanup source code warnings
- x started on materials
- x improved sin/cos sphere formula
- x achieved a smooth, full covering for a hemisphere (the other hemisphere was a funnel of sorts)
- x tested gravity
- x fixed gravity to use surface normal
+Working On It... (Jan 8-13)
+ - 'rocket into space' function (and 'return to earth')
+ - 
 
-day 5:
- x test various sphere projections
- x implement bounce normal projection
- x rested a lot and recovered strength. honestly.
+Almost There! (Jan 14-20)
+ - 
 
-day 6:
- x more sphere testing - try using camera equations, no joy (but maybe I can improve the camera this way)
- x fix camera y-axis overload
- x some design for spine/body parts
+Birthday Celebrations (Jan 25)
+ - open it up
+ - allow kick, ban
 
-day 7:
- x more sphere testing
- x improve sin/cos understanding
 
-day 8:
- x implement x,y,z -> xa,ya
- x normalize sphere from angles from htm
 
-* Wak 2
- creature definitions (100%)
- x limb types: arm, leg, head, stalk, tail, fin, wing
- x hand types: hand, foot, talon, eyeball, mouth, nose, ear
- vertebra builder (100%)
- merge builds with part and joint (100%)
- preliminary creature constructors (100%)
+Notes:
+ - bring back the 2d interface
+ - maybe commands for triggering walk tests
+ - measure time spent in safealloc
+ - consider creating allocation buffers again
+ - patching surfaces...
+  - run a general-purpose subdivision algorithm immediately after creating initial layout
+   - do a cover on the planet providing terrain detail by slope
+  - if two or more neighbors are subdivided, we should subdivide
+  - sharper redivide: 2500 meters range, fixed terrain inside at 'n' detail, outside 'm' detail... update within 500 meters of edge
 
-8 day 1:
- x spine review
 
-9 day 2:
- x spine/creature review and structural finalization
- x objpart review
- x creature spines, vertebrae, limbs and hands
- x objjoint integration
- x spine code structure
- x reimplemented object/objpart/objjoint
+Wak12: Now We're Rolling
+ - catchup
+ - trees
+ - fruit
+ - goal-oriented walking
+ - fruit gathering
+ - village center/food store
+ - creature aging
+ - grass
+ - hills
 
-10 day 5:
- x started on actors and personas (including chains and action lists)
- x identified creature base location
- x began version 1 of skeleton definition (and it's awful, which is what took so long)
- x map to the spine structure
+Wak11: Kinetics
+ - implement walk foot movement cycle
+ - test immobile walking
+ - design surfaces
+ - build the surfaces for just terrains for now
+  - rebuild the surfaces when terrains subdivide I guess for now
+ - implement surface walkers
+  - integrate surfaces w/ immobile walking
+  - codify the root spine joint. moving this joint will move the body.
+- implement turning
+ - test immobile turning
+ - place and move avatars along surfaces
+ - movement planning
+ - remove plants from surfaces
+ - add objects to surfaces
+ - fix actor-actor collision
 
-11 day 6:
- x more of the structural mapping
+54 Day 1: (Mon, 11th)
+ x got the kinetarget solver into debugging stage
+  x removed axial redundancy partway (eliminated z-rot)
+  x got within 0.04u of target with axial guessing
+ x improved axial solver uses coordinate range and axial elimination
+ x 2-axis solver finds range to 2-part angles
+ x 1-axis solver solves 1-part angles (should be rare I think?)
+ x fixed planar definitions
 
-12 day 7:
- x reconfigure objdrawable to facilitate joints
- x generate objdrawables for joints
- x fix joints to have at most two parts, and only one parent joint per part
+55 Day 2:
+ x troubleshooted the solver, mostly planes I think
 
-13 day 8:
- x finish creating joints from parts
- x finished basic human psuedo definition
- x joint math
- x abstracted v3_surface and v3_angle
- x added v3_scale1(v,x,y,z), v3_add1(v,x,y,z), v3_sub1
- x instantiation of creature test
- x added CreatureTest and JointTest to world
- x added registration for cre_pattern and cre_table
- x fixed up creature data table lookups
- x remove some extraneous init0 items
- x fixed Creatures not showing up
- x added joints to shaded objects
- x fixed joint stacking
+56 Day 3/Day 4 early Am:
+ x got the solver working
+ x improved the tech a bit more
+ x fixed joint and part resolve
+ x got the foot up/down working, sort of, circuitously (which it shouldn't be doing)
+ x changed the length formula to reflect origins properly
+ x added in other calculations to handle origins, joint zeroes, etc
 
-* Wak 3
- x v2 math (80% - overlapPoly  might be nice.... I mean shit we can already do it in three dimensions newb!)
- x v4 math (100%)
- x plates & tectonics (100%)
- x weather & clouds (100%)
- x water, transparency
- x some fixes for creatures
+57 Day 4: (Thur)
+ x added basic structures for constraints and multitargetting
 
-12 day 0(tue):
- x v2 functions/struct
- x basic weather structure
- x basic plate structure
- x basic plate/weather updates
+58 Day 5: (Fri)
+ x add in constraints
+  x 'only y axis'
+  x 'not z axis'
+  x always obey joint min/max
+ x support multiple simultaneous targets (one per joint)
+ x started improving angular comparisons
 
-13 day 1:
- x added v4 rotation (euler and axis/angle) functions
- x added object rotation variable and implement in drawobject
- x played around with glm to try to rotate a vector. glx not found :(
+59 Day 6: (Sat 17th)
+ - finish constraints
+ - surfaces
+ - start movement planning
 
-14 day 2:
- x found glx.
- x converted to use glm/glx rotation.
- x messed with camera a bit. looks much better. almost right, but a little funky and doesn't follow planet.
- x weather and plate updates.
- x weather cell map generation and lookups.
- x 2d intersections (lines and polys)
- x cloud drawables
- x multi-layer clouds
- x plate generation
- x much larger planet. x10
+60 Day 7:
+ - finish basic movement planning
+ - hit the bricks
 
-15 day 4(late night):
- x seekall(v2 border[])
- x terrain height vary by plates
- - debugging seek/seekall
+Milestone waypoints: "Creatures Walking"
+ - finish constraints
+  - finish angular comparisons
+  - foot up/down y-only test
+  - walk cycle testing
+  - 'minimize' constraint to minimize axial rotation (all the way to zero, but only if possible) during two-axial transforms
+ - surfaces
+  - surface generation
+  - slope calculation
+ - movement planning
+  - surface selection
+  - exploration/vision movement pattern
+  - pathfinding midrange pattern
+  - pathfinding precise pattern
+  - (later on, the longrange pattern will do things like checking the weather, selecting non-treacherous terrain, preparing wagons, etc)
+ - hitting the bricks
+  - executing turns
+  - walking across surface
+  - walking onto surface
+  - walking off of surface
 
-16 day 5:
- x v2_inside(triangle,pt)
- x fixed the seekall to include triangle inside
- x blue water
- x green land (colored by height)
- x water level
- x plate offsets work
- x various fixes
- x "transparent" water and weather
- x blue sky layer (doesn't show up...)
- x change player/items initial height. it's wrong.
- x sky layers are really too high, bring them down a bit
+Milestone waypoints: "Mobile Collision Detection"
+ - research
 
-17 day 6:
- x debugging...
- x fixed a bunch of stuff, including
- x double-draw bugs
- x transparency issue
- x v2_inside for triangles had -area
- x vectorFor was doubling sizes
- x vast sky improvements
 
-* Wak4
- x creature fixes (100%)
- x other fixes (100%)
- x animation start (100%)
+Wak10: Next Tasks: (Dec 4-9)
+ - cpu work (20%)
+ - creature work (50%)
+ - kinematics (15%)
+ - surfaces (5%)
+ - walking (5%)
+ - upgrade patching
 
-18 day 3 (early am):
- x redefined creature definitions w/ only limbs and joints
- x allow for future further creature modular definitions
- x fixed objects not showing up
- x rebuilt creature builder
- x removed bsp logging
- x fixed new compile issues with creatures
- x adjusted rotations some; needs more work
- x fixed axialeuler and v3_surface to use radians properly (i think)
- x more work on creatures: axis alignment (more work needed)
+49 Day 1: (Mon)
+ x do the mirror thing
+ x hands look the same and rotate the same way
+ x prepared kinematics structures
+ x added watchTime cpu monitoring
+ x revealed 300+k/second memory leak
+ x add watchMem memory monitoring
+ x replace all calls to malloc/free with safealloc/safefree
+ x fixed the hands, and undid the feet/knees
+ x support full tracking of alloc/free in ptrmap
+ x validate memory loss
+ x support tracking memory types
+ x support tracking high precision memory details
+ x support memory report
+ x fixed some overuse of memory in v3
 
-19 day 5 (early am):
- x most alignments seem right, there's still an issue
- x colored limbs, named parts and joints
- x left/right tagging for animation
- x started on animation design and implementation
- x started on plant design (Trunk)
- x small updates to timeline to support function calls
- x stack- and matrix- safe drawAbles()
-  - but it doesn't work; all objects pop out from the matrix
+50 Day 2: (Tue)
+ x look at memory use in detail
+  x fixed the pointer maps by making them much bigger
+  x improved the reporting significantly several times
+  x overrides for new/delete as well as halloc and HAlloc
+  x replaced calls to safealloc w/ halloc/HAlloc
+ x limitted creation of raindrops (doesn't work perfectly?)
+ x kinematics steps
 
-20 day 5:
- x saner texture loading
- x glmatrix storage
- x dynamic call lists
- x removed transforms from object
- x creature alignments are all right
+51 Day 3: (Wed)
+ x made the kinetarget chains, mostly. designed them and most of the code.
+ x worked on some other projects - got an ai(just a text generator) back online, and added voice synthesis to it. free in chrome :)
+ x worked on the chains some more. circle-circle intersection. almost done.
 
-21 day 6 (early am):
- x fixed matrix safety; objects and weather and terrain draw correctly
- x fscking crowed like a bitch about it for hours
+52 Day 5: (Fri)
+ x mostly nothing.
+ x worked out a possible solution for kinechains' axis issue
+ x kinechain test frame
+ x partial testing
+ - test foot raise/lower
+ - (option) bring back the 2d interface for test triggering // or just run tests from behavior
+ - test immobile walk foot movement cycle
 
-22 day 7 (early am):
- x offsets
- x dquats
- x axis-angle compilation via quaternions
- x animation zero rotation calculation
- x joint axis calculations
- x ribcage and pelvis
+53 Day 7: (Sun)
+ x fixed up kinechains somewhat
+  x better length comprehension
+  x validation of circle intersection
+  x calculation of rotational offsets
+  x pick the right circle lengths (circle1+circle2?) for chains up to length .. 4 ...
+  x establish 'inner range' on circle1-circle2
+  - support for reversed kine chains
+  - support for multiple targetting (averaging/other solutions)
+  x calculation of rotational zeros
+  x proper calculate based on relpos
+  x redid objjoint::resolve and added objpart::resolve 
+  x started foot up/down testing
+ 
 
-23 day 7:
- x add body parts
- x fix offsets/sizes for fingers/toes
- x add skin color and make body look decent
- x animation coding (main impl)
- x animation - behaviors
- x animation - lookup joint Targets
 
-Wak5.
-  plants now necessary (5%)
-   bush (50%)
-   tree (20%)
-   grass (10%)
-   moss (0%)
-  animation and behaviors (50%)
-  actors and identities (20%)
-  action objects
-   tools
-  mobility animation
+Wak 9: (December starts)
+ - gathering
+ - kinetics
+ - collisions and avoidance
+ - multiple actors (creatures) doing things in-game on the map
+ - actor locations and memories
 
-24 day 2: (tue)
- x did some plant thinking and design, added 'stalks' to trunk
+43 Day 1: (27th)
+ x tried dual winding - it doesn't seem to actually work! planes are still only half visible.
+ x tried zero spacing - it doesn't seem to actually matter..
+ x found out it was using multidrawarrays instead of drawelements
+ x objects fully visible
+ x added points and planes for cube3 and sphere
+ x support points properly (as a backup for layout only)
+ x also found empty points-polys in creation... odd. anyway, I fixed it I think.
+ x deleted firsts and count and cleaned up a bit
+ x joint movement no longer requires any redraw; rotations and offsets are linked instead of static.
+ x got laptop setup working for camping
 
-25 day 4: (thu)
- x most of ::trunk
- x beginning of shrub, tree, and grass
- x growth stages
+Day 2 - quit smoking, no coding allowed
 
-26 day 7: (sun)
- x add plant joint specifications
- x finish plant spec
- x finish plant build&grow
- x basic plant leaf drawable
- x extend designs thru thanksgiving
- x formula for matching rotations and orisrc for petals
- x axial range (multiple) - allow for all around z axis or half y axis
- x verify growing only one type per slot. close the slot after and re-check for each one.
- x plant test
+44 Day 3: (29th)
+ x enabled rotations and fixed the rotations for basic world objects
+
+45 Day 4: (30th)
+ x setup the HTM and Planet building-classes to patch() the system after building
+ x mapped the HTM
+ x designed the HTM Patcher
+ x implemented HTM patch flow and most of the patching - just need the windings now
+
+46 Day 5: (1st - Fri)
+ x added windings for HTM patch
+ x wound the base pattern as well
+ x reordered the children
+ x patches and neighbor calculations redone
+ x redid htm::seek and seekall
+ x recalculate plate borders (they use a circle now)
+ x calculate height by distance from plate center
+ x patches work
+
+47 Day 6: (Sat)
+ x fixed objects not drawing properly
+ x used drawelements for the world draw
+ - rain, notably is disabled
+ x fixed joints and rotations to work properly
+ x fixed joint offsets
+ x fixed animation not updating correct offset
+ x creature displays properly
+ x got a video of windmill working perfectly
+ x fixed the website - uploaded screenshots and fixed the scrollbars
+ x added video to the site, got it working
+ x changed the rotation speed on the arms a bit
+ x added support for zero rotations to pre-set arms and legs to proper toe- and finger- locales.
+
+48 Day 7: (Dec 3)
+ x fixed weather back to having 4 layers
+ x fixed a few issues with the rain, but didn't get it working
+ x designed kinematics structure (50%)
+ x kept working it w/ regards to rain & weather ... learning a few things I guess. hope it's not a waste (spent most of the evening)
+
+
+Wak 8:
+39 Day 1: (mon)
+debugging:
+ x tried a few things.
+ x finally figured we have been using dv3 and need fv3 - looks much better now.
+ x fixed up a few issues with weather appearing as red dots.
+ x fixed the camera
+ x fixed an issue with the idlers not taking cycles into account. they do now, and cycles should be calculated properly
+ x which fixed movement.
+ x re-enabled objects, but they're only partially visible.
+
+40 Day 3: (wed-early am)
+ x re-enabled creature/plant. they actually look right, which is good, except that the prim are still fucked.
+ x tried re-ordering the cube vertices; didn't work.
+ x reported/logged a bunch of stuff; not much help.
+
+41 Day 3: (wed)
+ x added most of the rain
+ x tried reversing the winding; worked a bit.
+ x finished adding rain - still some issues... learned a lot more about array buffers
+ x adjusted cps
+ x rain is only handled once now
+ x fixed rain shaders
+
+42 Day 7: (26th)
+ x setup dual winding
+ x added 'size' for all parts (creature, verified trunk, test in world)
+ x fixed objjoint::resolve
+
+
+Wak 7:
+ - terrain: plate_overlap, mtn_range, volcano, boulders (10%)
+  - generating a mountain should also generate initial streams
+ - weather: rain conditions, particle trigger, water flow (30%)
+  - store puddles in accum
+  - animate water
+ - animation: looking, turning (5%)
+  - have the creature 'watch' the player
+
+34 Day 1:
+ x recomputed terrain creation and subdivision, along with collapse
+ x fixed some resulting bugs and optimized surfaceAt
+ x redid heightAt and some others for better angle support
+ x optimized it to a playable point
+ x implemented draw lists for drawables, including matrix multiplication instead of loading
+ x cleaned up the logging a bit more
+ x restored drawables, fixing the matrix multiplication problems, I think, mostly, maybe, needing more tests.
+ x smoothed out and abstracted the visualization ranges, and set max depth to a reasonable level
+
+35 Day 3: (wed)
+ x did plate redistribution
+ x plates seem much better now, but edges still have serious issues
+ x got a better jointed test object
+ x added list::glue and list::sort
+ x clouds move more slowly and wind does not move
+ x red clouds are ready for rain
+ x wrote the basis for rendering rain
+
+36 Day 5: (fri)
+ x opengl 2 -> 4
+ x glut 1 -> 2
+ x glew
+ x object/drawable matrix calculator
+ x converted camera and perspective
+ x updated shader programs and buffering
+ - disabled terrain/weather/water, need to re-enable
+
+37 Day 6: (sat)
+ x updated camera to be a negative positioning
+ x re-enabled terrain/weather/water with structure to support them
+ x finished out the terrain/weather/water lists and supports
+ x debugged the shaders
+ x started on the camera; needs more work
+
+38 Day 7: (sun)
+ x static camera test: don't rotate (FAILED HARD)
+  - nfc what to do now honestly... glperspective change to degrees... ummm/// stop drawing everything but, um, the water i guess..
+  x none of that worked...
+ x fixed up terrain/weather/water/rain with appropriate 'changed' flags
+ x removed some more logging (xVision) and cleaned up the distance calculation
+ x fix the camera
+  x get the up vector set up, and rotate properly around that
+  x use quaternions instead of matrices for the in between (cross
+  x camera now uses glm::lookat
+  x projection uses glm::perspective
+ x added up vectors for all objects properly updating on move.
+
 
 Wak6:
  - multiple slots per stalk (so a 'top' can stop 'branchers' - eg for leafstalk)
@@ -358,131 +430,271 @@ Wak6:
  x tested a few ideas on creatures
  x got offsets, origin and orisrc working together correctly
 
-Wak 7:
- - terrain: plate_overlap, mtn_range, volcano, boulders (10%)
-  - generating a mountain should also generate initial streams
- - weather: rain conditions, particle trigger, water flow (30%)
-  - store puddles in accum
-  - animate water
- - animation: looking, turning (5%)
-  - have the creature 'watch' the player
 
-34 Day 1:
- x recomputed terrain creation and subdivision, along with collapse
- x fixed some resulting bugs and optimized surfaceAt
- x redid heightAt and some others for better angle support
- x optimized it to a playable point
- x implemented draw lists for drawables, including matrix multiplication instead of loading
- x cleaned up the logging a bit more
- x restored drawables, fixing the matrix multiplication problems, I think, mostly, maybe, needing more tests.
- x smoothed out and abstracted the visualization ranges, and set max depth to a reasonable level
+Wak5.
+  plants now necessary (5%)
+   bush (50%)
+   tree (20%)
+   grass (10%)
+   moss (0%)
+  animation and behaviors (50%)
+  actors and identities (20%)
+  action objects
+   tools
+  mobility animation
 
-35 Day 3: (wed)
- x did plate redistribution
- x plates seem much better now, but edges still have serious issues
- x got a better jointed test object
- x added list::glue and list::sort
- x clouds move more slowly and wind does not move
- x red clouds are ready for rain
- x wrote the basis for rendering rain
+24 day 2: (tue)
+ x did some plant thinking and design, added 'stalks' to trunk
 
-36 Day 5: (fri)
- x opengl 2 -> 4
- x glut 1 -> 2
- x glew
- x object/drawable matrix calculator
- x converted camera and perspective
- x updated shader programs and buffering
- - disabled terrain/weather/water, need to re-enable
+25 day 4: (thu)
+ x most of ::trunk
+ x beginning of shrub, tree, and grass
+ x growth stages
 
-37 Day 6: (sat)
- x updated camera to be a negative positioning
- x re-enabled terrain/weather/water with structure to support them
- x finished out the terrain/weather/water lists and supports
- x debugged the shaders
- x started on the camera; needs more work
+26 day 7: (sun)
+ x add plant joint specifications
+ x finish plant spec
+ x finish plant build&grow
+ x basic plant leaf drawable
+ x extend designs thru thanksgiving
+ x formula for matching rotations and orisrc for petals
+ x axial range (multiple) - allow for all around z axis or half y axis
+ x verify growing only one type per slot. close the slot after and re-check for each one.
+ x plant test
 
-38 Day 7: (sun)
- x static camera test: don't rotate (FAILED HARD)
-  - nfc what to do now honestly... glperspective change to degrees... ummm/// stop drawing everything but, um, the water i guess..
-  x none of that worked...
- x fixed up terrain/weather/water/rain with appropriate 'changed' flags
- x removed some more logging (xVision) and cleaned up the distance calculation
- x fix the camera
-  x get the up vector set up, and rotate properly around that
-  x use quaternions instead of matrices for the in between (cross
-  x camera now uses glm::lookat
-  x projection uses glm::perspective
- x added up vectors for all objects properly updating on move.
- - fix whatever else might be wrong, projection matrix, culling, depth buffer
-  - it's still not working
-  - may have to simplify again.
 
-Wak 8: (thxgiving)
- - trees
- - grass
- - seeding
- - accumulation networks: water, dirt. (not surfaces yet)
-  - dirt accumulation: 2d coords
-  - absorb accum: 2d coords
-  - object surface accum: 2d coords per drawable plane
-  - water accum: list of circular puddles, stored in terrain
-   * water animation joins the puddles
-    - do not join puddles until they overlap by 50%
-    - water can flow from one puddle to another if they overlap at all
-    - water flows in the direction of slope
-   * raindrop effect joins existing puddles and creates new puddles
-   * waterflow
+* Wak4
+ x creature fixes (100%)
+ x other fixes (100%)
+ x animation start (100%)
 
-Bugs:
- - terrain and water look like shit from above.
- - objects are only partly visible
+18 day 3 (early am):
+ x redefined creature definitions w/ only limbs and joints
+ x allow for future further creature modular definitions
+ x fixed objects not showing up
+ x rebuilt creature builder
+ x removed bsp logging
+ x fixed new compile issues with creatures
+ x adjusted rotations some; needs more work
+ x fixed axialeuler and v3_surface to use radians properly (i think)
+ x more work on creatures: axis alignment (more work needed)
 
-39 Day 1: (mon)
-debugging:
- x tried a few things.
- x finally figured we have been using dv3 and need fv3 - looks much better now.
- x fixed up a few issues with weather appearing as red dots.
- x fixed the camera
- x fixed an issue with the idlers not taking cycles into account. they do now, and cycles should be calculated properly
- x which fixed movement.
- x re-enabled objects, but they're only partially visible.
+19 day 5 (early am):
+ x most alignments seem right, there's still an issue
+ x colored limbs, named parts and joints
+ x left/right tagging for animation
+ x started on animation design and implementation
+ x started on plant design (Trunk)
+ x small updates to timeline to support function calls
+ x stack- and matrix- safe drawAbles()
+  - but it doesn't work; all objects pop out from the matrix
 
-40 Day 3: (wed-early am)
- x re-enabled creature/plant. they actually look right, which is good, except that the prim are still fucked.
- x tried re-ordering the cube vertices; didn't work.
- x reported/logged a bunch of stuff; not much help.
+20 day 5:
+ x saner texture loading
+ x glmatrix storage
+ x dynamic call lists
+ x removed transforms from object
+ x creature alignments are all right
 
-41 Day 3: (wed)
- x added most of the rain
- x tried reversing the winding; worked a bit.
- x finished adding rain - still some issues... learned a lot more about array buffers
- x adjusted cps
- x rain is only handled once now
- x fixed rain shaders
+21 day 6 (early am):
+ x fixed matrix safety; objects and weather and terrain draw correctly
+ x fscking crowed like a bitch about it for hours
 
-Day 5:
- - patch the terrain
- - make a water map
+22 day 7 (early am):
+ x offsets
+ x dquats
+ x axis-angle compilation via quaternions
+ x animation zero rotation calculation
+ x joint axis calculations
+ x ribcage and pelvis
 
-Day 6:
+23 day 7:
+ x add body parts
+ x fix offsets/sizes for fingers/toes
+ x add skin color and make body look decent
+ x animation coding (main impl)
+ x animation - behaviors
+ x animation - lookup joint Targets
 
-Day 7: (26th)
- - trees
- - terrain sines
- - dirt accumulation
- - seeding
- - dirt erosion
- - gravity erosion
- - surface mapping
- - animations. looking, turning, and walking
- - water channels
- - walking around
 
-Catchup:
- - planes are wrong in the cubes and probably the sphere
- - rain still does not show up
- - objects still look weird
- - rebuilding object drawables may not be optimal
- - object joint movement needs child/parent sizes... some are zero?
+* Wak 3
+ x v2 math (80% - overlapPoly  might be nice.... I mean shit we can already do it in three dimensions newb!)
+ x v4 math (100%)
+ x plates & tectonics (100%)
+ x weather & clouds (100%)
+ x water, transparency
+ x some fixes for creatures
+
+12 day 0(tue):
+ x v2 functions/struct
+ x basic weather structure
+ x basic plate structure
+ x basic plate/weather updates
+
+13 day 1:
+ x added v4 rotation (euler and axis/angle) functions
+ x added object rotation variable and implement in drawobject
+ x played around with glm to try to rotate a vector. glx not found :(
+
+14 day 2:
+ x found glx.
+ x converted to use glm/glx rotation.
+ x messed with camera a bit. looks much better. almost right, but a little funky and doesn't follow planet.
+ x weather and plate updates.
+ x weather cell map generation and lookups.
+ x 2d intersections (lines and polys)
+ x cloud drawables
+ x multi-layer clouds
+ x plate generation
+ x much larger planet. x10
+
+15 day 4(late night):
+ x seekall(v2 border[])
+ x terrain height vary by plates
+ - debugging seek/seekall
+
+16 day 5:
+ x v2_inside(triangle,pt)
+ x fixed the seekall to include triangle inside
+ x blue water
+ x green land (colored by height)
+ x water level
+ x plate offsets work
+ x various fixes
+ x "transparent" water and weather
+ x blue sky layer (doesn't show up...)
+ x change player/items initial height. it's wrong.
+ x sky layers are really too high, bring them down a bit
+
+17 day 6:
+ x debugging...
+ x fixed a bunch of stuff, including
+ x double-draw bugs
+ x transparency issue
+ x v2_inside for triangles had -area
+ x vectorFor was doubling sizes
+ x vast sky improvements
+
+
+* Wak 2
+ creature definitions (100%)
+ x limb types: arm, leg, head, stalk, tail, fin, wing
+ x hand types: hand, foot, talon, eyeball, mouth, nose, ear
+ vertebra builder (100%)
+ merge builds with part and joint (100%)
+ preliminary creature constructors (100%)
+
+8 day 1:
+ x spine review
+
+9 day 2:
+ x spine/creature review and structural finalization
+ x objpart review
+ x creature spines, vertebrae, limbs and hands
+ x objjoint integration
+ x spine code structure
+ x reimplemented object/objpart/objjoint
+
+10 day 5:
+ x started on actors and personas (including chains and action lists)
+ x identified creature base location
+ x began version 1 of skeleton definition (and it's awful, which is what took so long)
+ x map to the spine structure
+
+11 day 6:
+ x more of the structural mapping
+
+12 day 7:
+ x reconfigure objdrawable to facilitate joints
+ x generate objdrawables for joints
+ x fix joints to have at most two parts, and only one parent joint per part
+
+13 day 8:
+ x finish creating joints from parts
+ x finished basic human psuedo definition
+ x joint math
+ x abstracted v3_surface and v3_angle
+ x added v3_scale1(v,x,y,z), v3_add1(v,x,y,z), v3_sub1
+ x instantiation of creature test
+ x added CreatureTest and JointTest to world
+ x added registration for cre_pattern and cre_table
+ x fixed up creature data table lookups
+ x remove some extraneous init0 items
+ x fixed Creatures not showing up
+ x added joints to shaded objects
+ x fixed joint stacking
+
+
+* Wak 1
+ fix main 2d bugs (100%)
+ get planet up (100%)
+ be a bouncy ball (100%)
+ make stuff nearby (100%)
+
+day 1: (after a weekend of working on similar area)
+ x got the 2d interface cleaned up
+ x fixed the redraw for elements
+ x fixed 2d focus controls
+ x fixed element widths overflowing
+ x added shell command interpreter
+ x verified HTM will work for sorting planets
+ x fixed htm::seekall for the time being, it will work (sort of) haha
+
+day 2: (had a shot)
+ x htm::toLeafList to see just the edges of a tree
+ + terrain generation for a simple sphere
+ / visual range separators
+  * activate and use for display limit
+ x moved basic physics from player to object
+ x player now has a basic object
+ x destroyed the obsolete world_data and terrain_data premises.
+ x destroyed all code related to world_data and terrain_data premises.
+ x PlanetTerrain class, contains height, water level, vertices, soil type.
+ x track terrains in htm.
+ x rewrote world generation to use planet
+ x placed objects on surface
+ x functions to calculate surface positions
+ x drawTerrain and calls to it for terrains in 'vision'
+ x htm_include and htm_remove
+ x planet->addObject and removeObject
+ x buildTerrains and calls to it
+ x spheremesh now calls htm_include/remove properly
+
+day 3: (was kinda tired and sore from the shot)
+ x fixed first-level HTM search being wrong
+ x fixed start crash
+ x fix terrain not in visual range
+ x fixed scaling and heights
+ x fixed selecting a spherical range
+ x planets.. planets... more planets
+
+day 4: (mostly amazed at what is done now)
+ x give the player an actual sphere
+ x apply gravity and gravity-bounce
+ x create collision primitives
+ x cleanup source code warnings
+ x started on materials
+ x improved sin/cos sphere formula
+ x achieved a smooth, full covering for a hemisphere (the other hemisphere was a funnel of sorts)
+ x tested gravity
+ x fixed gravity to use surface normal
+
+day 5:
+ x test various sphere projections
+ x implement bounce normal projection
+ x rested a lot and recovered strength. honestly.
+
+day 6:
+ x more sphere testing - try using camera equations, no joy (but maybe I can improve the camera this way)
+ x fix camera y-axis overload
+ x some design for spine/body parts
+
+day 7:
+ x more sphere testing
+ x improve sin/cos understanding
+
+day 8:
+ x implement x,y,z -> xa,ya
+ x normalize sphere from angles from htm
+
 </pre>

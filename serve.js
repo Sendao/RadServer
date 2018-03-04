@@ -48,7 +48,7 @@ function openLoadHandler( ipaddr ) { // tests for connections that stay open
     } else {
         app.opensockets[ipaddr]++;
     }
-    if( app.opensockets[ipaddr] > 500 ) {
+    if( app.opensockets[ipaddr] > 50 ) {
         console.log("Too many open requests from " + ipaddr);// + ", blocking it.");
         //system("iptables -I INPUT -s " + ipaddr + " -j DROP");
         //app.opensockets[ipaddr] = 0;
@@ -71,17 +71,37 @@ function closeLoadHandler( ipaddr, doLoadTest ) { // tests for open connections 
     }
     app.loadtimes[ipaddr] = tmn;
     if( app.myloads[ipaddr] > 4 ) {
-        //console.log("Too many malformed requests from " + ipaddr);// + ", blocking it.");
+        console.log("Too many malformed requests from " + ipaddr);// + ", blocking it.");
         //system("iptables -I INPUT -s " + ipaddr + " -j DROP");
         //app.myloads[ipaddr] = 0;
     }
 }
 
-function mainHandler( req, res ) {
+function mainHandler_Insecure( req, res ) {
     var body = "", whoisit = 'remoteAddress' in req.connection ? req.connection.remoteAddress : "unknown";
     whoisit = whoisit.split(":")[3];
     
-    app_static.reportrequest(req.url, whoisit);
+    var hosts = "http:" + req.method + "//" + req.headers.host + req.url;
+    app_static.reportrequest(hosts, whoisit);
+    openLoadHandler(whoisit);
+
+    req.addListener('data', function (chunk) { body += chunk });
+    req.addListener('end', function () {
+            //console.log(req, body);
+            closeLoadHandler(whoisit, false);
+            app_static.reportError(301, hosts, whoisit);
+            res.writeHead(301, { 'Location': 'https://spiritshare.org' + req.url } );
+            res.end();
+            return;
+        });
+}
+
+function mainHandler( req, res ) {
+    var body = "", whoisit = 'remoteAddress' in req.connection ? req.connection.remoteAddress : "unknown";
+    whoisit = whoisit.split(":")[3];
+    var hosts = "https:" + req.method + "//" + req.headers.host + req.url;
+    app_static.reportrequest(hosts, whoisit);
+ 
     //console.log("Request from", whoisit, "for", req.url, "at", new Date());
     openLoadHandler(whoisit);
 
@@ -97,6 +117,7 @@ function mainHandler( req, res ) {
             phpCGI.env['REMOTE_ADDR'] = whoisit;
             phpCGI.serveResponse(req, res, phpCGI.paramsForRequest(req));
 //            phpmid(req, res, function(err) {console.info("Error php", err);});
+            closeLoadHandler(whoisit, false);
             return;
         }
         // ... detector
@@ -106,15 +127,15 @@ function mainHandler( req, res ) {
         var i = parts.length;
         while( i > 0 ) {
         	--i;
-        	if( app.util.isDigit(parts[i]) ) {
+        	if( parts[i] && app.util.isDigit(parts[i]) ) {
         		isnumbers = true;
         		break;
         	}
         }
         if( isnumbers ) {
         	// bad request type (journey cannot handle it lulz)
-        	app_static.reportError('Numeric URL', req.url, whoisit);
-        	app_static.report404(req.url,whoisit);
+        	app_static.reportError('Numeric URL', hosts, whoisit);
+        	app_static.report404(hosts,whoisit);
         	closeLoadHandler(whoisit, true);
 
         	res.writeHead(404, { 'Content-Type': 'text/html' });
@@ -124,9 +145,10 @@ function mainHandler( req, res ) {
         router.handle(req, body, function (result) {
             if( result.status != 200 ) {
                 //console.info("Error status: ", result.status);
-            	app_static.reportError(result.status, req.url, whoisit);
+            	app_static.reportError(result.status, hosts, whoisit);
                 closeLoadHandler(whoisit, true);
             } else {
+            	app_static.report200(hosts, whoisit);
                 closeLoadHandler(whoisit, false);
             }
             if( 'Content-Type' in result.headers && result.headers['Content-Type'].indexOf('text') == -1 ) {
@@ -152,7 +174,7 @@ if( process.env.PORT ) {
 }
 
 
-var server = http.createServer( mainHandler );
+var server = http.createServer( mainHandler_Insecure );
 var wsserver = new app.tools.Websock.server(server);
 var https_server = false, wssserver = false;
 if( fs.existsSync( hconfig['ssl'] ) ) {

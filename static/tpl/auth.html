@@ -11,20 +11,23 @@
 
 <div xTemplate='userprofile'>
 <div xWatch=sess>
+Session key: #sess.key<br>
 Permissions:
 <fl xLoop=sess.permissions xKey=k xVal=v>
 <fl>#v</fl>
 </fl>
 <div xWatch=user>
+<div xWatch=cookie>
+Browser key: #cookie<br>
 </div>
 Username: #user.name<br>
-Session key: #cookie<br>
+</div>
 </div>
 </div>
 
 <div xTemplate='signup'>
 <form xCb=auth_signup method=post action='/signup' xForm='newuser' #titlewidth=100 #valuewidth=200>
-<input xWatch2=sess type=hidden name=cookie value='#sess.key'>
+<input xWatch2=sess type=hidden name=cookie value='#cookie'>
 <field #name=username #title=Username></field> <br/>
 <field #name=password #title=Password></field> <br/>
 <field #name=email #title=Email></field> <br/>
@@ -34,7 +37,8 @@ Session key: #cookie<br>
 
 <div xTemplate='signin'>
 <form xCb=auth_signin method=post action='/signin' xForm='userexist' #titlewidth=100 #valuewidth=200>
-<input xWatch2=sess type=hidden name=cookie value='#sess.key'>
+<input xWatch2=cookie type=hidden name=cookie value='#cookie'>
+Cookie #cookie<BR>
 <field #name=username #title=Username></field> <br/>
 <field #name=password #title=Password></field> <br/>
 <submit>Signin</submit>
@@ -135,13 +139,18 @@ function auth_setkey( cookieval )
 
 var scook = readCookie("sessKey");
 if (scook != null && typeof scook != 'undefined' ) {
-
+	console.info("readcookie = " + scook);
 } else if( typeof(Storage) !== "undefined" ) {
     if( 'cookie' in localStorage  )
         scook = localStorage.cookie;
+	console.info("cookie2 = " + scook);
 }
+if( scook == 'undefined' ) scook = null;
 if( typeof scook != 'undefined' && scook != false && scook != null ) {
     auth_setkey(scook);
+} else {
+	scook = randStr(16);
+	auth_setkey(scook);
 }
 socketRegister('register', session_start);
 

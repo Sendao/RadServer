@@ -223,7 +223,9 @@ function radType( typename, defs )
     }
     if( defs['query'] && defs['query'].includes('http') ) {
     	defs['uri'] = defs['query'];
+    	radQueries[typename]['uri'] = defs['query'];
     	delete defs['query'];
+    	delete radQueries[typename]['query'];
     }
     if( defs['query'] ) {
         console.log("type created: " + typename + "(hooked)");
@@ -231,12 +233,14 @@ function radType( typename, defs )
     } else if( defs['refresh'] ) {
         if( defs['uri'] ) {
             defs['query'] = defs['uri'];
+            radQueries[typename]['query'] = defs['uri'];
         }
         console.log("type created: " + typename + "(refresh)");
         radQueries[typename]['r'] = radStartPoll( defs['query'], defs['refresh'], radTypeDataHandler, typename );
     } else {
         if( defs['uri'] ) {
             defs['query'] = defs['uri'];
+            radQueries[typename]['query'] = defs['uri'];
         }
         console.log("type created: " + typename + "(request)");
         HtmlRequestGet( defs['query'], '', radTypeDataHandler, typename );
@@ -244,6 +248,7 @@ function radType( typename, defs )
 }
 function radTypePoll( typename, polltime )
 {
+	console.log("poll " + typename);
     radQueries[typename]['refresh'] = polltime;
     var rq = radQueries[typename];
     radClearPoll( rq['r'] );

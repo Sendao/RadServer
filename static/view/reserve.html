@@ -1,6 +1,48 @@
 
-<h2>Reserve</h2>
+<h2>RadServer</h2>
 
-<p>Reserve is a webserver based on nodejs, journey, and radiance.</p>
-<p>Features include SSL, Websockets, binary file support, and builtin database.</p>
+<p>RadServer is a nodejs webserver using journey and radjs.</p>
+<p>Features include:</p>
+<ul>
+
+<li>SSL/HTTPS</li>
+<li>Websockets, including secure (ssl) sockets
+<ul>
+<li>Secure (ssl) sockets</li>
+<li>Automation included (tpl/socket.html)</li>
+</ul>
+</li>
+
+<li>Integrated database
+<ul>
+<li>Partial database editor</li>
+<li>Extensible for replication, archiving, and encryption</li>
+<li>Secure (no open sockets or inter-process comms)</li>
+<li>Natural (works well with node's process philosophy)</li>
+<li>NoSQL principles</li>
+<li>Some support for extended queries</li>
+<li>Auto-loading object wrapper auto-describes and saves most objects easily</li>
+<li>Very, very, very fast... I should definitely benchmark this</li>
+</ul>
+</li>
+
+<li>Scraping integration
+<ul>
+<li>Curl and Cheerio are included</li>
+<li>Interfaces for both are available</li>
+<li>There Are Plans And History</li>
+</ul></li>
+
+<li>Dynamic Handling
+<ul>
+<li>PHP is supported, actually. No big deal!</li>
+<li>Static files of all types are easily and securely handled.</li>
+<li>Model-based nodejs interfaces, easily extensible and integrated.</li>
+<li>Easy to configure sockets for streaming live views of database objects.</li>
+</ul>
+</li>
+
+</ul>
+
+<p>It can be found <a href='https://github.com/Sendao/RadServer'>on github.</a></p>
 

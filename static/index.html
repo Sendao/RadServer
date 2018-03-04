@@ -26,7 +26,7 @@ Loading
 
 <!--  main view screen on -->
 <div xSect=main id=mainscroll class="margin-small">
-<a href='https://spiritshare.ns01.info/client.html'>New Client Registration</a>
+<a href='https://spiritshare.ns01.info/client.html'>New Clients</a>
 
 #include tpl/radlib.html
 #include tpl/backend.html
@@ -34,7 +34,7 @@ Loading
 
 <tabpane id=tg123>
 
-<tablist style='max-width: 400px'>
+<tablist style='max-width: 120px'>
 
 <h2>GGEARS</h2>
 
@@ -46,9 +46,11 @@ Loading
 <tabhead name=videos structView=game/videos>Videos</tabhead>
 <tabhead name=refs structView=game/refs>References</tabhead>
 <tabhead name=insps structView=game/insps>Inspirations</tabhead>
+<tabhead name=concepts structView=game/concepts>Concept Intel</tabhead>
+<tabhead name=secrets structView=secret>Secrets</tabhead>
 </tablist>
 
-<tabsection id=maintabs xPostDraw='omv(["page","top","center"],1,400,1,40)' style='overflow:auto; float: right; min-width: 400px'>
+<tabsection id=maintabs xPostDraw='omv(["page","top","right"],0.99,130,0.99,0)' style='overflow:auto; float: right; min-width: 400px'>
 </tabsection>
 
 </tabpane>

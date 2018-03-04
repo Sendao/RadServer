@@ -28,6 +28,28 @@ Enable output:
 
 <div xTemplate='marky'>
 <div class=fl>#m</div>
+<form xForm='talking_marky.#m' onchange=updateTalking(this)>
+<input type=hidden name=title>
+<div class=cl></div>
+<div class=fl><input value=1 type=checkbox name=usespeech></div>
+<div class=fl>use speech library</div>
+<div class=cl></div>
+<div class=fl><input value=1 type=checkbox name=synchronize></div>
+<div class=fl>synchronize</div>
+<div class=cl></div>
+<div class=fl>volume</div>
+<div class=fl><input type=text name=volume></div>
+<div class=cl></div>
+<div class=fl>rate</div>
+<div class=fl><input type=text name=rate></div>
+<div class=cl></div>
+<div class=fl>pitch</div>
+<div class=fl><input type=text name=pitch></div>
+<div class=cl></div>
+<div class=fl>voice</div>
+<div class=fl><input type=text name=voice></div>
+<div class=cl></div>
+</form>
 <div class=cl></div>
 <div xDataname='marky.#m' xUrl='/marky.js?c=#cookie&m=#m' xRefresh=20 xCb=UpdateMarker></div>
 
@@ -50,6 +72,11 @@ function UpdateMarker(row,req)
 {
 	if( row == null ) return;
 	console.info(row,req);
+	var radSetup = radVar("talking_" + req.title);
+	
+	console.info(radSetup);
+	radSetup.requested = 0;
+	
 	var radRows = radVar(req.title);
 	if( radRows == null ) {
 		radStore(req.title, [row]);
@@ -60,7 +87,90 @@ function UpdateMarker(row,req)
 		}
 		radChange(req.title);
 	}
+	if( radSetup.usespeech == 1 ) {
+		if( radSetup.synchronize == 1 ) {
+			// 1st msg: get 2nd msg
+			// 2nd+msg: store in buffer, don't speak or get another msg
+			// finish 1st msg: start buffered msg, get 3rd msg
+			if( radSetup.running == 1 ) {
+				// current message is for storage
+				radSetup.storedbuffer = row;
+				console.info("storedbuffer");
+				return;
+			}
+			radSetup.running = 1;
+
+			// speak current (1st) message, triggering further messages as it finishes
+			MarkySay(radSetup, row);
+			// start grabbing next )message
+			console.info("get2 " + radSetup.title);
+			radTypePoll(req.title, ""+120);
+		} else {
+			radSetup.running = 1;
+			MarkySay(radSetup, row);
+		}
+	}
 }
+function MarkySay(radSetup, row)
+{
+	console.log("say " + row);
+	var msg = new SpeechSynthesisUtterance();
+	msg.voice = window.speechSynthesis.getVoices()[radSetup.voice];
+	msg.voiceURI = 'native';
+	msg.volume = radSetup.volume;//0.12; // 0 to 1
+	msg.rate = radSetup.rate;//0.85; // 0.1 to 10
+	msg.pitch = radSetup.pitch;//1; //0 to 2
+	msg.text = row;
+	msg.lang = 'en-US';
+	msg.title = radSetup.title;
+	if( radSetup.title && radSetup.synchronize == 1 ) {
+		radSetup.tm = setTimeout('finishMessage("' + msg.title + '", false);', 15000);
+		msg.onend = function(e) {
+			console.log("msgdone");
+			finishMessage(msg.title, true);
+		};
+	}
+	speechSynthesis.speak(msg);
+}
+function finishMessage(title, talkingworked)
+{
+	var radSetNow = radVar("talking_marky." + title);
+	if( talkingworked ) {
+		clearTimeout(radSetNow.tm); radSetNow.tm=0;
+	} else {
+		console.info("speech agent did not complete naturally");
+	}
+	// say the stored message
+	if( radSetNow.storedbuffer == 0 ) { // it has not updated yet.
+		radSetNow.running = 0;
+		radSetNow.requested = 0;
+		console.log("storedbuffer==0");
+		return;
+	} else {
+		MarkySay(radSetNow, radSetNow.storedbuffer);
+		radSetNow.storedbuffer = 0;
+		console.log("keeprunning()");
+	}
+	// start grabbing next message to store
+	console.log("get1 " + title);
+	radTypePoll( "marky." + title, ""+20);
+	radSetNow.requested = 1;
+}
+function updateTalking(f)
+{
+	RestartMarker(f.title.value);
+}
+function RestartMarker(title)
+{
+	console.log("RestartMarker(" + title + ")");
+	var radSetup = radVar("talking_marky." + title);
+	if( radSetup.usespeech == 1 && radSetup.synchronize == 1 ) {
+		radSetup.running = 0; // will get reset to '1' when new buffer arrives
+		radTypePoll( "marky." + title, ""+20);
+		radSetup.requested = 1;
+	}
+}
+
 function UpdateMarkers()
 {
     var si = document.forms.ai.ai;

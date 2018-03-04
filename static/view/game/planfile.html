@@ -1,9 +1,56 @@
-<pre>Catchup:
- - planes are wrong in the cubes and probably the sphere
+<pre>  
+* Leftover
+ - 2d
+  - shell command interpreter
+  - improve the redraw to be more specific (list per window)
+ - materials
+  - implement the coefficients
+   - friction
+   - spring
+ - collision
+  - give everything colliders
+ - inquire as to bsp logging details/processing (it currently doesn't work after all)
+
+
+Todo:
+ - watermap
+ - accummap (dirt)
+ - draw accum&watermaps
+
+
+
+Issue:
+ - terrain and water look like shit from above.
+ - gravity erosion
+ - surface mapping
+ - animations. looking, turning, and walking
+ - water channels
+ - walking around
  - rain still does not show up
- - objects still look weird
- - rebuilding object drawables may not be optimal
- - object joint movement needs child/parent sizes... some are zero?
+ - trees
+ - grass
+ - seeding
+ - accumulation networks: water, dirt. (not surfaces yet)
+  - dirt accumulation: 2d coords
+  - absorb accum: 2d coords
+  - object surface accum: 2d coords per drawable plane
+  - water accum: list of circular puddles, stored in terrain
+   * water animation joins the puddles
+    - do not join puddles until they overlap by 50%
+    - water can flow from one puddle to another if they overlap at all
+    - water flows in the direction of slope
+   * raindrop effect joins existing puddles and creates new puddles
+   * waterflow
+
+
+
+
+
+
+
+
+
+
 
 Technology Tree:
  * Terrain
@@ -33,12 +80,6 @@ Technology Tree:
   - Civilizations
    - Towns
 
-
-
-patching:
- - figure out neighbors for htm
- - figure out patches for htm
-
 new stuff:
  - surface water map
  - animated surface water map
@@ -46,38 +87,18 @@ new stuff:
   - scanning surroundings
   - utilize neighbors?
 
-
-Wak 9: (December starts)
- - gathering
- - kinetics
- - collisions and avoidance
- - multiple actors (creatures) doing things in-game on the map
- - actor locations and memories
-
 Creatures:
- - remove above v4
- - just check out the legs and get that working again
- - get everything working again
- - provide room for variations on models
  - looking and walking animations
  - skin
   - mass distributions?
  - add accumulation layers (on top of skin??)
 
 Plants:
- - get the branches touching the edges
  - expand the definitions
  - interact w/ wind
  - change colors w/ situations
  - add accumulation layers
-
-Terrain:
- - patch the holes
-  - sub[4] patch[3] both must be navigatable
-  - locate neighbors
-  - neighbors may be patches
-  - subdivision may cause neighbor's patches to be unneeded
-  - complete subdivision before patching? still will have to mind the unpatching
+ - twist for sun & wind pressure
 
 Weather:
  x generate rain particles
@@ -294,7 +315,7 @@ Christmas (4 waks) tasks
  - Erosion
   - Rivers
  - Formular Construction
- - Animations
+ * Animations
   - cutting down a tree
   - fishing
   - bear fishing
@@ -304,13 +325,12 @@ Christmas (4 waks) tasks
   - bear, fish, eagle
 
 Birthday (3 waks):
- - server rebuild
- - player creature
+ * server rebuild
+ * player creature
  - skill tree
  - wood crafting
  - start villages
-
- - here i'd like to have a friends-only beta release. but make sure there's enough to amuse people.
+ * here i'd like to have a friends-only beta release. but make sure there's enough to amuse people.
 
 Easter:
  - mining
@@ -445,5 +465,33 @@ Long Range Targets:
  - robotic destroyers
  - 
 
-
+Camping:
+ - towels
+ - duct tape
+ - tapestries
+ - pots
+ - shovel
+ - axe
+ - knife
+ - extension cord for gen
+ - test power to van & diagnose
+ - water container
+ - food supplies
+  - fridge: milk, oj, cheese, butter, yogurt, possibly some 
+  - oatmeal, pancakes, jam. soups bread pb. 
+ - tarps, tarps, tarps.
+ - blankets, sleeping bag, pillow & cushion
+ - folding table
+ - music?
+ - laundry
+ - videos?
+ - game engine download
+ - game libraries download
+ - kitty box - with lid
+ - cat food & treats
+ - hermes' fur
+ - ups power supply, squid power divider
+ - candles
+ - gloves
+ - 
 </pre>

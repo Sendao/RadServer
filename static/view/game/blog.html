@@ -1,3 +1,60 @@
+<p>December 4, 2017</p>
+<p>Scott Powell<br>
+<p>Animations are looking good, and we have the basics set up for kinematics now.
+I've also developed monitoring for the whole solution, tracking time use of all
+the critical systems. Memory monitoring is also in place now, and hopefully I'll
+soon trace down the leak that has been slowing the game down after about a minute.
+
+<p>Kinematics look fairly straightforward when you put the chains together. I
+don't think it will take too long. I think the first test will be to lift and
+lower the foot, and then I'll develop a system to deliver kinematic goals in
+sequence for walking. In order to walk, I agree with the concept that there
+should be something separate for our critters to walk on; a surface map that
+covers all terrain but also other objects. Surface maps provide fast pathing
+for all actors in a region, without too much expense. Pathing itself is
+fairly straightforward using a djikstra(I think) algorithm.
+
+<p>I've got my work cut out for me. Once the memory bugs are fixed, kinematics
+and surface maps get along, and pathing is in place, I'll be ready to add all
+the various parts for basic NPC gathering. They will go out and explore finding
+trees and shrubs with fruits and berries and nuts, bringing them back to what
+they consider home. Home will be wherever the npc rezzes, until it finds a home
+of equal or larger size; then it will occupy the new home, so npcs should flock
+together fairly quickly. That should be enough for this month.
+
+<p>Next month I plan to focus more on separating work between the server and the
+client. This will probably involve some basic controls on an admin site, a check
+on the main site to see if the game is running, possibly rebooting it... and hm,
+well there's developing messaging for movement and looking around, the planet
+and terrain will need to be fully registered for messaging, and I'll need to
+rework my 2d interface for login. All that job done, last is running the storage
+system through its paces by setting up dynamic loading.
+
+<p>Long story short? Plenty of fun to be had.
+
+<p>November 27, 2017</p>
+<p>Scott Powell<br>
+<p>The transition to OpenGL 4.0 is now virtually complete. Everything is operational
+and the new joint systems are great. I eliminated almost all of the redraw; now the
+objectdrawable's rotation and position come directly from each objjoint. When the joint
+is updated, the drawable automatically updates and does not need to be rebuilt: the new
+rotation and position are referenced in the final draw circuit once each, so what I did
+was just have them reference directly the objjoint data. As that data changes so does
+the transform matrix we use to draw each jointed part. It works great; the previously
+slow animation is now butter-smooth. I also got to optimize the draw cycle a bit more
+and set things up more carefully for the CSG engine. CSG continues to fail, although I
+think a bit more investigation will probably solve it.
+<p>This marks the end of the debugging phase I've been in for most of this month, as now
+most of the features I'd broken are working again.
+<p>Now we're moving into another push containing more detail in the animal and plant,
+more plants, plant seeding, creature animation, and waterflow animation. December will
+be a big month! January will have to be reserved for more server-critical things like the
+clientside physics, character creation and third-person camera. As we progress through
+the year I'll continue to produce more detailed visualizations and simulations, but I'm
+also looking forward to configuring and balancing item value and purpose statistics and
+enhancing creature behavior and intelligence. Some of these things will probably sneak
+in and break the project in the meantime!</p>
+
 <p>November 24, 2017</p>
 <p>Scott Powell<br>
 <p>I've just written up this basic site format and launched it onto my old server.
