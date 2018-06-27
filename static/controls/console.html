@@ -1,11 +1,46 @@
 <templates>
 
 <div xTemplate=tool_console>
-<form xForm=console xMethod=sendCommand(form)>
-<textarea name=content editable=false rows=80 cols=160 style='background-color: black; color: #aaaaaa'></textarea>
-<input type=text name=commandline size=80>
-<formbtn>submit</formbtn>
+<form xForm=console xMethod='sendCommand(this); return false;'>
+
+<div class=fl>
+<textarea name=content editable=false rows=40 cols=160 style='background-color: black; color: #aaaaaa'></textarea>
+</div>
+
+<div class=cl></div>
+
+<div class=fl>
+<div class=fl><input type=text name=keysline size=20 onSubmit='scanKeys()'></div>
+<btn xCmd='scanKeys()'>Scan</btn>
+
+<div class=cl></div>
+
+<div class=fl><input type=text name=commandline size=80></div>
+<formbtn>Run</formbtn>
+
+<div class=cl>&nbsp;</div>
+
+<btn xCmd='chooseTool(1)'>Inspect</btn>
+</div>
+
+<div class=fl id=toolset></div>
+<div class=cl></div>
+
 </form>
+</div>
+
+<div xTemplate=toolset_1>
+
+<div class=fl>
+<select name=whichshorty onChange='radFieldUpdate(this)'>
+ <option>this.app.ctrl
+ <option>this.app.data
+ <option>this.app.base
+</select>
+</div>
+
+<div class=fl xCmd='injector("a=\"\"; for( i in " + radVar("console.whichshorty") + " ) { a += i + \"\\n\"; } a;")'>examine</div>
+<div class=cl></div>
 </div>
 
 </templates>
@@ -14,7 +49,32 @@
 
 function sendCommand(fm)
 {
-    console.log(fm);
+    console.log(fm.commandline.value);
+    HtmlObjRequest("/console.json", {'c':fm.commandline.value}, cmdCB);//radVar("net.scan"));
+    return false;
+}
+function scanKeys()
+{
+	HtmlObjRequest("/console.json", {'c':'a=""; for( i in ' + document.forms[0].keysline.value + ' ) { a += i + "\\n"; } a;'}, cmdCB);
+	return false;
+}
+function cmdCB(a)
+{
+	document.forms[0].content.innerText = document.forms[0].content.value + "\n" + a + "\n";
+	document.forms[0].content.scrollTop = document.forms[0].content.scrollHeight;
+}
+
+function chooseTool(n)
+{
+	var e = gE("toolset");
+	
+	blitzTemplate(e, "toolset_" + n);
+	setTimeout("radFormSave(document.forms[0],false);", 10);
+}
+
+function injector(code)
+{
+	document.forms[0].commandline.value = code; document.forms[0].commandline.focus();
 }
 
 </script>
