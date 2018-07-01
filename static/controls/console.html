@@ -50,12 +50,12 @@
 function sendCommand(fm)
 {
     console.log(fm.commandline.value);
-    HtmlObjRequest("/console.json", {'c':fm.commandline.value}, cmdCB);//radVar("net.scan"));
+    HtmlObjRequest("/console.json", {'c':radVar("sess.key"), 'r':fm.commandline.value}, cmdCB);//radVar("net.scan"));
     return false;
 }
 function scanKeys()
 {
-	HtmlObjRequest("/console.json", {'c':'a=""; for( i in ' + document.forms[0].keysline.value + ' ) { a += i + "\\n"; } a;'}, cmdCB);
+	HtmlObjRequest("/console.json", {'c':radVar("sess.key"), 'r':'a=""; for( i in ' + document.forms[0].keysline.value + ' ) { a += i + "\\n"; } a;'}, cmdCB);
 	return false;
 }
 function cmdCB(a)
