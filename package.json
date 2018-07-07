@@ -10,6 +10,7 @@
     "cheerio": "^0.22.0",
     "curl": "^0.1.4",
     "emailjs": "^2.1.0",
+    "fb": "^2.0.0",
     "fibers": "^2.0.2",
     "github": "^14.0.0",
     "gulp": "^3.9.1",
@@ -17,13 +18,13 @@
     "gulp-minify": "0.0.14",
     "gulp-sourcemaps": "^1.12.1",
     "journey": "^0.4.0-pre-3",
+    "node-ipc": "^9.1.1",
     "node-phpcgi": "^0.3.7",
+    "php-cgi": "^0.2.0",
     "request": "^2.87.0",
     "stripe": "^4.25.0",
+    "usage": "^0.7.1",
     "wait.for": "^0.6.6",
-    "websocket": "^1.0.26",
-    "php-cgi": "^0.2.0",
-    "fb": "^2.0.0",
-    "usage": "^0.7.1"
+    "websocket": "^1.0.26"
   }
 }

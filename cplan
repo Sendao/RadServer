@@ -1,0 +1,36 @@
+- Update watch using arrow functions and a lookup table.
+ (done.)
+
+- Add a console where you can run debug commands through the node rad server
+ (done. blitzTemplate("tools_console") from #include controls/console.html.)
+ 
+- Secure the backdoor using a configurable password, then publish the shadows
+
+- A blog
+
+- GLUTON Serverside interface
+ - SZN reader (tool/szn.js)
+  - typespec storage in GCommon
+  - support external use (for LocalSocket or other things)
+   (done)
+  - data/szn.js (read, write)
+   (structure done)
+   (bitwise ops done)
+    - objects
+    - tests
+    - typespec loading
+ - LocalSocket (tool/localsocket.js)
+  (structure done)
+  - use SZN format
+  - local virtual file socket
+
+- Multiserver Solution?
+ - Database Grid
+  - RAID principles, each server is a disk unit
+  - Server data ownership & transfer
+ - Multiplexed Memory
+  - Laid on top of database
+  - Realistically Realize It's Slow As Shit And Implement Accordingly (asynch)
+  - 
+  
+  
