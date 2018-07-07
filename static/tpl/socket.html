@@ -39,7 +39,7 @@ function openSocket( target_url, recvCb, use_secure=false, _keypath=null, _ready
         clearInterval(socket_timer);
         socket_timer = -1;
     }
-    if( use_secure ) {
+    if( use_secure || document.URL.startsWith("https") ) {
 		targetHost = "wss://" + target_url + ":443/";
     } else {
     	targetHost = "ws://" + target_url + "/";

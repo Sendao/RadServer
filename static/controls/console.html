@@ -10,15 +10,20 @@
 <div class=cl></div>
 
 <div class=fl>
-<div class=fl><input type=text name=keysline size=20 onSubmit='scanKeys()'></div>
-<btn xCmd='scanKeys()'>Scan</btn>
-
-<div class=cl></div>
 
 <div class=fl><input type=text name=commandline size=80></div>
 <formbtn>Run</formbtn>
 
 <div class=cl>&nbsp;</div>
+
+<btn xCmd='scanKeys()'>Keysof</btn>
+<div class=fl>&nbsp;</div>
+<btn xCmd='scanType()'>Typeof</btn>
+<div class=fl>&nbsp;</div>
+<btn xCmd='scanJSON()'>JSONify</btn>
+<div class=fl>&nbsp;</div>
+
+<div class=cl></div>
 
 <btn xCmd='chooseTool(1)'>Inspect</btn>
 </div>
@@ -55,7 +60,17 @@ function sendCommand(fm)
 }
 function scanKeys()
 {
-	HtmlObjRequest("/console.json", {'c':radVar("sess.key"), 'r':'a=""; for( i in ' + document.forms[0].keysline.value + ' ) { a += i + "\\n"; } a;'}, cmdCB);
+	HtmlObjRequest("/console.json", {'c':radVar("sess.key"), 'r':'a=""; for( i in ' + document.forms[0].commandline.value + ' ) { a += i + "\\n"; } a;'}, cmdCB);
+	return false;
+}
+function scanType()
+{
+	HtmlObjRequest("/console.json", {'c':radVar("sess.key"), 'r':'typeof ' + document.forms[0].commandline.value}, cmdCB);
+	return false;
+}
+function scanJSON()
+{
+	HtmlObjRequest("/console.json", {'c':radVar("sess.key"), 'r':'JSON.stringify(' + document.forms[0].commandline.value + ')'}, cmdCB);
 	return false;
 }
 function cmdCB(a)
@@ -67,7 +82,7 @@ function cmdCB(a)
 function chooseTool(n)
 {
 	var e = gE("toolset");
-	
+
 	blitzTemplate(e, "toolset_" + n);
 	setTimeout("radFormSave(document.forms[0],false);", 10);
 }
