@@ -1,0 +1,186 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Radiant Cast</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+
+<!--
+<body style="background-image: url('dragontribe.jpg'); background-color: black; color: tan">
+ -->
+ <body class=bg5 style='color: tan; margin: 0px'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<div xWatch=menu_reset>
+<div xPostdraw='console.info'></div>
+<menu ></menu>
+</div>
+<main style='margin-top: 16px; font-size: 14pt' xWatch=window xCast='main_start'></main>
+
+<loadwheel></loadwheel>
+
+<!--  setup -->
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/auth.html
+#include tpl/meta.html
+
+<templates>
+
+<div xTemplate=main_start>
+<div xWatch=sess>
+<div xTest='"#sess" == ""'>I'm verifying your identity. This should only take a few seconds.</div>
+<div xTest='"#sess" != ""'>
+
+<div xTest='"#sess.userid" == "false"'>
+<fl>You should probably</fl>
+<fl>&nbsp;</fl>
+<btn xCmd='blitzTemplate(gE("mainscroll"), "signin")'>Login</btn>
+<cl></cl>
+</div>
+
+<div xTest='"#sess.userid" != "false"'>
+</div>
+
+</div>
+</div>
+</div>
+
+
+<div xTemplate=input>
+
+  <form id=input xForm=input xMethod=readInput>
+
+    <fl>Input text here:</fl>
+    <cl></cl>
+    <fl><textarea rows=7 cols=100 name=content></textarea></fl>
+    <cl></cl>
+    <btn xCmd='readInput()'>Go</btn>
+    <cl></cl>
+
+  </form>
+
+</div>
+
+<div xTemplate=words>
+
+
+</div>
+
+
+<script language=javascript>
+
+function readInput()
+{
+  var content = gE("input").content.value;
+  console.log("content:",content);
+  HtmlRequest('/words.js', buildArgString({content:content}), gotWords);
+  return false;
+}
+
+function gotWords()
+{
+  alert("got words");
+}
+
+
+
+
+
+function initSkeleton()
+{
+// Initialize any variables here radStore("x", 42);
+  basicMenu = [
+      { 'title': 'User', 'children': [
+          { 'title': 'Profile', 'cast': 'userprofile' },
+          { 'title': 'Signup', 'cast': 'signup' },
+          { 'title': 'Signin', 'cast': 'signin' },
+          { 'title': 'Logout', 'cast': 'logout' },
+          { 'title': 'List', 'cast': 'userlist' }
+      ] },
+      { 'title': 'Input', 'cast': 'input' },
+      { 'title': 'Wordnet', 'cast': 'words' },
+      ];
+
+  var host;
+
+  //radHook( "hosts." + window.location.hostname + ".config", checkGroups )
+  host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
+  radStore( "hostname", host.hostname );
+  radStore( "hosts." + host.hostname, host );;
+
+  structMenu(basicMenu);
+
+  radLoad();
+  radHook('pagekey', authstat);
+  cycleBodyStyles();
+  HtmlRequest('/words/start.js', '', gotStart);
+  socketRegister('semaproc', socketSemaProc);
+  openSocket(window.location.host, chatSocket);
+}
+
+function socketSemaProc(data)
+{
+  console.log("semaproc:",data);
+}
+
+function authstat()
+{
+  var sess = radVar("sess");
+
+  if( sess != null && 'userid' in sess && sess.userid != -1 ) {
+    console.log("Userid: " + sess.userid);
+  }
+}
+function chatSocket(data)
+{
+  console.log("chat:",data);
+}
+
+function gotStart(data)
+{
+  var obj = JSON.parse(data);
+  console.log("gotStart",obj);
+  //cats = obj.data.cats;
+}
+
+
+function cycleBodyStyles()
+{
+    var e = document.body;
+    if( typeof e.bgstate == 'undefined' )
+        e.bgstate=5;
+    e.bgstate = (e.bgstate+1)%9;
+    switch( e.bgstate ) {
+    case 1: e.className = 'bg0'; e.style.color = 'silver'; break;
+    case 2: e.className = 'bg1'; e.style.color = 'white'; break;
+    case 3: e.className = 'bg2'; e.style.color = 'black'; break;
+    case 4: e.className = 'bg3'; e.style.color = 'tan'; break;
+    case 5: e.className = 'bgsunrise'; e.style.color = 'white'; break;
+    case 6: e.className = 'bgmoonrise'; e.style.color = 'silver'; break;
+    case 7: e.className = 'bgmoonset'; e.style.color = 'silver'; break;
+    case 8: e.className = 'bgsunset'; e.style.color = 'black'; break;
+    }
+}
+
+
+registerStartup(initSkeleton);
+
+</script>
+</html>

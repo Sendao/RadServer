@@ -1,3 +1,94 @@
+#topstatus {
+    min-width: 500px;
+    background-color: #000;
+    opacity: 40%;
+    color: #ddd;
+    font-weight: bold;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    top: 10px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+#toptoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    opacity: 30%;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    top: 5px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+#lefttoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    opacity: 33%;
+    color: #ddd;
+    text-align: left;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    left: 5px;
+    font-size: 17px;
+    
+}
+#righttoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    opacity: 60%;
+    color: #ddd;
+    text-align: right;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    right: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+
+#yourtoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    opacity: 60%;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    bottom: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+@keyframes fadeOut {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+
+
 /* Controls */
 .line { display: inline-block; }
 .op50 { opacity: .5 }
@@ -53,13 +144,38 @@
 .m7 { margin: 7px }
 .m14 { margin: 14px }
 
+.mw6 { margin-left: 6px; margin-right: 6px }
+
 
 /* Floats */
-.fl { float: left }
+.fl { float: left; padding-right: 3px }
 .fln { float: left; padding-left: 5px }
 .fli { float: left; font-style: italic; padding-left: 5px }
 .fr { float: right }
-.cl { clear: both }
+.cl { float: left; clear: both }
+
+
+.tt {
+	position: relative;
+	display: inline-block;
+	float: left;
+	border-bottom: 1px dotted black; /* .. */
+}
+.tt .ttt {
+  visibility: hidden;
+  width: 120px;
+  background-color: #ffaa11;
+  color: black;
+  text-align: center;
+  padding: 5px 0;
+  border-radius: 6px;
+	border: 1.5px solid white;
+  position: absolute;
+  z-index: 1;
+}
+.tt:hover .ttt {
+    visibility: visible;
+}
 
 
 /* Widths */
@@ -121,6 +237,7 @@
 
 /* Flex */
 .flex { display: -webkit-flex; display: flex; }
+.fgrow { flex-grow: 1; }
 .f_vert { flex-direction: column }
 /* flex-justify: */
 .f_start { justify-content: flex-start; -webkit-justify-content: flex-start; }
@@ -141,8 +258,10 @@
 .fs_baseline { align-self: baseline; -webkit-align-self: baseline; }
 .fs_stretch { align-self: stretch; -webkit-align-self: stretch; }
 /* macros */
-.fcenter { -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; }
-.fpacked { -webkit-align-items: ; align-items: center; -webkit-justify-content: center; justify-content: center; }
+.fcenter { -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; text-align: center }
+.fright { -webkit-align-items: right; align-items: right; -webkit-justify-content: right; justify-content: right; text-align: right }
+.fleft { -webkit-align-items: left; align-items: left; -webkit-justify-content: left; justify-content: left; text-align: left }
+.fpacked { -webkit-align-items: center; align-items: center; -webkit-justify-content: center; justify-content: center; text-align: center }
 .fn { -webkit-flex: initial; flex: initial; } /* class='fn w10' */
 .f0 { -webkit-flex: 0; flex: 0; }
 .f1 { -webkit-flex: 1; flex: 1; }
@@ -150,6 +269,7 @@
 
 /* Menus */
 .menu {
+	display: block
 	/* Placeholder - instantiated via radicle */
 }
 
@@ -196,7 +316,7 @@
 /*    border-bottom: 1px solid #aaaaaa;
     border-left: 1px solid #aaaaaa;
     border-right: 1px solid #aaaaaa;
-    border-radius: 3px; padding-left: 2px; padding-right: 2px; 
+    border-radius: 3px; padding-left: 2px; padding-right: 2px;
     margin-left: 3px; margin-right: 3px; */
     margin: 3px;
 }
@@ -214,4 +334,29 @@
     top: 24px; right: 24px;
     width: 64px; height: 64px;
 }
+
+.flower {
+  display: -webkit-flex; /* Safari */
+  -webkit-flex-flow: row wrap; /* Safari 6.1+ */
+  display: flex;
+  flex-flow: row wrap;
+}
+
+.notextselect {
+	-moz-user-select: none; -webkit-user-select: none; -ms-user-select:none; user-select:none;-o-user-select:none;
+}
+
+body {
+	color: silver;
+	background-color: black;
+}
+
+
+ a { color: #f0c000; text-decoration: none }
+ a.b { color: #c000f0; text-decoration: none }
+ .fl { float: left }
+ .flcl { float: left; clear: left }
+ .cl { clear: left }  
+ .w6 { max-width: 600px }
+
 

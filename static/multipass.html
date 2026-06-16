@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Fifth Element Dashboard</title>
+  <style>
+    :root {
+      --orange: #ff6b00;
+      --blue: #00a8ff;
+      --dark-blue: #001433;
+      --yellow: #ffd500;
+      --pink: #ff0066;
+      --green: #00ff66;
+      --dark: #0a0a1a;
+      --medium-dark: #141428;
+      --light: #eeeef2;
+    }
+    
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: 'Courier New', monospace;
+    }
+    
+    body {
+      background-color: var(--dark);
+      color: var(--light);
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+      padding: 20px;
+      background-image: linear-gradient(45deg, rgba(0, 20, 51, 0.8), rgba(10, 10, 26, 0.9));
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px 20px;
+      background-color: var(--medium-dark);
+      border: 2px solid var(--orange);
+      border-radius: 8px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    header::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 10px,
+        rgba(255, 107, 0, 0.1) 10px,
+        rgba(255, 107, 0, 0.1) 20px
+      );
+      z-index: 0;
+    }
+    
+    .logo {
+      font-size: 28px;
+      font-weight: bold;
+      color: var(--orange);
+      z-index: 1;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+    
+    .multipass {
+      background-color: var(--orange);
+      color: var(--dark);
+      padding: 8px 15px;
+      border-radius: 25px;
+      font-weight: bold;
+      display: flex;
+      align-items: center;
+      z-index: 1;
+      box-shadow: 0 0 15px rgba(255, 107, 0, 0.7);
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    
+    .multipass:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 20px rgba(255, 107, 0, 0.9);
+    }
+    
+    .multipass::before {
+      content: "●";
+      color: var(--green);
+      margin-right: 8px;
+      animation: blink 2s infinite;
+    }
+    
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+    
+    main {
+      display: grid;
+      grid-template-columns: 1fr 2fr;
+      gap: 20px;
+      flex-grow: 1;
+    }
+    
+    .sidebar {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .menu {
+      background-color: var(--medium-dark);
+      border-radius: 8px;
+      padding: 15px;
+      border-left: 4px solid var(--blue);
+    }
+    
+    .menu h3 {
+      color: var(--blue);
+      margin-bottom: 15px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 16px;
+    }
+    
+    .menu ul {
+      list-style-type: none;
+    }
+    
+    .menu li {
+      padding: 10px 5px;
+      margin-bottom: 5px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    
+    .menu li:hover {
+      background-color: rgba(0, 168, 255, 0.2);
+      padding-left: 10px;
+    }
+    
+    .menu li::before {
+      content: ">";
+      color: var(--blue);
+      margin-right: 8px;
+      font-weight: bold;
+    }
+    
+    .info-panel {
+      background-color: var(--medium-dark);
+      border-radius: 8px;
+      padding: 15px;
+      border-left: 4px solid var(--pink);
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+    
+    .info-panel h3 {
+      color: var(--pink);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-size: 16px;
+    }
+    
+    .user-info {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    
+    .avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background-color: var(--orange);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: bold;
+      color: var(--dark);
+    }
+    
+    .user-details {
+      flex-grow: 1;
+    }
+    
+    .user-name {
+      font-weight: bold;
+      font-size: 18px;
+    }
+    
+    .user-status {
+      color: var(--green);
+      font-size: 14px;
+    }
+    
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .stat-value {
+      font-weight: bold;
+      color: var(--yellow);
+    }
+    
+    .dashboard {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    
+    .widget {
+      background-color: var(--medium-dark);
+      border-radius: 8px;
+      padding: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .widget.traffic {
+      border-top: 4px solid var(--green);
+    }
+    
+    .widget.elements {
+      border-top: 4px solid var(--yellow);
+    }
+    
+    .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      z-index: 1;
+      position: relative;
+    }
+    
+    .widget-title {
+      font-size: 18px;
+      font-weight: bold;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    
+    .traffic .widget-title {
+      color: var(--green);
+    }
+    
+    .elements .widget-title {
+      color: var(--yellow);
+    }
+    
+    .widget-actions {
+      display: flex;
+      gap: 10px;
+    }
+    
+    .widget-button {
+      background-color: rgba(255, 255, 255, 0.1);
+      color: var(--light);
+      border: none;
+      border-radius: 4px;
+      padding: 5px 10px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    
+    .widget-button:hover {
+      background-color: rgba(255, 255, 255, 0.2);
+    }
+    
+    .traffic-map {
+      height: 200px;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 4px;
+      margin-bottom: 15px;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .traffic-map::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        linear-gradient(90deg, transparent 95%, rgba(0, 255, 102, 0.5) 100%),
+        linear-gradient(0deg, transparent 95%, rgba(0, 255, 102, 0.5) 100%);
+      background-size: 20px 20px;
+      z-index: 0;
+    }
+    
+    .traffic-map::after {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 30px;
+      height: 30px;
+      background-color: var(--green);
+      border-radius: 50%;
+      box-shadow: 0 0 20px rgba(0, 255, 102, 0.8);
+      z-index: 1;
+    }
+    
+    .traffic-stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    
+    .stat-card {
+      background-color: rgba(0, 0, 0, 0.2);
+      padding: 10px;
+      border-radius: 4px;
+      text-align: center;
+    }
+    
+    .stat-card-value {
+      font-size: 22px;
+      font-weight: bold;
+      color: var(--green);
+      margin-bottom: 5px;
+    }
+    
+    .stat-card-label {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .elements-grid {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 15px;
+    }
+    
+    .element {
+      aspect-ratio: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: rgba(0, 0, 0, 0.3);
+      border-radius: 8px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      overflow: hidden;
+    }
+    
+    .element:hover {
+      transform: scale(1.05);
+      box-shadow: 0 0 15px rgba(255, 213, 0, 0.5);
+    }
+    
+    .element.fire {
+      border: 2px solid var(--orange);
+    }
+    
+    .element.water {
+      border: 2px solid var(--blue);
+    }
+    
+    .element.earth {
+      border: 2px solid var(--green);
+    }
+    
+    .element.air {
+      border: 2px solid var(--light);
+    }
+    
+    .element.fifth {
+      border: 2px solid var(--pink);
+      background: radial-gradient(circle, rgba(255, 0, 102, 0.3) 0%, rgba(10, 10, 26, 0.9) 70%);
+    }
+    
+    .element-icon {
+      font-size: 24px;
+      margin-bottom: 5px;
+    }
+    
+    .fire .element-icon {
+      color: var(--orange);
+    }
+    
+    .water .element-icon {
+      color: var(--blue);
+    }
+    
+    .earth .element-icon {
+      color: var(--green);
+    }
+    
+    .air .element-icon {
+      color: var(--light);
+    }
+    
+    .fifth .element-icon {
+      color: var(--pink);
+    }
+    
+    .element-name {
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    
+    .element::after {
+      content: "";
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 3px;
+      background: linear-gradient(90deg, transparent, currentColor, transparent);
+      opacity: 0.7;
+    }
+    
+    .fire::after {
+      background: linear-gradient(90deg, transparent, var(--orange), transparent);
+    }
+    
+    .water::after {
+      background: linear-gradient(90deg, transparent, var(--blue), transparent);
+    }
+    
+    .earth::after {
+      background: linear-gradient(90deg, transparent, var(--green), transparent);
+    }
+    
+    .air::after {
+      background: linear-gradient(90deg, transparent, var(--light), transparent);
+    }
+    
+    .fifth::after {
+      background: linear-gradient(90deg, transparent, var(--pink), transparent);
+    }
+    
+    footer {
+      margin-top: 20px;
+      text-align: center;
+      padding: 15px;
+      background-color: var(--medium-dark);
+      border-radius: 8px;
+      font-size: 12px;
+      color: rgba(255, 255, 255, 0.6);
+    }
+
+    @media (max-width: 768px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+      
+      .elements-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+      
+      .traffic-stats {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="logo">Zorg Industries</div>
+    <div class="multipass">MULTIPASS</div>
+  </header>
+  
+  <main>
+    <div class="sidebar">
+      <div class="menu">
+        <h3>Navigation</h3>
+        <ul>
+          <li>Flight Status</li>
+          <li>Element Scanner</li>
+          <li>City Traffic</li>
+          <li>Taxi Service</li>
+          <li>Fhloston Paradise</li>
+        </ul>
+      </div>
+      
+      <div class="info-panel">
+        <h3>User Profile</h3>
+        <div class="user-info">
+          <div class="avatar">LC</div>
+          <div class="user-details">
+            <div class="user-name">Leeloo Corben</div>
+            <div class="user-status">Supreme Being</div>
+          </div>
+        </div>
+        
+        <div class="stats">
+          <div class="stat">
+            <div class="stat-label">Credits</div>
+            <div class="stat-value">2,748</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Location</div>
+            <div class="stat-value">NYC Sector 5</div>
+          </div>
+          <div class="stat">
+            <div class="stat-label">Status</div>
+            <div class="stat-value">Perfect</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="dashboard">
+      <div class="widget traffic">
+        <div class="widget-header">
+          <div class="widget-title">City Traffic</div>
+          <div class="widget-actions">
+            <button class="widget-button">Refresh</button>
+            <button class="widget-button">Filter</button>
+          </div>
+        </div>
+        
+        <div class="traffic-map"></div>
+        
+        <div class="traffic-stats">
+          <div class="stat-card">
+            <div class="stat-card-value">873</div>
+            <div class="stat-card-label">Active Taxis</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-value">42%</div>
+            <div class="stat-card-label">Congestion</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card-value">12 min</div>
+            <div class="stat-card-label">Average Wait</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="widget elements">
+        <div class="widget-header">
+          <div class="widget-title">Element Status</div>
+          <div class="widget-actions">
+            <button class="widget-button">Scan</button>
+            <button class="widget-button">Details</button>
+          </div>
+        </div>
+        
+        <div class="elements-grid">
+          <div class="element fire">
+            <div class="element-icon">🔥</div>
+            <div class="element-name">Fire</div>
+          </div>
+          <div class="element water">
+            <div class="element-icon">💧</div>
+            <div class="element-name">Water</div>
+          </div>
+          <div class="element earth">
+            <div class="element-icon">🌍</div>
+            <div class="element-name">Earth</div>
+          </div>
+          <div class="element air">
+            <div class="element-icon">💨</div>
+            <div class="element-name">Air</div>
+          </div>
+          <div class="element fifth">
+            <div class="element-icon">💫</div>
+            <div class="element-name">Fifth</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+  
+  <footer>
+    © 2263 Zorg Industries | MULTI-PASS™ | Perfect
+  </footer>
+</body>
+</html>

@@ -26,11 +26,7 @@ Loading
 
 <!--  main view screen on -->
 <div xSect=main id=mainscroll class="margin-small">
-<a href='https://spiritshare.ns01.info/client.html'>New Client Registration</a>
-
-#include tpl/radlib.html
-#include tpl/backend.html
-#include tpl/struct.html
+	This page is under repairs. Please check back later. <a href='https://spiritshare.org/'>About us</a>
 
 <tabpane id=tg123>
 
@@ -50,6 +46,7 @@ Loading
 <tabhead name=evocircuit structView=evocircuit>Evocircuit</tabhead>
 <tabhead name=warpkit structView=warpkit>Warpkit</tabhead>
 <tabhead name=links structView=links>Links</tabhead>
+<tabhead name=wishlist structView=wishlist>Wishlist</tabhead>
 </tablist>
 
 <tabsection id=maintabs xPostDraw='omv(["page","top","center"],1,400,1,40)' style='overflow:auto; float: right; min-width: 400px'>
@@ -62,6 +59,10 @@ Loading
 </div>
 <!--  main view screen off -->
 
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+
 <zenbox></zenbox>
 
 </body>
@@ -71,9 +72,7 @@ Loading
 function initSkeleton()
 {
 	radClass( { 'zenbox': { 'style': 'display: none', 'keepscan': 1 } } );
-	structStartup();    
-    radStartup();
-    radLoad();
+  radLoad();
 }
 
 registerStartup(initSkeleton)

@@ -1,0 +1,1315 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+
+<head splash>
+  <title>Radiant Cast</title>
+  <link rel=stylesheet href='/css/styles.css'>
+  </link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<!--
+Todo
+
+
+ -->
+
+<body style='color: #c3c3c3 ; background: black; margin: 0px'>
+
+  <div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+    <div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+      <div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+        Loading
+      </div>
+    </div>
+  </div>
+
+  <div id=mainscroll xStyle='width: winW-25; height: winH-101' style='margin-top: 16px; margin-left: 8px; font-size: 14pt'></div>
+  <div id=controller xStyle='width: winW; height: 60' style='padding-top: 16px'><div xCast=controls></div></div>
+
+  <loadwheel></loadwheel>
+
+  <!--  setup -->
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/mauth.html
+
+  <templates>
+
+<div xTemplate='home'>
+  Homepage
+</div>
+
+<div xTemplate='controls'>
+<div xWatch=cultures>
+  <fl>Gold: #[cultures.#[cultureids.#[player.cultureid]].gold]</fl>
+  <fl>Tech: #[cultures.#[cultureids.#[player.cultureid]].research]</fl>
+  <fl>Pop: #[cultures.#[cultureids.#[player.cultureid]].population]</fl>
+<fl class=btn xCmd='viewsectormap()'>Sectormap</fl>
+<fl class=btn xCmd='openResearch()'>Research</fl>
+<fl class=btn xCmd='logout()'>Logout</fl>
+</div>
+</div>
+
+<div xTemplate='login'>
+<div xCmd='login_signup()'>Sign up</div>
+<div xCmd='login_signin()'>Sign in</div>
+</div>
+
+<div xTemplate='sectormap'><canvas id=sectormap width=1000 height=1000 style='z-index: 10' xStyle='width: winW-25; height: winH-85'></canvas></div>
+
+<div xTemplate='starmap'><canvas id=starmap width=1000 height=1000 style='z-index: 10' xStyle='width: winW-25; height: winH-85'></canvas></div>
+
+<div xTemplate='research'>
+<div xWatch=cultures.#[cultureids.#[player.cultureid]]>
+<fl>Known techs:</fl>
+<div xLoop=cultures.#[cultureids.#[player.cultureid]].techs xKey=k xVal=v>
+  <fl>#[techs.#[v].name]</fl>
+</div>
+<cl></cl>
+<fl>Current research:</fl>
+<fl>#[cultures.#[cultureids.#[player.cultureid]].research_name]</fl>
+<fl>#[cultures.#[cultureids.#[player.cultureid]].research_done] / #[technologies.#[cultures.#[cultureids.#[player.cultureid]].research_name].cost]</fl>
+<cl></cl>
+<form xForm=doresearch>
+<fl>New topic:</fl>
+<fl><select name=tech xOptions='availtechs.#[player.cultureid],name,name'></select></fl>
+<fl class=btn xCmd='confirmResearch()'>Confirm</fl>
+</form>
+</div>
+</div>
+
+<div xTemplate='construct_bldg'>
+<div xWatch2=builds.#.bid>
+<fl xTest='"#[builds.#[.bid].loctype]"=="1"'>
+<fl>Planet #[planets.#[builds.#[.bid].locid].name]</fl>
+</fl>
+<cl></cl>
+<fl>Build (#[builds.#[.bid].type])</fl>
+<form xForm=builds.#.bid>
+<cl></cl>
+<fl>Work:</fl>
+<fl>#[builds.#[.bid].work] / #[buildingtypes.#[builds.#[.bid].type].cost]</fl>
+<cl></cl>
+<fl>Choose:</fl>
+<fl><select name=type xOptions='buildingtypes,name,name'></select></fl>
+<cl></cl>
+<fl class=btn xCmd='doBuild("#.bid")'>Confirm</fl>
+</form>
+</div>
+</div>
+
+<div xTemplate='construct_ship'>
+<div xWatch2=builds.#.bid>
+<fl xTest='"#[builds.#[.bid].loctype]"=="1"'>
+<fl>Planet #[planets.#[builds.#[.bid].locid].name]</fl>
+</fl>
+<cl></cl>
+<fl>Build (#[builds.#[.bid].type])</fl>
+<form xForm=builds.#.bid>
+<cl></cl>
+<fl>Work:</fl>
+<fl>#[builds.#[.bid].work] / #[shiptypes.#[builds.#[.bid].type].cost]</fl>
+<cl></cl>
+<fl>Choose:</fl>
+<fl><select name=type xOptions='shiptypes,name,name'></select></fl>
+<cl></cl>
+<fl class=btn xCmd='doBuild("#.bid")'>Confirm</fl>
+</form>
+</div>
+</div>
+
+<div xTemplate='ship'>
+  <div xWatch=ships.#[.sid]>
+  <fl>Ship #[ships.#[.sid].name] (#[ships.#[.sid].hulltype])</fl>
+  <fl xTest='"#[ships.#[.sid].loctype]"=="1"'>
+    <fl>@ planet #[planets.#[ships.#[.sid].locid].name]</fl>
+  </fl>
+  <fl xTest='"#[ships.#[.sid].loctype]"=="0"'>
+    <fl>@ star #[stars.#[starids.#[ships.#[.sid].locid]].name]</fl>
+  </fl>
+  <cl></cl>
+  <fl>Stardist: #[ships.#[.sid].stardist]</fl>
+  <cl></cl>
+  <div xTest='"#[ships.#[.sid].cultureid]"=="#player.cultureid"'>
+    <div xTest='"#[ships.#[.sid].hulltype]"=="colony ship"'>
+      <div xTest='"#[ships.#[.sid].loctype]" == "1"'>
+        <div xSet="pid=#[ships.#[.sid].locid]">
+          <div xTest='"#[planets.#[pid].cultureid]"==""'>
+          <fl class=btn xCmd='colonize("#[.sid]")'>Colonize Planet</fl>
+          </div>
+        </div>
+      </div>
+    </div>
+    <cl></cl>
+    <fl>Travel: #[ships.#[.sid].traveldist]</fl>
+    <cl></cl>
+    <div xTest='"#[ships.#[.sid].loctype]" == "0"'>
+      <div xSet="loctype=#[ships.#[.sid].loctype],starid=#[ships.#[.sid].locid]">
+        <div xSet="sno=#[starids.#[ships.#[.sid].locid]]">
+          <fl>Travel to stars (#sno):</fl>
+          <cl></cl>
+          <div xLoop="stars.#[sno].links" xKey=k xVal=v>
+            <fl class=btn xCmd='travelToStar2("#[.sid]", "#[v]")'>Travel to #[stars.#[v].name]</fl>
+          </div>
+          <cl></cl>
+          <fl>Travel to planets:</fl>
+          <cl></cl>
+          <div xLoop="stars.#[sno].planets" xKey=k xVal=v>
+            <fl class=btn xCmd='travelToPlanet("#[.sid]", "#[v]")'>Travel to #[planets.#[v].name]</fl>
+            <cl></cl>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div xTest='"#[ships.#[.sid].loctype]" == "1"'>
+      <div xSet="loctype=#[ships.#[.sid].loctype],pid=#[ships.#[.sid].locid]">
+        <fl class=btn xCmd='travelToStar("#[.sid]")'>Travel to star</fl>
+        <cl></cl>
+        <fl>Travel to planets:</fl>
+        <cl></cl>
+        <div xSet="sno=#[starids.#[planets.#[pid].starid]]">
+          <div xLoop="stars.#[sno].planets" xKey=k xVal=v>
+            <fl class=btn xTest='"#pid"!="#v"' xCmd='travelToPlanet("#[.sid]", "#[v]")'>Travel to #[planets.#[v].name]</fl>
+            <cl></cl>
+          </div>
+        </div>
+      </div>
+      <cl></cl>
+    </div>
+    <cl></cl>
+  </div>
+  </div>
+</div>
+
+<div xTemplate='planet'>
+  <div xWatch=planets.#[.pid] style='width: 100%; height: 100%; background: black'>
+  <fl>Planet #[planets.#[.pid].name]</fl>
+  <cl></cl>
+  <fl style='width: 100px'>Size</fl>
+  <fl>#[planets.#[.pid].size]</fl>
+  <cl></cl>
+  <fl style='width: 100px'>Population</fl>
+  <fl>#[planets.#[.pid].pop]</fl>
+  <cl></cl>
+  <fl xTest='"#[planets.#[.pid].cultureid]"!=""'>
+    <fl style='width: 100px'>Culture:</fl><fl xCmd='openCulture("#[planets.#[.pid].cultureid]")'>#[cultures.#[cultureids.#[planets.#[.pid].cultureid]].name]</fl>
+  </fl>
+  <cl></cl>
+  <fl style='width: 150px'>Buildings</fl>
+  <cl></cl>
+  <fl xLoop=planets.#[.pid].buildings xKey=k xVal=v>
+    <fl>#[buildings.#[v].type]</fl>
+  </fl>
+  <cl></cl>
+  <fl class=btn xTest='"#[cultures.#[cultureids.#[planets.#[.pid].cultureid]].isplayer]" == "true"' xCmd='openConstructor(1,1,"#[.pid]")' style='width: 150px'>Construct Buildings</fl>
+  <cl></cl>
+  <fl style='width: 150px'>Items</fl>
+  <cl></cl>
+  <fl xLoop=planets.#[.pid].items xKey=k xVal=v>
+    <fl>#[items.#[v].type](#[items.#[v].amount])</fl>
+  </fl>
+  <cl></cl>
+  <fl style='width: 150px'>Ships</fl>
+  <cl></cl>
+  <fl xLoop=planets.#[.pid].ships xKey=k xVal=v>
+    <fl class=btn xCmd='viewShip("#[v]")'>#[ships.#[v].name] (#[ships.#[v].hulltype])</fl>
+    <cl></cl>
+  </fl>
+  <cl></cl>
+  <fl class=btn xTest='"#[cultures.#[cultureids.#[planets.#[.pid].cultureid]].isplayer]" == "true"' xCmd='openConstructor(2,1,"#[.pid]")' style='width: 150px'>Construct Ships</fl>
+  <cl></cl>
+  <fl style='width: 150px'>Market</fl>
+  <cl></cl>
+  <fl xLoophead=planets.#[.pid].markets style='width: 380px'>
+    <fl style='width: 120px'>Resource</fl>
+    <fl style='width: 120px'>Buy</fl>
+    <fl style='width: 120px'>Sell</fl>
+    <cl></cl>
+  </fl>
+  <cl></cl>
+  <fl xLoop=planets.#[.pid].markets xKey=k xVal=v style='width: 380px'>
+    <fl style='width: 120px'>#[markets.#[v].resource]</fl>
+    <fl style='width: 120px'><fl class=btn>#[markets.#[v].buy]</fl></fl>
+    <fl style='width: 120px'><fl class=btn>#[markets.#[v].sell]</fl></fl>
+    <cl></cl>
+  </fl>
+  <cl></cl>
+</div>
+</div>
+
+<div xTemplate='star'>
+  <fl>Star #[stars.#[.sno].name]</fl>
+  <cl></cl>
+  <fl>Ships</fl>
+  <cl></cl>
+  <fl xLoop=stars.#[.sno].ships xKey=k xVal=v>
+    <fl class=btn xCmd='viewShip("#[v]")'>#[ships.#[v].name] (#[ships.#[v].hulltype])</fl>
+    <cl></cl>
+  </fl>
+  <cl></cl>
+
+</div>
+
+
+  </templates>
+
+  <dataforms>
+
+  </dataforms>
+
+</body>
+
+<script language=javascript>
+
+function logout()
+{
+  clearMapOverlays();
+  blitzTemplate(gE("mainscroll"), "logout");
+}
+
+function login_signin()
+{
+  clearMapOverlays();
+  blitzTemplate(gE("mainscroll"), "signin");
+}
+function login_signup()
+{
+  clearMapOverlays();
+  blitzTemplate(gE("mainscroll"), "signup");
+}
+
+var i_remap=-1, i_draw=-1;
+
+function viewsectormap()
+{
+  clearMapOverlays();
+  blitzTemplate(gE("mainscroll"), "sectormap");
+  //i_remap = setInterval(animate_starmap, 100);
+  //i_draw = setInterval(drawsectormap, 100);
+  drawsectormap();
+}
+
+function viewstarmap()
+{
+  clearMapOverlays();
+  blitzTemplate(gE("mainscroll"), "starmap");
+  drawstarmap();
+}
+
+var technologies, buildingtypes, shiptypes;
+var stars, starids, links, cultures, cultureids;
+var planets, ships, items;
+var techs, markets;
+var builds, buildings;
+var player;
+var focused_star;
+var dstars = {};
+var builders = {};
+var shipviews = {};
+var starviews = {};
+var planetviews = {};
+var max_builder=0;
+var research_window=false;
+
+function openResearch()
+{
+  if( research_window != false ) {
+    if( windowToTop(research_window) )
+      return;
+  }
+  radStore("doresearch.tech", "");
+  research_window = newWindow("research");
+}
+
+function viewShip(sid)
+{
+  if( sid in shipviews ) {
+    if( windowToTop(shipviews[sid]) )
+      return;
+  }
+
+  var objn = max_builder++;
+  var obj = { 'sid': sid };
+  radStore("cobj" + objn, obj);
+  shipviews[sid] = newWindow("ship", "cobj"+objn);
+}
+
+function viewStar(sid)
+{
+  var sno = findStar(sid);
+  if( sid in starviews ) {
+    if( windowToTop(starviews[sid]) )
+      return;
+  }
+
+  var objn = max_builder++;
+  var obj = { 'sid': sid, 'sno': sno };
+  radStore("cobj" + objn, obj);
+  starviews[sid] = newWindow("star", "cobj"+objn);
+}
+
+function openConstructor(buildtype,loctype,locid)
+{
+  if( locid in builders ) {
+    if( windowToTop(builders[locid]) )
+      return;
+  }
+
+  var bid=false, hasbuild=false;
+  if( planets[locid].builds.length > 0 ) {
+    hasbuild = true;
+    bid = planets[locid].builds[0];
+  }
+
+  var objn = max_builder++;
+  var obj = { 'pid': locid, 'bid': bid, 'btype': buildtype, 'build': hasbuild };
+  if( !hasbuild ) {
+    radStore("builds.false", { 'locid': locid, 'loctype': loctype, '_id': false, 'type': 'farm' });
+  }
+  radStore("cobj" + objn, obj);
+  builders[locid] = newWindow("construct_" + (buildtype==1?"bldg":"ship"), "cobj"+objn);
+}
+
+function doBuild(bid)
+{
+  var bld = radVar("builds." + bid);//builds[bid];
+  console.log("doBuild("+bid+")");
+  var pid = bld.locid;
+  if( bld.done != 1 ) {
+    if( !confirm("Are you sure you want to override your existing build?") )
+      return;
+  }
+  HtmlRequest("/play/build", buildArgString({planet: pid, build: bld.type}), finishBuild);
+}
+
+function finishBuild(e)
+{
+  console.log("finishBuild",e);
+  var o = JSON.parse(e);
+  if( o.status == 'error' ) {
+    alert( o.message );
+  }
+}
+
+function colonize(sid)
+{
+  var pid = ships[sid].locid;
+  HtmlRequest("/play/colonize", buildArgString({planet: pid,ship:sid}), finishColonize);
+}
+function finishColonize(e)
+{
+  console.log("finishColonize",e);
+  var o = JSON.parse(e);
+  if( o.status == 'error' ) {
+    alert( o.message );
+  }
+}
+
+function confirmResearch()
+{
+  var tech = radVar("doresearch.tech");
+  HtmlRequest("/play/tech", buildArgString({tech: tech}), finishResearch);
+}
+function finishResearch(e)
+{
+  console.log("finishResearch",e);
+  var o = JSON.parse(e);
+  if( o.status == 'error' ) {
+    alert( o.message );
+  }
+}
+
+function travelToStar(sid)
+{
+  var pid = ships[sid].locid;
+  var starid = planets[pid].starid;
+
+  HtmlRequest("/play/travel", buildArgString({sid: sid, type: 0, tgt: starid}), finishTravel);
+}
+function travelToStar2(sid, starno)
+{
+  var starid = stars[starno]._id;
+  HtmlRequest("/play/travel", buildArgString({sid: sid, type: 0, tgt: starid}), finishTravel);
+}
+function travelToPlanet(sid, pid)
+{
+  HtmlRequest("/play/travel", buildArgString({sid: sid, type: 1, tgt: pid}), finishTravel);
+}
+function finishTravel(e)
+{
+  console.log("finishTravel",e);
+  var o = JSON.parse(e);
+  if( o.status == 'error' ) {
+    alert( o.message );
+  }
+}
+
+function drawstarmap()
+{
+  var canvas = gE("starmap");
+  var ctx = canvas.getContext('2d');
+  var i, j, m;
+
+  ctx.strokeStyle = "blue";
+  ctx.fillStyle = "blue";
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  var h2 = canvas.height/2;
+
+  console.log("Focused star: " + focused_star);
+
+  var planetid;
+  var x,y;
+
+  ctx.fillStyle = 'yellow';
+  ctx.beginPath();
+  ctx.arc(0, h2, 100, 0, 2*Math.PI);
+  ctx.fill();
+
+  for( i=0; i<stars[focused_star].planets.length; ++i ) {
+    planetid = stars[focused_star].planets[i];
+    y = h2;
+    x = 100 + planets[planetid].stardist*0.5;
+
+    switch( planets[planetid].type ) {
+      case 0: // terran
+        ctx.fillStyle = 'green';
+        break;
+      case 1: // rocky
+        ctx.fillStyle = 'gray';
+        break;
+      case 2: // gas giant
+        ctx.fillStyle = 'purple';
+        break;
+      case 3: // ice
+        ctx.fillStyle = 'blue';
+        break;
+      case 4: // lava
+        ctx.fillStyle = 'red';
+        break;
+    }
+    ctx.beginPath();
+    ctx.arc(x, y, planets[planetid].size/5, 0, 2*Math.PI);
+    ctx.fill();
+  }
+
+  var d;
+  var cwidth = parseInt(canvas.style.width);
+  var cheight = parseInt(canvas.style.height);
+  var rad;
+  cwidth /= 1000;
+  cheight /= 1000;
+
+
+  d = document.createElement("div");
+  d.style.position = 'absolute';
+  d.style.left = 6 + "px";
+  d.style.top = (y-100)*cheight+15 + "px";
+  d.style.width = (100)*cwidth + 1 + 'px';
+  d.style.height = (200)*cheight + 1 + 'px';
+  d.style.border = '1px solid white';
+  d.className = 'staroverlay';
+  d.style.zIndex = 100;
+  d.planetnum = -1;
+  d.planetid = '';
+  d.starno = focused_star;
+  d.starid = stars[focused_star]._id;
+  d.onclick = onclick_planetmap;
+  document.documentElement.appendChild(d);
+
+  for( i=0; i<stars[focused_star].planets.length; ++i ) {
+    planetid = stars[focused_star].planets[i];
+    y = h2;
+    x = 100 + planets[planetid].stardist*0.5;
+    rad = planets[planetid].size/5;
+
+    d = document.createElement("div");
+    d.style.position = 'absolute';
+    d.style.left = (x-rad)*cwidth+6 + "px";
+    d.style.top = (y-rad)*cheight+15 + "px";
+    d.style.width = (rad*2)*cwidth + 1 + 'px';
+    d.style.height = (rad*2)*cheight + 1 + 'px';
+    d.style.border = '1px solid white';
+    d.className = 'staroverlay';
+    d.style.zIndex = 100;
+    d.planetnum = i;
+    d.planetid = planetid;
+    d.onmouseover = onmouse_planetmap;
+    d.onclick = onclick_planetmap;
+    document.documentElement.appendChild(d);
+  }
+}
+
+function onclick_planetmap(e)
+{
+  var eTarget = e.target;
+  while( eTarget && typeof eTarget.planetnum == 'undefined' ) eTarget = eTarget.parentElement;
+  console.log("onclickPlanet", eTarget.planetnum);
+//  focused_star = eTarget.starnum;
+//  clearMapOverlays();
+//  viewstarmap();
+  var id = eTarget.planetid;
+  var winobj;
+  if( id == '' ) {
+    viewStar( eTarget.starid );
+  } else {
+    if( id in planetviews ) {
+      if( windowToTop(planetviews[id]) ) {
+        return;
+      }
+    }
+    winobj = { 'pid': id };
+    radStore("planetwindow." + id, winobj);
+    planetviews[id] = newWindow("planet", "planetwindow." + id, 'closePlanetWindow(winpath)');
+  }
+}
+function closePlanetWindow( winpath )
+{
+  var win = radVar("windows." + winpath);
+  radClear(win.path);
+}
+var mapped2 = false;
+function clearMapLabel2()
+{
+  var e = gE("starname");
+  if( e )
+    kamiNode(e);
+  mapped2=false;
+}
+function onmouse_planetmap(e)
+{
+  var i = e.target.planetnum;
+  if( mapped2 == i ) return;
+  console.log("mouseover " + i);
+  if( mapped2 !== false )
+    clearMapLabel2();
+  mapped2 = i;
+  var d = document.createElement("div");
+  d.id = 'starname';
+  d.className = 'staroverlay';
+  d.innerHTML = planets[e.target.planetid].name;
+  d.style.position = 'absolute';
+  d.style.minWidth = "20px";
+  d.style.minHeight = "20px";
+  d.style.border = "1px solid blue";
+  d.style.background = "#c3c3c3";
+  d.style.zIndex = "200";
+  d.style.left = e.clientX + "px";
+  d.style.top = e.clientY + "px";
+  d.onclick = onclick_planetmap;
+  d.planetnum = mapped;
+  d.planetid = e.target.planetid;
+  document.documentElement.appendChild(d);
+}
+
+
+</script>
+
+<script language=javascript>
+
+function drawsectormap()
+{
+  var canvas = gE("sectormap");
+  var ctx = canvas.getContext('2d');
+  var i, j, m;
+
+  ctx.strokeStyle = "blue";
+  ctx.fillStyle = "blue";
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  for( i=0; i<stars.length; ++i ) {
+    for( j=0; j<stars[i].links.length; ++j ) {
+      ctx.beginPath();
+      ctx.moveTo( stars[i].x, stars[i].y );
+      m = stars[i].links[j];
+      ctx.lineTo( stars[m].x, stars[m].y );
+      ctx.stroke();
+    }
+  }
+
+  for( i=0; i<stars.length; ++i ) {
+    ctx.beginPath();
+    ctx.fillStyle = stars[i].color;
+    ctx.arc(stars[i].x, stars[i].y, 5, 0, 2*Math.PI);
+    ctx.fill();
+  }
+
+  var d;
+  var cwidth = parseInt(canvas.style.width);
+  var cheight = parseInt(canvas.style.height);
+  console.log("Canvas: " + cwidth + "x" + cheight);
+  cwidth /= 1000;
+  cheight /= 1000;
+  for( i=0; i<stars.length; ++i ) {
+    d = document.createElement("div");
+    d.style.position = 'absolute';
+    d.style.left = 2+(stars[i].x*cwidth - 7.5) + "px";
+    d.style.top = 16+(stars[i].y*cheight - 7.5) + "px";
+    d.style.width = 15*cwidth + 'px';
+    d.style.height = 15*cheight + 'px';
+    d.style.border = '1px solid ' + stars[i].color;
+    d.className = 'staroverlay';
+    d.style.zIndex = 100;
+    d.starnum = i;
+    d.onmouseover = onmouse_starmap;
+    d.onclick = onclick_starmap;
+    document.documentElement.appendChild(d);
+  }
+}
+
+function onclick_starmap(e)
+{
+  var eTarget = e.target;
+  while( eTarget && typeof eTarget.starnum == 'undefined' ) eTarget = eTarget.parentElement;
+  console.log("onclick", eTarget.starnum);
+  focused_star = eTarget.starnum;
+  clearMapOverlays();
+  viewstarmap();
+}
+var mapped = false;
+function clearMapLabel()
+{
+  var e = gE("starname");
+  if( e )
+    kamiNode(e);
+  mapped=false;
+}
+function onmouse_starmap(e)
+{
+  var i = e.target.starnum;
+  if( mapped == i ) return;
+  console.log("mouseover " + i);
+  if( mapped != false )
+    clearMapLabel();
+  mapped = i;
+  var d = document.createElement("div");
+  d.id = 'starname';
+  d.className = 'staroverlay';
+  d.innerHTML = stars[i].name;
+  d.style.position = 'absolute';
+  d.style.minWidth = "20px";
+  d.style.minHeight = "20px";
+  d.style.border = "1px solid blue";
+  d.style.background = "#c3c3c3";
+  d.style.zIndex = "200";
+  d.style.left = e.clientX + "px";
+  d.style.top = e.clientY + "px";
+  d.onclick = onclick_starmap;
+  d.starnum = mapped;
+  document.documentElement.appendChild(d);
+}
+
+function clearMapOverlays()
+{
+  var e, i;
+
+  for( i=0; i< document.documentElement.children.length; ++i ) {
+    e = document.documentElement.children[i];
+    if( e.className == 'staroverlay' ) {
+      kamiNode(e);
+      --i;
+    }
+  }
+}
+</script>
+
+<script language=javascript>
+var basicMenu = [];
+
+function castSpell() {
+  var f = document.forms['caster'];
+  var e = gE("zenbox");
+  e.innerHTML = eval(f.spell.value);
+  return false;
+}
+
+function initSkeleton() {
+  // Initialize any variables here radStore("x", 42);
+  console.log("Setup()");
+
+  onAuthenticate(spiritLoggedIn);
+  socketRegister('registered', spiritSockedIn);
+
+  radLoad();
+  useMongoSocket();
+  openSocket(window.location.host, chatSocket);
+  radHook("pagekey", pgChanged);
+
+  renderHomePage();
+}
+
+function pgChanged() {
+  alert("Login changed");
+  spiritLoggedIn();
+}
+
+function spiritSockedIn() {
+  var login = radVar("sess.login");
+  if( login != 1 ) {
+    console.log("spirit.SockedIn.go");
+  } else {
+    radStore("user", radVar("sess.user"));
+    spiritLoggedIn();
+  }
+}
+var loggedin=false;
+function spiritLoggedIn() {
+  if( !loggedin ) {
+    loggedin=true;
+    console.log("spirit.LoggedIn.go");
+    RadRequest("/play/start", {}, gotStarData);
+  }
+}
+
+function countAvailableTech(cid)
+{
+  var i, j, k;
+  var tech, xtechs=[];
+  var cno = findCulture(cid);
+  var matched, found;
+
+  for( i in technologies ) {
+    matched=true;
+    found=false;
+    for( j=0; j<cultures[cno].techs.length; ++j ) {
+      if( !( cultures[cno].techs[j] in techs ) ) {
+        console.log("Not found technology '" + cultures[cno].techs[j] + "'");
+      }
+      if( i == techs[ cultures[cno].techs[j] ].name ) {
+        found=true;
+        break;
+      }
+    }
+    if( found ) continue; // already researched
+    if( typeof technologies[i].prereqs == 'object' ) {
+      for( j=0; j<technologies[i].prereqs.length; ++j ) {
+        tech = technologies[i].prereqs[j];
+        found=false;
+        for( k=0; k<cultures[cno].techs.length; ++k ) {
+          if( tech == techs[ cultures[cno].techs[k] ].name ) {
+            found=true;
+            break;
+          }
+        }
+        if( !found ) {
+          matched=false;
+          break;
+        }
+      }
+    }
+    if( matched ) {
+      xtechs.push( i );
+    }
+  }
+  return xtechs;
+}
+
+function countCultureItems(cid, type)
+{
+  var i, j;
+  var cno = findCulture(cid);
+  var pid, iid;
+  var amount=0;
+  for( i=0; i<cultures[cno].planets.length; ++i ) {
+    pid = cultures[cno].planets[i];
+    for( j=0; j<planets[pid].items.length; ++j ) {
+      iid = planets[pid].items[j];
+      if( items[iid].type == type ) {
+        amount += items[iid].amount;
+      }
+    }
+  }
+  return amount;
+}
+function countCulturePop(cid, type)
+{
+  var i;
+  var cno = findCulture(cid);
+  var pid;
+  var amount=0;
+  for( i=0; i<cultures[cno].planets.length; ++i ) {
+    pid = cultures[cno].planets[i];
+    if( !isNaN(planets[pid].pop) )
+      amount += planets[pid].pop;
+  }
+  return amount;
+}
+
+function gotStarData(details) {
+  var o = JSON.parse(details),
+    cu = o.data;
+  if (cu && typeof cu != 'undefined') {
+    console.log("gotSpiritData");
+  } else {
+    console.log("Not logged in yet");
+    return;
+  }
+
+  console.log("Details ", cu);
+  stars = cu.stars;
+  planets = cu.planets;
+  radStore("planets", planets);
+  ships = cu.ships;
+  radStore("ships", ships);
+  items = cu.items;
+  radStore("items", items);
+  markets = cu.markets;
+  radStore("markets", markets);
+  cultures = cu.cultures;
+  player = cu.player;
+  radStore("player", player);
+  var i, j, cid, pid, found;
+  cultureids = {};
+  for( i=0; i<cultures.length; ++i ) {
+    cultureids[ cultures[i]._id ] = i;
+
+    cultures[i].research = countCultureItems( cultures[i]._id, 'research' );
+    cultures[i].population = countCulturePop( cultures[i]._id );
+  }
+  radStore("cultures", cultures);
+  for( i=0; i<stars.length; ++i ) {
+    found=false;
+    for( j=0; j<stars[i].planets.length; ++j ) {
+      pid = stars[i].planets[j];
+      if( planets[pid].cultureid != "" ) {
+        if( planets[pid].cultureid == player.cultureid ) {
+          stars[i].color = 'green';
+        } else {
+          stars[i].color = 'white';
+        }
+        found=true;
+        break;
+      }
+    }
+    if( !found )
+      stars[i].color = 'blue';
+  }
+  radStore("stars", stars);
+  radStore("cultureids", cultureids);
+  buildings = cu.buildings;
+  radStore("buildings", buildings);
+  builds = cu.builds;
+  radStore("builds", builds);
+  techs = cu.techs;
+  radStore("techs", techs);
+  technologies = cu.technologies;
+  radStore("technologies", cu.technologies);
+  availtechs = {};
+  for( i=0; i<cultures.length; ++i ) {
+    cid = cultures[i]._id;
+    var atechs = countAvailableTech(cid);
+    availtechs[cid] = [];
+    for( j=0; j<atechs.length; ++j ) {
+      availtechs[cid].push({ 'name': atechs[j] });
+    }
+  }
+  radStore("availtechs", availtechs);
+  buildingtypes = cu.buildingtypes;
+  radStore("buildingtypes", cu.buildingtypes);
+  shiptypes = cu.shiptypes;
+  radStore("shiptypes", cu.shiptypes);
+
+  dstars = {};
+  var i;
+  for( i=0; i<stars.length; ++i ) {
+    dstars[ stars[i]._id ] = i;
+  }
+  radStore("starids", dstars);
+  renderHomePage();
+}
+
+function renderHomePage() {
+  var login = radVar("sess.login");
+  if( login != 1 ) {
+    blitzTemplate(gE("mainscroll"), "login");
+  } else {
+    blitzTemplate(gE("mainscroll"), "home");
+  }
+}
+
+function findStar(sid) {
+  var i;
+
+  for( i=0; i<stars.length; ++i ) {
+    if( stars[i]._id == sid ) return i;
+  }
+  return -1;
+};
+
+function findCulture(cid) {
+  var i;
+
+  for( i=0; i<cultures.length; ++i ) {
+    if( cultures[i]._id == cid ) return i;
+  }
+  return -1;
+};
+
+function chatSocket(event) {
+  var i,j,id,pid,sid,cid,cno,sno;
+  var isnew;
+  console.log("Socket event");
+  var data = JSON.parse(event.data);
+  var docs;
+  console.log("Socket data: ", data);
+  if( !('t' in data) )
+    return;
+  docs = data['docs'];
+  if( typeof docs == 'undefined' ) {
+    docs = [ data['doc'] ];
+    docs[0]['_id'] = data['id'];
+  }
+  switch( data['t'] ) {
+    default:
+      console.log("[table-" + data['t'] + "]");
+      break;
+    case '-agents':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i];
+        if( id in agents ) {
+          delete agents[id];
+          radClear("agents."+id);
+        }
+      }
+      break;
+    case 'agents':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in agents) ) {
+          agents[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+        }
+        for( j in docs[i] ) {
+          agents[id][j] = docs[i][j];
+        }
+        radStore("agents." + id, agents[id]);
+      }
+      break;
+    case 'builds':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in builds) ) {
+          builds[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+        }
+        for( j in docs[i] ) {
+          builds[id][j] = docs[i][j];
+        }
+        radStore("builds." + id, builds[id]);
+        switch( builds[id].loctype ) {
+          case 0: break;
+          case 1: // planet
+            pid = builds[id].locid;
+            if( planets[pid].builds.indexOf(id) == -1 )
+              planets[pid].builds.push(id);
+            radStore("planets." + pid, planets[pid]);
+            break;
+          case 2: // ship
+            sid = builds[id].locid;
+            if( ships[sid].builds.indexOf(id) == -1 )
+              ships[sid].builds.push(id);
+            radStore("ships." + sid, ships[sid]);
+            break;
+          case 3: // starbase
+            break;
+        }
+      }
+      break;
+    case 'items':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in items) ) {
+          items[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+          switch( items[id].loctype ) {
+            case 0: break;
+            case 1: // planet
+              pid = items[id].locid;
+              for( j=0; j<planets[pid].items.length; ++j ) {
+                if( planets[pid].items[j] == id ) {
+                  planets[pid].items.splice(j,1);
+                  radStore("planets."+pid,planets[pid]);
+                  break;
+                }
+              }
+              break;
+            case 2: // ship
+              sid = items[id].locid;
+              for( j=0; j<ships[sid].items.length; ++j ) {
+                if( ships[sid].items[j] == id ) {
+                  ships[sid].items.splice(j,1);
+                  radStore("ships."+sid,ships[sid]);
+                  break;
+                }
+              }
+              break;
+          }
+        }
+        for( j in docs[i] ) {
+          items[id][j] = docs[i][j];
+        }
+        radStore("items." + id, items[id]);
+
+        switch( items[id].loctype ) {
+          case 0: break;
+          case 1: // planet
+            pid = items[id].locid;
+            if( planets[pid].items.indexOf(id) == -1 )
+              planets[pid].items.push(id);
+            if( items[id].type == 'research' ) {
+              cid = planets[pid].cultureid;
+              cno = findCulture(cid);
+              cultures[cno].research = countCultureItems(cid,'research');
+              radStore("cultures."+cno, cultures[cno]);
+            }
+            radStore("planets." + pid, planets[pid]);
+            break;
+          case 2: // ship
+            sid = items[id].locid;
+            if( ships[sid].items.indexOf(id) == -1 )
+              ships[sid].items.push(id);
+            if( items[id].type == 'research' ) {
+              cid = ships[sid].cultureid;
+              cno = findCulture(cid);
+              cultures[cno].research = countCultureItems(cid,'research');
+              radStore("cultures."+cno, cultures[cno]);
+            }
+            radStore("ships." + sid, ships[sid]);
+            break;
+          case 3: // starbase
+            break;
+        }
+      }
+      break;
+    case 'markets':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in markets) ) {
+          markets[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+        }
+        for( j in docs[i] ) {
+          markets[id][j] = docs[i][j];
+        }
+        radStore("markets."+id,markets[id]);
+        switch( markets[id].loctype ) {
+          case 0: break;
+          case 1:
+            pid = markets[id].locid;
+            if( planets[pid].markets.indexOf(id) == -1 )
+              planets[pid].markets.push(id);
+            radStore("planets." + pid, planets[pid]);
+            break;
+          case 2: break;
+          case 3: break;
+        }
+      }
+      break;
+    case 'buildings':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in buildings) ) {
+          buildings[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+        }
+        for( j in docs[i] ) {
+          buildings[id][j] = docs[i][j];
+        }
+        radStore("buildings." + id, buildings[id]);
+        switch( buildings[id].loctype ) {
+          case 0: break;
+          case 1: // planet
+            pid = buildings[id].locid;
+            if( planets[pid].buildings.indexOf(id) == -1 )
+              planets[pid].buildings.push(id);
+            radStore("planets." + pid, planets[pid]);
+            break;
+          case 2: // ship
+            sid = buildings[id].locid;
+            if( ships[sid].buildings.indexOf(id) == -1 )
+              ships[sid].buildings.push(id);
+            radStore("ships." + sid, ships[sid]);
+            break;
+          case 3: // starbase
+            break;
+        }
+      }
+      break;
+    case '-ships':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i];
+        if( id in ships ) {
+          switch( ships[id].loctype ) {
+            case 0: // star
+              sno = findStar(ships[id].locid);
+              for( j=0; j<stars[sno].ships.length; ++j ) {
+                if( stars[sno].ships[j] == id ) {
+                  stars[sno].ships.splice(j,1);
+                  radStore("stars."+sno, stars[sno]);
+                }
+              }
+              break;
+            case 1: // remove from planet
+              pid = ships[id].locid;
+              for( j=0; j<planets[pid].ships.length; ++j ) {
+                if( planets[pid].ships[j] == id ) {
+                  planets[pid].ships.splice(j,1);
+                  radStore("planets." + pid, planets[pid]);
+                }
+              }
+              break;
+            case 2:
+              break;
+            case 3: // remove from starbase
+          }
+          delete ships[id];
+          radClear("ships." + id);
+        }
+      }
+      break;
+    case 'ships':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in ships) ) {
+          ships[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+          switch( ships[id].loctype ) {
+            case 0: // remove from star
+              sno = findStar(ships[id].locid);
+              for( j=0; j<stars[sno].ships.length; ++j ) {
+                if( stars[sno].ships[j] == id ) {
+                  stars[sno].ships.splice(j,1);
+                  console.log("Removed ship from star " + sno);
+                  radStore("stars."+sno, stars[sno]);
+                }
+              }
+              break;
+            case 1: // remove from planet
+              pid = ships[id].locid;
+              for( j=0; j<planets[pid].ships.length; ++j ) {
+                if( planets[pid].ships[j] == id ) {
+                  planets[pid].ships.splice(j,1);
+                  console.log("Removed ship from planet " + pid);
+                  radStore("planets." + pid, planets[pid]);
+                }
+              }
+              break;
+            case 2:
+              break;
+            case 3: // remove from starbase
+          }
+        }
+        for( j in docs[i] ) {
+          ships[id][j] = docs[i][j];
+        }
+        radStore("ships." + id, ships[id]);
+        switch( ships[id].loctype ) {
+          case 0:
+            sno = findStar(ships[id].locid);
+            if( stars[sno].ships.indexOf(id) == -1 )
+              stars[sno].ships.push(id);
+            radStore("stars."+ sno, stars[sno]);
+            break;
+          case 1: // planet
+            pid = ships[id].locid;
+            if( planets[pid].ships.indexOf(id) == -1 )
+              planets[pid].ships.push(id);
+            radStore("planets." + pid, planets[pid]);
+            break;
+          case 2: // ship
+            break;
+          case 3: // starbase
+            break;
+        }
+      }
+      break;
+    case 'techs':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in techs) ) {
+          techs[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+        }
+        for( j in docs[i] ) {
+          techs[id][j] = docs[i][j];
+        }
+        radStore("techs." + id, techs[id]);
+        cno = findCulture( techs[id].cultureid );
+
+        var atechs = countAvailableTech(techs[id].cultureid);
+        var avtechs = [];
+        for( j=0; j<atechs.length; ++j ) {
+          avtechs.push({ 'name': atechs[j] });
+        }
+        availtechs[ techs[id].cultureid ] = avtechs;
+        radStore("availtechs." + techs[id].cultureid, avtechs);
+        if( cultures[cno].techs.indexOf(id) == -1 ) {
+          cultures[cno].techs.push(id);
+          radStore("cultures." + cno, cultures[cno]);
+        }
+      }
+      break;
+    case 'planets':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        if( !(id in planets) ) {
+          planets[id] = {};
+          isnew=true;
+        } else {
+          isnew=false;
+        }
+        for( j in docs[i] ) {
+          planets[id][j] = docs[i][j];
+        }
+        radStore("planets." + id, planets[id]);
+        cno = findCulture( planets[id].cultureid );
+        if( cultures[cno].planets.indexOf(id) == -1 )
+          cultures[cno].planets.push(id);
+        cultures[cno].research = countCultureItems( cultures[cno]._id, 'research' );
+        cultures[cno].population = countCulturePop( cultures[cno]._id );
+        radStore("cultures." + cno, cultures[cno]);
+      }
+      break;
+    case 'cultures':
+      for( i=0; i<docs.length; ++i ) {
+        id = docs[i]['_id'];
+        cno = findCulture(id);
+        if( !(cno in cultures) ) {
+          cultures[cno] = {};
+        }
+        for( j in docs[i] ) {
+          cultures[cno][j] = docs[i][j];
+        }
+        cultures[cno].research = countCultureItems( id, 'research' );
+        cultures[cno].population = countCulturePop( id );
+        radStore("cultures." + cno, cultures[cno]);
+      }
+      break;
+  }
+}
+
+registerStartup(initSkeleton);
+
+</script>

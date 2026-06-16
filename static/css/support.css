@@ -1,0 +1,378 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body.start {
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' version='1.1' xmlns:xlink='http://www.w3.org/1999/xlink' xmlns:svgjs='http://svgjs.com/svgjs' width='1440' height='560' preserveAspectRatio='none' viewBox='0 0 1440 560'%3e%3cg mask='url(%26quot%3b%23SvgjsMask1000%26quot%3b)' fill='none'%3e%3crect width='1440' height='560' x='0' y='0' fill='rgba(227%2c 227%2c 227%2c 1)'%3e%3c/rect%3e%3cpath d='M0%2c466.673C104.321%2c492.916%2c223.951%2c547.424%2c315.272%2c490.573C406.437%2c433.819%2c390.213%2c296.225%2c432.415%2c197.477C473.26%2c101.905%2c572.179%2c22.717%2c559.296%2c-80.415C546.404%2c-183.621%2c444.537%2c-248.466%2c367.921%2c-318.806C299.122%2c-381.969%2c226.735%2c-440.695%2c137.356%2c-467.79C47.46%2c-495.042%2c-51.591%2c-507.53%2c-138.706%2c-472.389C-222.832%2c-438.453%2c-261.838%2c-346.751%2c-324.737%2c-281.386C-391.964%2c-211.524%2c-486.672%2c-165.542%2c-521.171%2c-74.933C-559.146%2c24.804%2c-583.06%2c150.679%2c-522.775%2c238.743C-461.859%2c327.729%2c-326.372%2c310.929%2c-227.52%2c354.028C-148.342%2c388.549%2c-83.766%2c445.601%2c0%2c466.673' fill='%23949494'%3e%3c/path%3e%3cpath d='M1440 964.473C1530.908 963.4390000000001 1624.1109999999999 1012.813 1706.992 975.448 1792.968 936.687 1861.212 854.617 1885.692 763.5409999999999 1909.12 676.38 1843.715 593.086 1833.8809999999999 503.368 1823.557 409.178 1875.458 306.18100000000004 1826.66 224.95800000000003 1776.743 141.873 1676.682 93.38299999999998 1580.476 81.582 1489.422 70.41300000000001 1407.727 126.88299999999998 1323.5 163.236 1249.539 195.159 1161.875 213.461 1118.16 281.124 1075.578 347.033 1101.609 432.53 1098.8519999999999 510.95 1096.425 579.979 1092.749 645.613 1102.943 713.929 1116.785 806.698 1093.798 925.6120000000001 1169.075 981.568 1243.199 1036.666 1347.647 965.524 1440 964.473' fill='white'%3e%3c/path%3e%3c/g%3e%3cdefs%3e%3cmask id='SvgjsMask1000'%3e%3crect width='1440' height='560' fill='white'%3e%3c/rect%3e%3c/mask%3e%3c/defs%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.container {
+  padding: 0.8rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5rem;
+  flex-wrap: wrap;
+  min-height: 100vh;
+}
+
+#requestform {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  background-color: rgb(249, 252, 255);
+  border-radius: 2rem;
+  padding: 1.5rem;
+  /* box-shadow:  28px 28px 56px #858585,
+             -28px -28px 56px #ffffff; */
+  box-shadow: inset 12px 12px 39px #c3c3c3, inset -12px -12px 39px #f9f9f9,
+    2px 2px 10px 5px rgba(0, 0, 0, 0.123);
+}
+
+#form textarea {
+  resize: vertical;
+  min-height: 5rem;
+  height: 5rem;
+}
+
+#form label {
+  color: #2c3e50;
+  font-size: 1.2rem;
+}
+
+.filler {
+  background-color: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.315);
+  outline: none;
+  font-size: 1.2rem;
+  color: rgb(53, 53, 53);
+}
+
+.btn {
+  background-color: #2c3e50;
+  color: white;
+  border: 1px solid #dfdfdf;
+  border-radius: 1rem;
+  cursor: pointer;
+  font-size: 1rem;
+  transition: all 0.2s;
+  padding: 0.5rem 1rem;
+}
+
+.btn:active,
+.btn:hover {
+  outline: 0;
+}
+
+.btn:hover {
+  background-color: white;
+  color: #1a242e;
+  border-color: rgba(0, 0, 0, 0.19);
+}
+
+#thanks {
+  margin-top: 4rem;
+  height: 25rem;
+  width: 18rem;
+  color: whitesmoke;
+  background-color: #2c3e50;
+  padding: 2rem;
+  border-radius: 2rem;
+  box-shadow: inset 30px 30px 59px #1a242e, inset -30px -30px 59px #3e5872,
+    2px 2px 10px 5px rgba(0, 0, 0, 0.123);
+    animation-name: backforth;
+    animation-iteration-count: infinite;
+    animation-duration: 8s;
+    animation-timing-function: linear;
+}
+
+@keyframes backforth {
+  0%{
+    transform: translateY(0);
+  }
+  25%{
+    transform: translateY(-8px);
+  }
+  50%{
+    transform: translateY(0px);
+  }
+  75%{
+    transform: translateY(8px);
+  }
+  100%{
+    transform: translateY(0px);
+  }
+  
+}
+
+#thanks div:first-child {
+  font-size: 4rem;
+  font-weight: 500;
+}
+
+hr {
+  color: grey;
+}
+
+#thanks div:last-child {
+  margin-top: 1rem;
+  font-size: 1.5rem;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+/* Variables */
+
+/* misc-classes */
+.title {
+  text-align: center;
+  margin: 0.5rem 0;
+}
+
+/* Tabel */
+
+.tableContainer {
+  padding: 1.5rem;
+  background-color: #ebedef;
+  border-radius: 1rem;
+  width: 90%;
+  margin: auto;
+}
+
+table {
+  border-spacing: 0 0.8rem;
+  width: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  border-collapse: separate;
+}
+
+tr {
+  height: 3.5rem;
+  background-color: white;
+  transition-duration: 0.2s;
+}
+
+td,
+th {
+  padding: 8px;
+  max-width: 15rem;
+}
+
+td {
+  word-break: break-word;
+}
+
+tr:nth-child(even) {
+  background-color: #f8f9f9;
+}
+
+tr:hover {
+  background-color: #dce1e4;
+}
+
+th {
+  padding-top: 12px;
+  padding-bottom: 12px;
+  text-align: left;
+  background-color: #212f3d;
+  color: white;
+}
+
+th:first-child,
+td:first-child {
+  border-top-left-radius: 1rem;
+  border-bottom-left-radius: 1rem;
+  padding-left: 1rem;
+}
+th:last-child,
+td:last-child {
+  border-bottom-right-radius: 1rem;
+  border-top-right-radius: 1rem;
+  padding-right: 1rem;
+}
+
+.ticketDesc {
+  overflow: hidden;
+  height: 0;
+  transition-duration: 1s;
+}
+
+div.center {
+  margin: auto;
+  width: max-content;
+}
+
+.btn {
+  align-items: center;
+  background-color: #e5e7e9;
+  border: 1px solid #dfdfdf;
+  border-radius: 0.7rem;
+  box-sizing: border-box;
+  color: #000000;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.8rem;
+  justify-content: center;
+  padding: 0.5rem 0.8rem;
+  transition: all 0.2s;
+}
+
+.btn:active,
+.btn:focus,
+.btn:hover {
+  background-color: #212f3d;
+  outline: 0;
+  color: whitesmoke;
+  border-color: rgba(0, 0, 0, 0.19);
+}
+
+/* Select Element */
+select:focus {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+select option:last-child {
+  border-bottom-left-radius: 0.7rem;
+  border-bottom-right-radius: 0.7rem;
+}
+
+.ticketDescToggle {
+  margin-left: 0.5rem;
+  display: inline-block;
+  padding: 0.5rem;
+  transform: rotate(90deg);
+}
+
+/* chatBox */
+
+#chatBoxContainer {
+  position: absolute;
+  background-color: rgba(32, 37, 44, 0.767);
+  background: radial-gradient(
+    circle,
+    rgba(47, 45, 77, 0.7399553571428572) 0%,
+    rgba(5, 5, 10, 0.5354735644257703) 0%,
+    rgba(4, 4, 4, 0.8351934523809523) 100%
+  );
+  min-width: 100vw;
+  min-height: 100vh;
+  z-index: -1;
+  opacity: 0;
+  transition: 0.5s;
+}
+
+#chatBox {
+  overflow: hidden;
+  border-radius: 0.5rem;
+  width: 60vw;
+  height: 90vh;
+  border-radius: 0.5rem;
+  position: absolute;
+  top: calc(50% - 45vh);
+  left: calc(50% - 30vw);
+  display: flex;
+  transition-duration: 1s;
+  flex-direction: column;
+  background-color: #f6fcff;
+  color: whitesmoke;
+  box-shadow: rgba(50, 50, 93, 0.25) 0px 50px 2rem -20px,
+    rgba(0, 0, 0, 0.3) 0px 30px 3rem -2rem,
+    rgba(10, 37, 64, 0.35) 0px -2px 6px 0px inset;
+}
+
+#chatHeader {
+  border-top: 1px solid rgba(77, 77, 77, 0.418);
+  background-color: #212f3d;
+  color: white !important;
+  padding: 1rem 0.5rem;
+
+  font-size: 1.2rem;
+}
+
+#chatsContainer {
+  padding: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow: auto;
+  flex-grow: 1;
+}
+
+.chatContent {
+  padding: 1rem;
+  min-width: 40%;
+  max-width: 65%;
+  border-radius: 0.5rem;
+  margin: 0.2rem 0.6rem;
+  word-wrap: break-word;
+  color: #262626;
+  border: 1px solid #dbdbdb;
+  position: relative;
+}
+
+.sender {
+ background-color:  #dbdbdb;
+  align-self: flex-end;
+}
+
+
+.receiver {
+  background-color: transparent;
+  align-self: flex-start;
+}
+
+
+#sendArea {
+  border-top: 1px solid rgba(77, 77, 77, 0.418);
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  padding: 0.5rem;
+}
+
+#chatText {
+  width: 100%;
+  height: 100%;
+  background-color: transparent;
+  outline: none;
+  border: none;
+  resize: none;
+}
+
+#chatText::-webkit-scrollbar {
+  display: none;
+}
+
+#closeChatBox {
+  position: absolute;
+  right: 0.6rem;
+  top: 0.5rem;
+  font-weight: bolder;
+  background-color: transparent;
+  border: none;
+  color: whitesmoke;
+  cursor: pointer;
+}
+
+#chatBoxContainer.open {
+  z-index: 100;
+  opacity: 1;
+}

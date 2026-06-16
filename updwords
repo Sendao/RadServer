@@ -1,0 +1,2 @@
+rm -f know/*jsdb
+cp words/wordroots.jsdb know

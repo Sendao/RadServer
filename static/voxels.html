@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Voxel Matrix Engine</title>
+    <style>
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            background: linear-gradient(135deg, #2a1a3d, #4b3375);
+            font-family: 'Segoe UI', Arial, sans-serif;
+        }
+        canvas { display: block; }
+        #introModal { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%);
+            background: rgba(43, 26, 77, 0.95); 
+            color: #d8cfff; 
+            padding: 30px; 
+            border-radius: 8px;
+            text-align: center;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+            max-width: 400px;
+            display: none;
+        }
+        #introModal button {
+            background: #6b4e9e;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+        #introModal button:hover {
+            background: #8b6cce;
+        }
+        .toast { 
+            position: fixed; 
+            bottom: 20px; 
+            right: 20px; 
+            background: #6b4e9e; 
+            color: #fff; 
+            padding: 10px 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="introModal">
+        <h2>Voxel Matrix Engine</h2>
+        <p>Explore a recursive 3D voxel world!<br>Use mouse to rotate, scroll to zoom.</p>
+        <button onclick="startEngine()">Start Exploration</button>
+    </div>
+    <div id="toast" class="toast"></div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.173.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.173.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { CopyShader } from 'three/addons/shaders/CopyShader.js';
+        window.THREE = THREE;
+        window.EffectComposer = EffectComposer;
+        window.OrbitControls = OrbitControls;
+        window.RenderPass = RenderPass;
+        window.ShaderPass = ShaderPass;
+        window.CopyShader = CopyShader;
+        window.threeReady = true;
+    </script>
+    <script language=javascript>
+        let scene, camera, renderer, controls, composer;
+        let voxelMatrix;
+        let isRunning = false;
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+
+        function init() {
+            if( !window.threeReady ) {
+                setTimeout(init,100);
+                return;
+            }
+            document.getElementById('introModal').style.display = 'block';
+        }
+
+        function startEngine() {
+            document.getElementById('introModal').style.display = 'none';
+            setupThree();
+            setupScene();
+            animate();
+            isRunning = true;
+            showToast('Engine Started!');
+        }
+
+        function setupThree(targetElement) {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            if( targetElement ) {
+                targetElement.innerHTML = ``;
+                targetElement.appendChild(renderer.domElement);
+            } else {
+                var oldCanvas = document.getElementById(renderer.domElement.id);
+                if( oldCanvas !== null ) oldCanvas.remove();
+                document.body.appendChild(renderer.domElement);
+            }
+
+            controls = new window.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            camera.position.set(15, 15, 15);
+            controls.update();
+
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            composer.addPass(new ShaderPass(CopyShader));
+        }
+
+        // Voxel Matrix Engine
+        class VoxelMatrix {
+            constructor(size, depth = 3) {
+                this.size = size;
+                this.depth = depth;
+                this.matrix = this.generateMatrix(size, depth);
+            }
+
+            generateMatrix(size, depth) {
+                if (depth <= 0) {
+                    return Math.random() > 0.7 ? { mass: Math.random() * 2 + 0.5 } : null;
+                }
+                const matrix = new Array(size);
+                let count = 0;
+                for (let x = 0; x < size; x++) {
+                    matrix[x] = new Array(size);
+                    for (let y = 0; y < size; y++) {
+                        matrix[x][y] = new Array(size);
+                        for (let z = 0; z < size; z++) {
+                            if (Math.random() > 0.4) {
+                                matrix[x][y][z] = this.generateMatrix(size, depth - 1);
+                                count++;
+                            } else {
+                                matrix[x][y][z] = null;
+                            }
+                        }
+                    }
+                }
+                console.log("generated " + count);
+                return matrix;
+            }
+
+            renderToScene(scene, scale = 1, offset = new THREE.Vector3(0, 0, 0)) {
+                let voxelCount = 0;
+                this.traverseMatrix((x, y, z, node, depth) => {
+                    if (node?.mass) {
+                        const geometry = new THREE.BoxGeometry(scale, scale, scale);
+                        const material = new THREE.MeshPhongMaterial({
+                            color: new THREE.Color().setHSL(depth / 5, 0.7, 0.5),
+                            specular: 0x555555,
+                            shininess: 30
+                        });
+                        const voxel = new THREE.Mesh(geometry, material);
+                        voxel.position.set(
+                            (x * scale) + offset.x,
+                            (y * scale) + offset.y,
+                            (z * scale) + offset.z
+                        );
+                        scene.add(voxel);
+                        voxelCount++;
+                        console.log(x,y,z,scale,depth);
+                    }
+                });
+                console.log(`Rendered ${voxelCount} voxels`);
+                if (voxelCount === 0) {
+                    showToast("Warning: No voxels rendered - check matrix generation");
+                }
+            }
+
+            traverseMatrix(callback) {
+                const stack = [{
+                    node: this.matrix,
+                    depth: this.depth,
+                    x: 0,
+                    y: 0,
+                    z: 0
+                }];
+
+                while (stack.length > 0) {
+                    const { node, depth, x, y, z } = stack.pop();
+
+                    if (!node || !node[x]?.[y]?.[z]) continue;
+                    const current = node[x][y][z];
+
+                    if (current?.mass) {
+                        console.log("cb");
+                        callback(x, y, z, current, depth);
+                    } else if (Array.isArray(current)) {
+                        console.log(x,y,z);
+                        const subSize = this.size;
+                        for (let i = 0; i < subSize; i++) {
+                            for (let j = 0; j < subSize; j++) {
+                                for (let k = 0; k < subSize; k++) {
+                                    if( !current || !node[x][y][z] ) continue;
+                                    stack.push({
+                                        node: current,
+                                        depth: depth - 1,
+                                        px: px + ,
+                                        py: py,
+                                        pz: pz,
+                                        x: x,
+                                        y: y,
+                                        z: z
+                                    });
+                                }
+                            }
+                        }
+                    } else {
+                        console.log("Unexpected");
+                    }
+                }
+            }
+        }
+
+        function setupScene() {
+            const ambient = new THREE.AmbientLight(0xffffff, 1.0);
+            scene.add(ambient);
+            const directional = new THREE.DirectionalLight(0xffffff, 0.8);
+            directional.position.set(5, 10, 7);
+            scene.add(directional);
+
+            voxelMatrix = new VoxelMatrix(3, 3);
+            voxelMatrix.renderToScene(scene, 1.8);
+        }
+
+        function animate() {
+            if (!isRunning) return;
+            requestAnimationFrame(animate);
+            controls.update();
+            composer.render();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            composer.setSize(window.innerWidth, window.innerHeight);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Particle Experimentation Lab</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; }
+	div {
+		background-color: transparent;
+	}
+        canvas { display: block; }
+        #controls { 
+            position: absolute; top: 10px; left: 10px; 
+            background: rgba(0,0,0,0.8); color: #fff; 
+            padding: 15px; font-family: Arial, sans-serif;
+            border-radius: 5px; width: 250px;
+        }
+        .system-controls { 
+            border: 1px solid #444; padding: 5px; 
+            border-radius: 3px;
+        }
+        .system-controls label {
+            display: block;
+            margin: 5px 0;
+        }
+        .system-controls input[type="text"] {
+            width: 180px;
+        }
+        #controls input { 
+            width: 200px; margin: 5px 0; padding: 4px;
+            background: #222; color: #fff; border: none;
+        }
+        #controls input[type="color"] { width: 50px; }
+        #introModal { 
+            position: absolute; top: 50%; left: 50%; 
+            transform: translate(-50%, -50%);
+            background: rgba(0,0,0,0.9); color: #fff; 
+            padding: 20px; text-align: center;
+            font-family: Arial, sans-serif; 
+        }
+        .toast { 
+            position: fixed; bottom: 20px; right: 20px; 
+            background: #333; color: #fff; padding: 10px; 
+            display: none; 
+        }
+        button {
+            background-color: #c3ef40;
+            border: 1px solid blue;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button id="addSystem">Add Particle System</button>
+        <div id="systemsContainer"></div>
+	<button id="hideUI">Hide Command UI</button>
+    </div>
+    <div id="toast" class="toast"></div>
+    
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.173.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.173.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { CopyShader } from 'three/addons/shaders/CopyShader.js';
+        window.THREE = THREE;
+        window.EffectComposer = EffectComposer;
+        window.OrbitControls = OrbitControls;
+        window.RenderPass = RenderPass;
+        window.ShaderPass = ShaderPass;
+        window.CopyShader = CopyShader;
+        window.threeReady = true;
+    </script>
+    <script language=javascript>
+        const random_equations = [
+            `{r1} * sin(t * {r2} + i * {r3})`, // Dynamic sine wave
+            `{r1} * cos(t * {r2} - i * {r3})`, // Dynamic cosine wave
+            `sin(t) * {r4} * cos(i * 0.05) + i * {r5}`, // Combined sine-cosine pattern
+            `{r6} * exp(-0.01 * i) * sin(t + i * 0.05)`, // Exponential decay with oscillation
+            `{r4} * (i * 0.05 - {r7}) * cos(t * 0.1)`, // Polynomial with oscillation
+            `sin(t * {r8}) * {r1} + cos(i * 0.1) * {r4}`, // Mixed oscillatory pattern
+        ];
+
+        let scene, camera, renderer, controls, composer;
+        let particleSystems = [];
+        let time = 0;
+        const particleCount = 256;
+
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+
+        function validateFunction(funcStr) {
+            try {
+                new Function('t', 'i', `return ${funcStr}`);
+                return true;
+            } catch (e) {
+                showToast(`Invalid function: ${funcStr}`);
+                return false;
+            }
+        }
+
+        function convertInts(equation) {
+            let i, x = "", buf = "";
+            for(i = 0; i < equation.length; i++) {
+                if(equation[i] == '.' || !isNaN(parseInt(equation[i]))) {
+                    x += equation[i];
+                } else if(x != "") {
+                    if(!isNaN(parseFloat(x))) {
+                        buf += parseFloat(x).toFixed(3);
+                        x = "";
+                    } else {
+                        buf += x;
+                        x = "";
+                    }
+                    buf += equation[i];
+                } else buf += equation[i];
+            }
+            if(x != "") {
+                if(!isNaN(parseFloat(x))) buf += parseFloat(x).toFixed(3);
+                else buf += x;
+            }
+            return buf;
+        }
+
+        function createParticleSystem(id, xFunc, yFunc, zFunc, startColor, endColor) {
+            const geometry = new THREE.BufferGeometry();
+            const positions = new Float32Array(particleCount * 3);
+            const indices = new Float32Array(particleCount);
+
+            
+            for (let i = 0; i < particleCount; i++) {
+                indices[i] = i;
+            }
+            
+            geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+            geometry.setAttribute('index', new THREE.BufferAttribute(indices, 1));
+
+            const vertexShader = `
+                attribute float index;
+                uniform float time;
+                uniform vec3 startColor;
+                uniform vec3 endColor;
+                varying vec3 vColor;
+                const float SCALE = 10.0;
+                
+                float computeX(float t, float i) {
+                    return ${convertInts(xFunc) || '0'};
+                }
+                float computeY(float t, float i) {
+                    return ${convertInts(yFunc) || '0'};
+                }
+                float computeZ(float t, float i) {
+                    return ${convertInts(zFunc) || '0'};
+                }
+
+                void main() {
+                    vec3 transformed = vec3(
+                        computeX(time, index) * SCALE,
+                        computeY(time, index) * SCALE,
+                        computeZ(time, index) * SCALE
+                    );
+                    
+                    float t = index / ${particleCount}.0;
+                    vColor = mix(startColor, endColor, t);
+                    gl_Position = projectionMatrix * modelViewMatrix * vec4(transformed, 1.0);
+                    gl_PointSize = 5.0;
+                }
+            `;
+
+            const fragmentShader = `
+                varying vec3 vColor;
+                void main() {
+                    gl_FragColor = vec4(vColor, 1.0);
+                }
+            `;
+
+            const material = new THREE.ShaderMaterial({
+                vertexShader,
+                fragmentShader,
+                uniforms: { 
+                    time: { value: 0 },
+                    startColor: { value: new THREE.Color(startColor) },
+                    endColor: { value: new THREE.Color(endColor) }
+                }
+            });
+
+            const particles = new THREE.Points(geometry, material);
+            particles.userData = { id, xFunc, yFunc, zFunc };
+            return particles;
+        }
+        function getRandomColor() {
+            return '#' + Math.floor(Math.random() * 16777215).toString(16).padStart(6, '0');
+        }
+        
+        function addParticleSystem() {
+            const id = Date.now();
+            const container = document.getElementById('systemsContainer');
+            const systemDiv = document.createElement('div');
+            systemDiv.className = 'system-controls';
+            const xFunc = getRandomEquation();
+            const yFunc = getRandomEquation();
+            const zFunc = getRandomEquation();
+            const startColor = getRandomColor();
+            const endColor = getRandomColor();
+            const particles = createParticleSystem(
+                id,
+                xFunc,
+                yFunc,
+                zFunc,
+                startColor,
+                endColor
+            );
+            systemDiv.innerHTML = `
+                <input id="name_${id}" value="System ${particleSystems.length + 1}" placeholder="System Name">
+                <div id="editor_${id}">
+                    <div style='display: flex'>
+                       <label for="xFunc_${id}" style='padding-top: 4px'>X:</label><input id="xFunc_${id}" value="${xFunc}" placeholder="X Function"><button onClick='randomizeFunction(${id},"x")'>R</button>
+                    </div><div style='display: flex'>
+                        <label for="yFunc_${id}" style='padding-top: 4px'>Y:</label><input id="yFunc_${id}" value="${yFunc}" placeholder="Y Function"><button onClick='randomizeFunction(${id},"y")'>R</button>
+                    </div><div style='display: flex'>
+                        <label for="zFunc_${id}" style='padding-top: 4px'>Z:</label><input id="zFunc_${id}" value="${zFunc}" placeholder="Z Function"><button onClick='randomizeFunction(${id},"z")'>R</button>
+                    </div>
+                    <div>
+                        <input type="color" id="startColor_${id}" value="${startColor}">
+                        <input type="color" id="endColor_${id}" value="${endColor}">
+                    </div>
+                    <button onclick="removeParticleSystem(${id})">Remove</button>
+                    <button onclick="toggleShrink(${id})">Shrink</button>
+                    <button onclick="randomizeSystem(${id})">Random</button>
+                </div>
+            `;
+            container.appendChild(systemDiv);
+
+            scene.add(particles);
+            particleSystems.push(particles);
+
+            // Add event listeners
+            [`xFunc_${id}`, `yFunc_${id}`, `zFunc_${id}`, `startColor_${id}`, `endColor_${id}`].forEach(id => {
+                document.getElementById(id).addEventListener('change', () => updateParticleSystem(id.split('_')[1]));
+            });
+            document.getElementById(`name_${id}`).addEventListener('click', () => toggleShrink(id, true));
+
+            showToast("Particle system added");
+        }
+
+        function removeParticleSystem(id) {
+            const index = particleSystems.findIndex(p => p.userData.id === id);
+            if (index !== -1) {
+                scene.remove(particleSystems[index]);
+                particleSystems.splice(index, 1);
+                document.querySelector(`.system-controls:has(#xFunc_${id})`).remove();
+                showToast("Particle system removed");
+            }
+        }
+        function getRandomEquation() {
+            const r1 = Math.random() * 3 + 1; // Amplitude (1 to 4)
+            const r2 = Math.random() * 0.5 + 0.5; // Frequency for t (0.5 to 1)
+            const r3 = Math.random() * 0.3 + 0.1; // Frequency for i (0.1 to 0.4)
+            const r4 = Math.random() * 2 + 1; // Smaller amplitude (1 to 3)
+            const r5 = Math.random() * 0.15; // Small offset for i (0 to 0.15)
+            const r6 = Math.random() * 10 + 5; // Large amplitude for exp (5 to 15)
+            const r7 = Math.random() * 20 - 10; // Large offset (-10 to 10)
+            const r8 = Math.random() * 0.3 + 0.2; // Small frequency for t (0.2 to 0.5)
+
+            const equation = random_equations[Math.floor(Math.random() * random_equations.length)];
+            return equation
+                .replace('{r1}', r1.toFixed(3))
+                .replace('{r2}', r2.toFixed(3))
+                .replace('{r3}', r3.toFixed(3))
+                .replace('{r4}', r4.toFixed(3))
+                .replace('{r5}', r5.toFixed(3))
+                .replace('{r6}', r6.toFixed(3))
+                .replace('{r7}', r7.toFixed(3))
+                .replace('{r8}', r8.toFixed(3));
+        }
+
+        function randomizeSystem(id) {
+            const index = particleSystems.findIndex(p => p.userData.id == id);
+            if (index !== -1) {
+                const xFunc = getRandomEquation();
+                const yFunc = getRandomEquation();
+                const zFunc = getRandomEquation();
+                document.getElementById(`xFunc_${id}`).value = particleSystems[index].userData.xFunc = xFunc;
+                document.getElementById(`yFunc_${id}`).value = particleSystems[index].userData.yFunc = yFunc;
+                document.getElementById(`zFunc_${id}`).value = particleSystems[index].userData.zFunc = zFunc;
+                updateParticleSystem(id);
+            } else {
+                showToast("Can't find system " + id);
+            }
+        }
+
+
+        function randomizeFunction(id, axis) {
+            const index = particleSystems.findIndex(p => p.userData.id == id);
+            if (index !== -1) {
+                const newFunc = getRandomEquation();
+                if( axis == 'x' ) {
+                    document.getElementById(`xFunc_${id}`).value = particleSystems[index].userData.xFunc = newFunc;
+                } else if( axis == 'y' ) {
+                    document.getElementById(`yFunc_${id}`).value = particleSystems[index].userData.yFunc = newFunc;
+                } else if( axis == 'z' ) {
+                    document.getElementById(`zFunc_${id}`).value = particleSystems[index].userData.zFunc = newFunc;
+                }
+                updateParticleSystem(id);
+            } else {
+                showToast("Can't find system " + id);
+            }
+        }
+
+        function updateParticleSystem(id) {
+            const xFunc = document.getElementById(`xFunc_${id}`).value;
+            const yFunc = document.getElementById(`yFunc_${id}`).value;
+            const zFunc = document.getElementById(`zFunc_${id}`).value;
+            const startColor = document.getElementById(`startColor_${id}`).value;
+            const endColor = document.getElementById(`endColor_${id}`).value;
+
+            if (!validateFunction(xFunc) || !validateFunction(yFunc) || !validateFunction(zFunc)) {
+                showToast("Particle system INVALID");
+                return;
+            }
+
+            const index = particleSystems.findIndex(p => p.userData.id == id);
+            if (index !== -1) {
+                scene.remove(particleSystems[index]);
+                const newParticles = createParticleSystem(id, xFunc, yFunc, zFunc, startColor, endColor);
+                scene.add(newParticles);
+                particleSystems[index] = newParticles;
+                showToast("Particle system updated");
+            } else {
+                showToast("Can't find system " + id);
+            }
+        }
+
+        function setupThree() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 20000);
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            controls = new window.OrbitControls(camera, renderer.domElement);
+            camera.position.set(0, 100, 250);
+            controls.update();
+
+            composer = new EffectComposer(renderer);
+            composer.addPass(new RenderPass(scene, camera));
+            composer.addPass(new ShaderPass(CopyShader));
+
+            document.getElementById('addSystem').addEventListener('click', addParticleSystem);
+	    document.getElementById('hideUI').addEventListener('click', hideUserInterface);
+            addParticleSystem(); // Add initial system
+        }
+	let hidden_ui=false;
+	function hideUserInterface() {
+	    let e = document.getElementById('controls');
+	    alert("Are you sure? Press H to show controls again.");
+	    e.style.display='none';
+	    hidden_ui=true;
+	}
+	function showUserInterface() {
+	    let e = document.getElementById('controls');
+     	    e.style.display='block';
+	    hidden_ui=false;
+	}
+        function toggleShrink(id, forceExpand = false) {
+            const editor = document.getElementById(`editor_${id}`);
+            const nameInput = document.getElementById(`name_${id}`);
+            if (forceExpand || editor.style.display === 'none') {
+                editor.style.display = 'block';
+                nameInput.style.cursor = 'pointer';
+            } else {
+                editor.style.display = 'none';
+                nameInput.style.cursor = 'pointer';
+            }
+        }
+
+	function keypress(e) {
+		//alert(e.key, ", " + hidden_ui, document.activeElement ? document.activeElement.tagname : 'notag' );
+		if( (!hidden_ui) && (document.activeElement) 
+			&& document.activeElement.tagName == 'INPUT' ) return;
+		if( e.key == 'h' || e.key == 'H' ) {
+			if( hidden_ui ) {
+				showUserInterface();
+			} else {
+				hideUserInterface();
+			}
+		}
+	}
+
+        function init() {
+            if (!window.threeReady) {
+                setTimeout(init, 100);
+                return;
+            }
+            setupThree();
+		document.addEventListener('keydown',keypress);
+            animate();
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            time += 0.02;
+            particleSystems.forEach(particles => {
+                if (particles.material.uniforms) {
+                    particles.material.uniforms.time.value = time;
+                }
+            });
+            controls.update();
+            composer.render();
+        }
+
+        window.addEventListener('load', init);
+    </script>
+</body>
+</html>

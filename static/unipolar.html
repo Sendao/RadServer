@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unipolar Particle Simulation</title>
+    <style>
+        canvas {
+            background-color: #000;
+            display: block;
+            margin: 0 auto;
+        }
+    </style>
+</head>
+<body style='background-color: black'>
+    <canvas id="simulationCanvas" style='' ></canvas>
+
+    <script>
+const canvas = document.getElementById('simulationCanvas');
+const ctx = canvas.getContext('2d');
+let docwidth = document.documentElement.clientWidth;
+let docheight = document.documentElement.clientHeight;
+canvas.width = docwidth - 30;
+canvas.height = docheight - 30;
+
+// Constants for the simulation
+const avgSize = (canvas.width+canvas.height)/2;
+const numParticles = 500*(0.0005*avgSize);
+const particleRadius = avgSize/500;
+const maxSpeed = 0.8;
+const initSpeed = 0.2;
+const repulsionConstant = 1;  // Determines the strength of the repulsive force
+const influenceShield = 0.00001; // how much influence gets through to the field
+const influenceShield2 = 10; // how much influence gets through from the field
+const influenceShield3 = 0.1; // how much effect is allowed to push on the bubbles
+const fieldSize = 10; // Resolution of the field overlay (pixels per cell)
+//const fieldResolution = canvas.clientWidth/fieldSize; // Resolution of the field overlay (pixels per cell)
+const fieldResolution = 10;
+const updateThreshold = maxSpeed*repulsionConstant*fieldResolution;
+const fieldMax = 1.0;
+const drawDots = true;
+
+// Grid dimensions for the field
+const gridWidth = Math.ceil(canvas.width / fieldResolution);
+const gridHeight = Math.ceil(canvas.height / fieldResolution);
+const gridReach = 2;
+
+// Field matrix storing green and blue intensities
+let fieldMatrix = Array.from({ length: gridWidth }, () =>
+    Array.from({ length: gridHeight }, () => ({ green: 0, blue: 0 }))
+);
+
+// Particle class
+class Particle {
+    constructor(x, y, charge) {
+        this.x = x;
+        this.y = y;
+        this.vx = Math.random() * initSpeed * 2 - initSpeed;
+        this.vy = Math.random() * initSpeed * 2 - initSpeed;
+        this.charge = charge; // Either 1 (positive) or -1 (negative)
+    }
+
+    // Update position based on velocity
+    updatePosition() {
+        if( this.vx > maxSpeed ) this.vx=maxSpeed;
+        if( this.vx < -maxSpeed ) this.vx=-maxSpeed;
+        if( this.vy > maxSpeed ) this.vy=maxSpeed;
+        if( this.vy < -maxSpeed ) this.vy=-maxSpeed;
+        this.prevX = this.x;
+        this.prevY = this.y;
+
+        this.x += this.vx;
+        this.y += this.vy;
+
+        // Wrap around edges
+        if (this.x < 0) this.x = canvas.width;
+        if (this.x > canvas.width) this.x = 0;
+        if (this.y < 0) this.y = canvas.height;
+        if (this.y > canvas.height) this.y = 0;
+    }
+    hasMoved() {
+        const dx = this.x - this.prevX;
+        const dy = this.y - this.prevY;
+        return dx * dx + dy * dy > updateThreshold * updateThreshold;
+    }
+    // Draw the particle on the canvas
+    draw() {
+        if( drawDots) {
+            ctx.beginPath();
+            ctx.arc(this.x, this.y, particleRadius, 0, Math.PI * 2);
+            ctx.fillStyle = this.charge > 0 ? 'green' : 'blue';  // Red for positive, blue for negative
+            ctx.fill();
+            ctx.closePath();
+        }
+    }
+}
+
+// Initialize particles with random positions and charges
+const particles = [];
+for (let i = 0; i < numParticles; i++) {
+    const x = Math.random() * (canvas.width - 2 * particleRadius) + particleRadius;
+    const y = Math.random() * (canvas.height - 2 * particleRadius) + particleRadius;
+    const charge = Math.random() < 0.5 ? 1 : -1; // 50% chance for positive or negative charge
+    particles.push(new Particle(x, y, charge));
+}
+
+// Update the field matrix
+function updateFieldMatrix() {
+    // Reset field matrix
+    /* no don't
+    fieldMatrix = fieldMatrix.map(row =>
+        row.map(() => ({ green: 0, blue: 0 }))
+    );
+    */
+
+    particles.forEach(particle => {
+        const gridX = Math.floor(particle.x / fieldResolution);
+        const gridY = Math.floor(particle.y / fieldResolution);
+
+        // Apply particle influence within a radius
+        for (let dx = -gridReach; dx <= gridReach; dx++) {
+            for (let dy = -gridReach; dy <= gridReach; dy++) {
+                const nx = gridX + dx;
+                const ny = gridY + dy;
+
+                if (nx >= 0 && nx < gridWidth && ny >= 0 && ny < gridHeight) {
+                    const cellX = nx * fieldResolution + fieldResolution / 2;
+                    const cellY = ny * fieldResolution + fieldResolution / 2;
+                    let distX = particle.x-cellX;
+                    let distY = particle.y-cellY;
+                    const distanceSq = ( distX**2 + distY**2) ** 0.5 / 4*( Math.abs(distX)+Math.abs(distY) );
+                    if (distanceSq > 0) {
+                        const influence = 1 / distanceSq; // Inverse-square law
+                        if( influence < 1 ) {
+                            if (particle.charge > 0) {
+                                fieldMatrix[nx][ny].green = Math.max(0,Math.min(fieldMax,fieldMatrix[nx][ny].green + influenceShield*influence));
+                            } else {
+                                fieldMatrix[nx][ny].blue = Math.max(0,Math.min(fieldMax,fieldMatrix[nx][ny].blue + influenceShield*influence));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+function sampleFieldMatrix(x,y) {
+    const gridX = Math.floor(x / fieldResolution);
+    const gridY = Math.floor(y / fieldResolution);
+
+    let q = Math.floor( Math.random() * 12 ); // at most 128 samples
+    let charge = 0;
+    while( q > 0 ) {
+        let w = Math.floor( Math.random() * 25 );
+        for (let dx = -2; dx <= 2; dx++) {
+            let found = false;
+            for (let dy = -2; dy <= 2; dy++) {
+                w--;
+                if( w == 0 ) {
+                    q--;
+                    let nx = Math.min(gridWidth-1,Math.max(0,gridX + dx));
+                    let ny = Math.min(gridHeight-1,Math.max(0,gridY + dy));
+                    let influence = 1/(dx*dx+dy*dy);
+                    charge += influenceShield2*influence*fieldMatrix[nx][ny].green;
+                    charge -= influenceShield2*influence*fieldMatrix[nx][ny].blue;
+                    found = true;
+                    break;
+                }
+            }
+            if( found ) break;
+        }
+    }
+    return charge;
+}
+function sampleFieldMatrixForce(x,y) {
+    const gridX = Math.floor(x / fieldResolution);
+    const gridY = Math.floor(y / fieldResolution);
+
+    let q = Math.floor( Math.random() * 12 + 4 ); // at most 128 samples
+    let vx = [], vy = [];
+    while( q > 0 ) {
+        let w = Math.floor( Math.random() * 25 );
+        for (let dx = -2; dx < 3; dx++) {
+            let found = false;
+            for (let dy = -2; dy < 3; dy++) {
+                w--;
+                if( w == 0 ) {
+                    q--;
+                    let nx = Math.min(gridWidth-1,Math.max(0,gridX + dx));
+                    let ny = Math.min(gridHeight-1,Math.max(0,gridY + dy));
+                    let cell_influence = fieldMatrix[nx][ny].green - fieldMatrix[nx][ny].blue;
+                    let influence = 1/(dx*dx+dy*dy);
+                    vx.push( Math.sign(dx)*influenceShield2*influence*cell_influence );
+                    vy.push( Math.sign(dy)*-influenceShield2*influence*cell_influence );
+                    found = true;
+                    break;
+                }
+            }
+            if( found ) break;
+        }
+    }
+    let len = vx.length;
+    let velx = vx.reduce((a,b)=>(a+b),0)/len;
+    let vely = vy.reduce((a,b)=>(a+b),0)/len;
+    return [velx,vely];
+}
+
+// Draw the field
+function drawField() {
+    for (let x = 0; x < gridWidth; x++) {
+        for (let y = 0; y < gridHeight; y++) {
+            const field = fieldMatrix[x][y];
+            const totalField = field.green + field.blue;
+
+            const greenIntensity = field.green / totalField || 0;
+            const blueIntensity = field.blue / totalField || 0;
+
+            const color = `rgba(0, ${Math.floor(greenIntensity * 255)}, ${Math.floor(
+                blueIntensity * 255
+            )}, 0.2)`;
+
+            ctx.fillStyle = color;
+            ctx.fillRect(
+                x * fieldResolution,
+                y * fieldResolution,
+                fieldResolution,
+                fieldResolution
+            );
+        }
+    }
+}
+let fieldColor=0;
+canvas.addEventListener('mousedown', (event) => {
+    var mouseMove, mouseUp, mouseOut;
+
+    mouseMove = function(event) {
+        const rect = canvas.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+        const gridX = Math.floor(mouseX / fieldResolution);
+        const gridY = Math.floor(mouseY / fieldResolution);
+
+        var dx,dy;
+        let affectradius=8;
+        let width=affectradius+Math.floor(affectradius/2);
+
+        for( dx=-width;dx<=width;dx++ ) {
+            var gx = gridX+dx;
+            if( gx<0 || gx>=fieldMatrix.length ) continue;
+            for( dy=-width;dy<=width;dy++ ) {
+                var gy = gridY+dy;
+                if( gy<0 || gy>=fieldMatrix[0].length ) continue;
+
+                let dist = dx*dx + dy*dy;
+                if( dist > affectradius ) continue;
+
+                // Flip the field at the clicked location
+                if( fieldColor == 0 ) {
+                    fieldMatrix[gx][gy].blue *= influenceShield3*200.0;
+                } else {
+                    fieldMatrix[gx][gy].green *= influenceShield3*200.0;
+                }
+            }
+        }
+    };
+    mouseUp = function(event) {
+        canvas.removeEventListener('mousemove', mouseMove);
+        canvas.removeEventListener('mouseup', mouseUp);
+        canvas.removeEventListener('mouseout', mouseOut);
+        fieldColor = !fieldColor;
+        return;
+    };
+    mouseOut = function(event) {
+        canvas.removeEventListener('mousemove', mouseMove);
+        canvas.removeEventListener('mouseup', mouseUp);
+        canvas.removeEventListener('mouseout', mouseOut);
+        fieldColor = !fieldColor;
+        return;
+    };
+    canvas.addEventListener('mousemove', mouseMove);
+    canvas.addEventListener('mouseup', mouseUp);
+    canvas.addEventListener('mouseout', mouseOut);
+});
+function applyBlur() {
+    let dist = 2;
+    for( let blurs=1; blurs>0; blurs-- ) {
+        const newFieldMatrix = fieldMatrix.map(row => [...row]);
+        for (let x = dist; x < gridWidth - dist; x++) {
+            for (let y = dist; y < gridHeight - dist; y++) {
+                const greenSum = (
+                    fieldMatrix[x-dist][y-dist].green + fieldMatrix[x][y-dist].green +
+                    fieldMatrix[x+dist][y-dist].green + fieldMatrix[x-dist][y].green +
+                    fieldMatrix[x][y].green + fieldMatrix[x+dist][y].green +
+                    fieldMatrix[x-dist][y+dist].green + fieldMatrix[x][y+dist].green +
+                    fieldMatrix[x+dist][y+dist].green
+                ) / 9;
+
+                const blueSum = (
+                    fieldMatrix[x-dist][y-dist].blue + fieldMatrix[x][y-dist].blue +
+                    fieldMatrix[x+dist][y-dist].blue + fieldMatrix[x-dist][y].blue +
+                    fieldMatrix[x][y].blue + fieldMatrix[x+dist][y].blue +
+                    fieldMatrix[x-dist][y+dist].blue + fieldMatrix[x][y+dist].blue +
+                    fieldMatrix[x+dist][y+dist].blue
+                ) / 9;
+
+                newFieldMatrix[x][y].green = greenSum;
+                newFieldMatrix[x][y].blue = blueSum;
+            }
+        }
+        fieldMatrix = newFieldMatrix;
+    }
+}
+function applyDecay() {
+    for (let x = 0; x < gridWidth; x++) {
+        for (let y = 0; y < gridHeight; y++) {
+            fieldMatrix[x][y].green *= 0.1; // Decay rate
+            fieldMatrix[x][y].blue *= 0.1;
+        }
+    }
+}
+// Function to apply forces between particles
+function applyForces() {
+    for (let i = 0; i < particles.length; i++) {
+        const p1 = particles[i];
+        [vx,vy] = sampleFieldMatrixForce(p1.x,p1.y)
+        if( !isNaN(vx) )
+            p1.vx += influenceShield3*vx;
+        if( !isNaN(vy) )
+            p1.vy += influenceShield3*vy;
+    }
+    for (let i = 0; i < particles.length; i++) {
+        let p1 = particles[i];
+        for (let j = i + 1; j < particles.length; j++) {
+            let p2 = particles[j];
+            
+            let dx = p2.x - p1.x;
+            let dy = p2.y - p1.y;
+
+            let d2 = dx*dx + dy*dy;
+            if( d2 < 10000 ) {
+                const distance = Math.sqrt(d2);
+                
+                if (distance > 0 && distance < 100) {  // Only calculate forces for nearby particles
+                    // Repulsive force if charges are the same
+                    let forceMagnitude = repulsionConstant / d2;
+                    let fx = forceMagnitude * dx / distance;
+                    let fy = forceMagnitude * dy / distance;
+
+                    // Apply force to each particle in opposite directions
+                    let whomoves = sampleFieldMatrix((p1.x+p2.x)/2,(p1.y+p2.y)/2);
+                    
+                    //d1 = Math.abs(whomoves-p1.charge);
+                    //d2 = Math.abs(whomoves-p2.charge);
+                    let s1 = p1.charge>0, s2 = p2.charge>0;
+                    let w1 = whomoves>0;
+                    if( w1 != s1 ) {
+                        s1 = -1;
+                    } else {
+                        s1 = 1;
+                    }
+                    if( w1 != s2 ) {
+                        s2 = -1;
+                    } else {
+                        s2 = 1;
+                    }
+
+                    p1.vx += s1*fx/2;
+                    p1.vy += s1*fy/2;
+                    p2.vx += s2*fx/2;
+                    p2.vy += s2*fy/2;
+
+                }
+            }
+        }
+    }
+}
+
+// Main animation loop
+function animate() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Apply forces and update each particle's position
+    applyForces();
+    applyDecay();
+    applyBlur();
+
+    particles.forEach(particle => {
+        particle.updatePosition();
+        particle.draw();
+    });
+
+    updateFieldMatrix();
+
+    drawField();
+
+    requestAnimationFrame(animate);
+}
+
+// Start the animation
+animate();
+</script>
+</body>
+</html>

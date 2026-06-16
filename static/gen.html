@@ -1,0 +1,1222 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Radiant Cast</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+
+<!--
+<body style="background-image: url('dragontribe.jpg'); background-color: black; color: tan">
+ -->
+ <body class=bg5 style='color: tan; margin: 0px'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<div xWatch=menu_reset>
+<div xPostdraw='console.info'></div>
+<menu ></menu>
+</div>
+<main style='margin-top: 16px; font-size: 14pt' xWatch=window xCast='main_start'></main>
+
+<loadwheel></loadwheel>
+
+<!--  setup -->
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/auth.html
+#include tpl/meta.html
+
+
+#include controls/edit.html
+#include controls/console.html
+#include controls/gameconsole.html
+#include controls/whiteboard.html
+#include controls/watch.html
+
+#include controls/game/db.html
+#include controls/game/castle.html
+
+<templates>
+
+<div xTemplate=main_start>
+<div xWatch=sess>
+<div xTest='"#sess" == ""'>I'm verifying your identity. This should only take a few seconds.</div>
+<div xTest='"#sess" != ""'>
+
+<div xTest='"#sess.userid" == "false"'>
+<fl>You should probably</fl>
+<fl>&nbsp;</fl>
+<btn xCmd='blitzTemplate(gE("mainscroll"), "signin")'>Login</btn>
+<cl></cl>
+</div>
+
+<div xTest='"#sess.userid" != "false"'>
+</div>
+
+</div>
+</div>
+</div>
+
+
+<div xTemplate=categories>
+
+<fl>Categories:</fl>
+<cl></cl>
+
+<fl xWatch=cats>
+<fl xLoop=cats xKey=k xVal=v>
+ <fl>#v.name</fl>
+ <div class=btn xCmd='editCategory("#v.id")'>Edit</div>
+ <div class=btn xCmd='delCategory("#v.id")'>Remove</div>
+ <cl></cl>
+</fl>
+</fl>
+<cl>&nbsp;</cl>
+<div id=catviewer></div>
+<cl>&nbsp;</cl>
+<fl>Add category:</fl>
+<cl></cl>
+<form xCb=finishAddCategory id=newcat method=post action='/gen/addcat.js'>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <div class=formbtn>Submit</div>
+  <cl></cl>
+</form>
+</div>
+
+<div xTemplate=editcategory>
+<form xCb=finishEditCategory id=editcat xForm=cats.#catid method=post action='/gen/editcat.js'>
+  <input type=hidden name=id>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <div class=formbtn>Submit</div>
+</form>
+</div>
+
+<div xTemplate=templates>
+
+<form id=tcat>
+<fl>Category:</fl>
+<fl><select name=cat onchange=updateCategory() xOptions=catslist,id,name></select></fl>
+<cl></cl>
+</form>
+<fl xWatch='selectedcatid,templates'>
+<fl>Explore #[cats.#[selectedcatid].name]</fl>
+<cl></cl>
+<fl xLoop=templates.#[selectedcatid] xKey=k xVal=v>
+ <div class=btn xCmd='editTemplate("#v.id", "#v.name")'>#v.name</div>
+ <cl></cl>
+</fl>
+</fl>
+<cl></cl>
+
+<div id=templateviewer></div>
+
+<cl></cl>
+
+<form xCb=finishAddTemplate id=newtemplate method=post action='/gen/addtemplate.js'>
+  <input type=hidden name=catid>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <fl>Code:</fl>
+  <cl></cl>
+  <fl><textarea name=code rows=12 cols=120></textarea></fl>
+  <cl></cl>
+  <div class=formbtn>Submit</div>
+  <cl></cl>
+</form>
+</div>
+
+<div xTemplate=edittemplate>
+<form xCb=finishEditTemplate id=edittemplate xForm=templates.#[selectedcatid].#[templateid] method=post action='/gen/edittemplate.js'>
+  <input type=hidden name=id>
+  <input type=hidden name=catid>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <fl>Code:</fl>
+  <cl></cl>
+  <fl><textarea name=code rows=12 cols=120></textarea></fl>
+  <cl></cl>
+  <div class=formbtn>Submit</div>
+  <cl></cl>
+</form>
+</div>
+
+<div xTemplate=databases>
+<fl>Databases</fl>
+<cl></cl>
+<fl xLoop=dbconns xKey=k xVal=v>
+ <div class=btn xCmd='viewDatabase("#v.id")'>View</div>
+ <div class=btn xCmd='editDatabase("#v.id")'>Edit</div>
+ <div class=btn xCmd='delDatabase("#v.id")'>Remove</div>
+ <fl>#v.name</fl>
+ <fl>#v.url</fl>
+ <cl></cl>
+</fl>
+<cl></cl>
+
+<div id=databaseviewer></div>
+
+<cl></cl>
+<form id=newdb method=post action='/gen/adddb.js'>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <fl>URL:</fl>
+  <fl><input type=text name=url></fl>
+  <cl></cl>
+  <div class=formbtn>Submit</div>
+  <cl></cl>
+</form>
+</div>
+
+<div xTemplate=viewdatabase>
+ - list tables
+ - refresh
+</div>
+
+<div xTemplate=editdatabase>
+<form xCb='finishEditDatabase' id=editdb method=post action='/gen/editdb.js' xForm='dbconns.#databaseid'>
+<input type=hidden name=id>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <fl>URL:</fl>
+  <fl><input type=text name=url></fl>
+  <cl></cl>
+  <div class=formbtn>Reset</div>
+</form>
+</div>
+
+<div xTemplate=statics>
+<fl>Statics</fl>
+<cl></cl>
+<fl xWatch='statics'>
+<fl xLoop=statics xKey=k xVal=v>
+ <div class=btn xCmd='editStatic("#v.id")'>#v.name</div>
+ <cl></cl>
+</fl>
+</fl>
+<cl></cl>
+
+<div id=staticviewer></div>
+
+<cl></cl>
+
+<form xCb=finishAddStatic id=newstatic method=post action='/gen/addstatic.js'>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <fl>Code:</fl>
+  <cl></cl>
+  <fl><textarea name=code rows=12 cols=120></textarea></fl>
+  <cl></cl>
+  <div class=formbtn>Submit</div>
+  <cl></cl>
+</form>
+</div>
+
+<div xTemplate=editstatic>
+<form xCb=finishEditStatic id=editstatic xForm='statics.#[staticid]' method=post action='/gen/editstatic.js'>
+  <input type=hidden name=id>
+  <fl>Name:</fl>
+  <fl><input type=text name=name></fl>
+  <cl></cl>
+  <fl>Code:</fl>
+  <cl></cl>
+  <fl><textarea name=code rows=12 cols=120></textarea></fl>
+  <cl></cl>
+  <div class=formbtn>Submit</div>
+  <cl></cl>
+</form>
+</div>
+
+
+
+<div xTemplate=object>
+  <div xSet="path=#[path2],shortname=#shortname2">
+    <div xTest='Array.isArray(radVar("source"))'>
+      <div xWatch='gendata.var#[shortname]' xLoop='gendata.var#[shortname]' xKey=k2 xVal=vv>
+        <div style='width: 400px'>
+          <div xTest='typeof radVar("source.0") == "object"'>
+            <fl>#k2</fl>
+            <fl class=btn xCmd='delObjectRow("#[shortname]", "#k2")'>Remove</fl>
+            <fl xCast='object' xSetObj='source=radVar("#[path].#k2")' xSet='path2=#[path].#[k2],shortname=#[shortname].#k2'></fl>
+            <cl></cl>
+          </div>
+          <div xTest='radVar("source.0")=="string" || radVar(source + ".0")=="number" || radVar(source + ".0")=="literal"'>
+            <fl>#k2</fl>
+            <fl class=btn xCmd='delObjectRow("#[shortname]", "#k2")'>Remove</fl>
+            <fl><input type=text name='var#[shortname].#k2'></fl>
+            <cl></cl>
+          </div>
+          <div xTest='radVar("source.0")=="text"'>
+            <fl>#k2</fl>
+            <fl class=btn xCmd='delObjectRow("#[shortname]", "#k2")'>Remove</fl>
+            <fl><textarea rows=6 cols=80 name='var#[shortname].#k2'></textarea></fl>
+            <cl></cl>
+          </div>
+        </div>
+        <cl></cl>
+      </div>
+      <fl class=btn xCmd='addObjectRow("#[path]", "#[shortname]")'>Add row</fl>
+      <cl></cl>
+    </div>
+
+    <div xTest='radVar("source") != null && !Array.isArray(radVar("source"))'>
+      <div xLoop=source xInd=kk xKey=ki xVal=v2>
+        <div style='width: 400px'>
+          <div xTest='typeof radVar("v2") == "object"' style='margin-left: 4px'>
+            <fl>#kk</fl>
+            <cl></cl>
+            <fl xSetObj='source2=radVar("source").#kk' xSet='path2=#[path].#[kk],shortname2=#[shortname].#kk'><fl xSetObj='source=radVar("source2")' xCast=object></fl></fl>
+            <cl></cl>
+          </div>
+          <div xTest='"#v2"=="string" || "#v2"=="number" || "#v2"=="literal"'>
+            <fl>#kk</fl>
+            <fl><input type=text name=var#[shortname].#kk></fl>
+            <cl></cl>
+          </div>
+          <div xTest='"#v2"=="text"'>
+            <fl>#kk</fl>
+            <fl><textarea rows=6 cols=80 name=var#[shortname].#kk></textarea></fl>
+            <cl></cl>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script language=javascript>
+
+function delObjectRow(shortname,key)
+{
+  var tgt = radVar("gendata.var" + shortname);
+  if( tgt != null )
+    if( Array.isArray(tgt) )
+      tgt.splice(key,1);
+    else
+      delete tgt[key];
+  radStore("gendata.var"+shortname,tgt);
+}
+function addObjectRow(path,shortname)
+{
+  var tgt = radVar("gendata.var" + shortname);
+  var base = radVar(path)[0];
+  if( tgt == null ) tgt = [];
+
+  if( typeof base == 'object' ) {
+    if( Array.isArray(base) ) {
+      tgt.push([]);
+    } else {
+      tgt.push({});
+    }
+  } else if( base == 'text' || base == 'string' || base == 'literal' ) {
+    tgt.push('');
+  } else if( base == 'number' ) {
+    tgt.push(0);
+  }
+  radStore("gendata.var"+shortname,tgt);
+}
+function buildObject(source)
+{
+  var rv;
+
+  try {
+    rv=JSON.parse(source);
+  } catch(e) {
+    console.warn(e);
+    rv={};
+  }
+
+  return rv;
+}
+
+</script>
+
+
+<div xTemplate=generate>
+
+<form id=gen xForm=gendata>
+  <fl>Category:</fl>
+  <fl><select name=cat onChange=updateGenCategory() xOptions="catslist,id,name"></select></fl>
+  <cl></cl>
+  <fl>Template:</fl>
+  <fl xWatch=selectedcat2><select name=template onChange=updateGenTemplate() xOptions="templateslist.#[selectedcat2],id,name"></select></fl>
+  <cl></cl>
+  <fl>Links:</fl>
+  <cl></cl>
+<div xWatch=selectedtemplate>
+<div xLoop=templates.#[selectedcat2].#[selectedtemplate].vars xInd=k xKey=ki xVal=v>
+  <fl>#v.name</fl>
+  <fl>
+<fl xTest='"#v.stype"=="db"'>
+  <select xName=var#v.name xOptions='dbconnslist,id,name'></select>
+</fl>
+<fl xTest='"#v.stype"=="template"'>
+  <fl>Category:</fl>
+  <fl><select name=cat#v.name onChange=updateGenCategory2('#v.name') xOptions="catslist,id,name"></select></fl>
+  <cl></cl>
+  <fl>Template:</fl>
+  <fl xWatch=selectedcat#[v.name]><select name=template#v.name onChange=updateGenTemplate2('#v.name') xOptions="templateslist.#[selectedcat#[v.name]],id,name"></select></fl>
+<!--  <fl xCast='object' xSetObj='source=' xSet='path2=templates.#[selectedcat2].#[selectedtemplate].vars.#[selectedtemplate]#[ki].data -->
+</fl>
+<fl xTest='"#v.stype"=="obj"||"#v.stype"=="var"'>
+  <fl xCast='object' xSetObj='source=radVar("v.data")' xSet='path2=templates.#[selectedcat2].#[selectedtemplate].vars.#[ki].data,shortname2=#v.name'></fl>
+  <cl></cl>
+  <fl>or</fl>
+  <fl><select xName=var#v.name xOptions='staticslist,id,name'></select></fl>
+  <cl></cl>
+</fl>
+<fl xTest='"#v.stype"=="lit"||"#v.stype"=="string"'>
+<input type=text xName=var#v.name size=80>
+</fl>
+<fl xTest='"#v.stype"=="text"'>
+<textarea xName=var#v.name rows=80 cols=8></textarea>
+<cl></cl>
+</fl>
+<cl></cl>
+  </fl>
+<cl></cl>
+</div>
+<cl></cl>
+</div>
+<cl></cl>
+<fl xWatch=gencode><pre>#gencode</pre></fl>
+ <cl></cl>
+ <btn xCmd='generateCode()'>Generate</div>
+ <cl></cl>
+</form>
+
+</div>
+
+</templates>
+
+<dataforms>
+
+</dataforms>
+
+</body>
+
+<script language=javascript>
+var basicMenu = [];
+
+var cats = {}, templates = {}, dbconns = {}, dbtabs = {}, statics = {};
+
+function castSpell()
+{
+  var f = document.forms['caster'];
+  var e = gE("zenbox");
+  e.innerHTML = eval(f.spell.value);
+  return false;
+}
+
+function editCategory( id )
+{
+  radStore("catid", id);
+  blitzTemplate(gE("catviewer"), "editcategory");
+}
+
+function delCategory(id)
+{
+  if( id == radVar("catid") ) {
+    clearNode(gE("catviewer"));
+  }
+  HtmlRequest('/gen/delcat.js', buildArgString({'id':id}), finishDelCategory);
+}
+function finishAddCategory(data)
+{
+  var obj = JSON.parse(data);
+  var id = obj.data._id;
+  cats[ id ] = obj.data;
+  cats[ id ].id = id;
+  delete cats[ id ]._id;
+  radStore("cats", cats);
+  makeCatsList();
+//  radChange("cats1");
+}
+function finishEditCategory(data)
+{
+  makeCatsList();
+  radChange("cats");
+  console.log("Done");
+}
+function finishDelCategory(data)
+{
+  var obj = JSON.parse(data);
+  //! Delete it from the list
+  var id = obj.data.id;
+  delete cats[id];
+  radStore("cats",cats);
+  makeCatsList();
+  setTimeout("radChange('cats')",100);
+//  radChange("cats1");
+}
+
+function updateCategory()
+{
+  var id = document.forms['tcat'].cat.value;
+  radStore("selectedcatid", id);
+  if( !(id in templates) ) templates[id]={};
+  document.forms['newtemplate'].catid.value = id;
+  setTimeout('radChange("templates")',100);
+}
+
+
+function editTemplate( id )
+{
+  radStore("templateid", id);
+  blitzTemplate(gE("templateviewer"), "edittemplate");
+}
+
+function delTemplate(id)
+{
+  if( id == radVar("templateid") ) {
+    clearNode(gE("templateviewer"));
+  }
+  HtmlRequest('/gen/deltemplate.js', buildArgString({'id':id}), finishDelTemplate);
+}
+function finishAddTemplate(data)
+{
+  var obj = JSON.parse(data);
+  var catid = radVar("selectedcatid");
+  var id = obj.data._id;
+  if( !( catid in templates ) )
+    templates[ catid ] = {};
+  templates[ catid ][ id ] = obj.data;
+  templates[ catid ][ id ].id = id;
+  delete templates[ catid ][ id ]._id;
+  radStore("templates."+catid, templates[catid]);
+  makeTemplatesList(catid);
+}
+function finishEditTemplate(data)
+{
+  var obj = JSON.parse(data);
+  console.log(obj);
+  var catid = obj.data.catid;
+  var id = obj.data._id;
+  delete obj.data._id;
+  obj.data.id = id;
+  templates[ catid ][ id ] = obj.data;
+  radStore("templates."+catid, templates[catid]);
+  makeTemplatesList(catid);
+  //radChange("templates." + obj.catid);
+  setTimeout("radChange('templates')",100);
+}
+function finishDelTemplate(data)
+{
+  var obj = JSON.parse(data);
+  var id = obj.data.id;
+  var catid = obj.data.catid;
+  delete templates[catid][id];
+  radStore("templates."+catid,templates[catid]);
+  makeTemplatesList(catid);
+}
+
+
+
+function editStatic( id )
+{
+  radStore("staticid", id);
+  blitzTemplate(gE("staticviewer"), "editstatic");
+}
+
+function delStatic(id)
+{
+  if( id == radVar("staticid") ) {
+    clearNode(gE("staticviewer"));
+  }
+  HtmlRequest('/gen/delstatic.js', buildArgString({'id':id}), finishDelStatic);
+}
+function finishAddStatic(data)
+{
+  var obj = JSON.parse(data);
+  var id = obj.data._id;
+  statics[ id ] = obj.data;
+  statics[ id ].id = id;
+  delete statics[ id ]._id;
+  radStore("statics", statics);
+  makeStaticsList();
+}
+function finishEditStatic(data)
+{
+  var obj = JSON.parse(data);
+  console.log(obj);
+  var id = obj.data._id;
+  delete obj.data._id;
+  obj.data.id = id;
+  statics[ id ] = obj.data;
+  radStore("statics", statics);
+  //radChange("statics." + obj.catid);
+  makeStaticsList();
+  setTimeout("radChange('statics')",100);
+}
+function finishDelStatic(data)
+{
+  var obj = JSON.parse(data);
+  var id = obj.data.id;
+  delete statics[id];
+  radStore("statics",statics);
+  makeStaticsList();
+}
+
+
+
+function editDatabase( id )
+{
+  radStore("databaseid", id);
+  blitzTemplate(gE("databaseviewer"), "editdatabase");
+}
+
+function delDatabase(id)
+{
+  if( id == radVar("databaseid") ) {
+    clearNode(gE("databaseviewer"));
+  }
+  HtmlRequest('/gen/deldatabase.js', buildArgString({'id':id}), finishDelDatabase);
+}
+function finishAddDatabase(data)
+{
+  var obj = JSON.parse(data);
+  console.log("add: ", obj);
+  var id = obj.data._id;
+  dbonns[ id ] = obj.data;
+  dbconns[ id ].id = id;
+  delete dbconns[ id ]._id;
+  radStore("dbconns", dbconns);
+  makeDbconnsList();
+}
+function finishEditDatabase(data)
+{
+  var obj = JSON.parse(data);
+  console.log("edit: ", obj);
+  radChange("dbconns");
+  makeDbconnsList();
+  setTimeout("radChange('dbconns')",100);
+}
+function finishDelDatabase(data)
+{
+  var obj = JSON.parse(data);
+  var id = obj.data.id;
+  delete dbconns[id];
+  makeDbconnsList();
+  radStore("dbconns",dbconns);
+}
+
+
+
+
+
+
+function updateGenCategory()
+{
+  var cat = document.forms['gen'].cat.value;
+  radStore("selectedcat2", cat);
+}
+
+function updateGenTemplate()
+{
+  var template = document.forms['gen'].template.value;
+  radStore("selectedtemplate", template);
+}
+
+function processParams(parmstr)
+{
+  var i, mode=0;
+  var varname='', varvalue='', buf='';
+  var vars = {};
+
+  for( i=0; i<parmstr.length; ++i ) {
+    switch( mode ) {
+      case 0:
+        if( parmstr[i] == '=' ) {
+          if( parmstr[i+1] == "'" ) {
+            varvalue='';
+            mode=2;
+          } else {
+            varvalue='';
+            mode=1;
+          }
+          continue;
+        }
+        varname += parmstr[i];
+        continue;
+      case 1:
+        if( parmstr[i] == ' ' ) {
+          vars[varname] = varvalue;
+          varname = '';
+          mode = 0;
+          continue;
+        }
+        varvalue += parmstr[i];
+        continue;
+      case 2:
+        if( parmstr[i] == "'" ) {
+          vars[varname] = varvalue;
+          varname = '';
+          mode = 0;
+          continue;
+        }
+        if( parmstr[i] == '\\' ) {
+          if( parmstr[i+1] == "'" ) {
+            i++;
+          }
+        }
+        varvalue += parmstr[i];
+        continue;
+    }
+  }
+  if( mode == 1 || mode == 2 ) {
+    vars[varname] = varvalue;
+  }
+
+  return vars;
+}
+
+
+function processParamList(parmstr)
+{
+  var i, vars=[], varname='';
+
+  for( i=0; i<parmstr.length; ++i ) {
+    if( parmstr[i] == ' ' ) {
+      vars.push(varname);
+      varname = '';
+    } else {
+      varname += parmstr[i];
+    }
+  }
+
+  return vars;
+}
+
+
+var contextvars={};
+var scopevars=[];
+function resetContext()
+{
+  contextvars={};
+  scopevars=[];
+}
+
+function evalParam(param)
+{
+  var i, n;
+  var inits="";
+  for( i in contextvars ) {
+    inits += "var " + i + "=contextvars['"+i+"'];";
+  }
+  for( i = 0; i < scopevars.length; ++i ) {
+    for( n in scopevars[i] ) {
+      inits += "var " + n + "=scopevars[" + i + "]['" + n + "'];";
+    }
+  }
+  eval(inits);
+  var buf='', subvar, depth=0, iStart;
+  for( i=0; i<param.length; i++ ) {
+    if( param[i] == '$' && param[i+1] == '{' ) {
+      depth=0;
+      iStart=i;
+      for( ; i<param.length; i++ ) {
+        if( param[i] == '{' ) {
+          depth++;
+        } else if( param[i] == '}' ) {
+          depth--;
+          if( depth == -1 ) {
+            break;
+          }
+        }
+      }
+      subvar = param.substr(iStart,i-iStart);
+      buf += evalParam(subvar);
+    } else {
+      buf += param[i];
+    }
+  }
+
+  var v = eval(buf);
+  console.log("Inits: ", inits);
+  console.log("Param: ", param);
+  console.log("Result: ", v);
+  return v;
+}
+function litParam(param)
+{
+  //! Sense more complicated details
+  var i, iStart;
+  var buf='';
+  var depth=0;
+  var subvar;
+
+  for( i=0; i<param.length; i++ ) {
+    if( param[i] == '$' && param[i+1] == '{' ) {
+      depth=0;
+      iStart=i;
+      for( ; i<param.length; i++ ) {
+        if( param[i] == '{' ) {
+          depth++;
+        } else if( param[i] == '}' ) {
+          depth--;
+          if( depth == -1 ) {
+            break;
+          }
+        }
+      }
+      subvar = param.substr(iStart,i-iStart);
+      buf += evalParam(subvar);
+    } else {
+      buf += param[i];
+    }
+  }
+  return param;
+}
+
+var funcs={};
+
+function translateCode(tpl, i, runtime=true, copydump=false)
+{
+  var mode, code, buffer='';
+  var startpt=i;
+  var i2, subbuf, wasif=true;
+
+  for( ; i<tpl.length; ++i ) {
+    mode = tpl[i].mode;
+    code = tpl[i].code;
+    if( copydump ) {
+      buffer.push(tpl[i]);
+      if( mode == 1 && code.trim() == 'end' ) {
+        return [i+1,buffer];
+      }
+      continue;
+    }
+    if( mode == 2 ) continue;
+    console.log("mode " + mode,code);
+    if( mode == 0 ) {
+      if( runtime )
+        buffer += code;
+      continue;
+    }
+    if( mode == 1 ) {
+      if( code.substr(0,1) == '~' ) {
+        var evalstr = code.substr(1);
+        eval(evalstr);
+      } else if( code.substr(0,8) == 'function' ) {
+        var parmstr = code.substr(9).trim();
+        var params = processParamList(parmstr);
+        var funcname = params[0];
+        var func;
+
+        func = { 'name': funcname, 'args': params.slice(1) };
+
+        [i2,subbuf] = translateCode(tpl,i+1,true,true);
+        func['code'] = subbuf;
+
+        i = i2-1;
+        startpt = i2;
+
+        funcs[funcname] = func;
+      } else if( code.substr(0,4) == 'call' ) {
+        var parmstr = code.substr(5).trim();
+        var params = processParamList(parmstr);
+        var funcname = params[0];
+        var args = params.slice(1);
+        var n, func = funcs[funcname];
+        var scope = {};
+
+        for( n=0; n<args.length; ++n ) {
+          scope[ func.args[n] ] = args[n];
+        }
+        scopevars.push(scope);
+        [i2,subbuf] = translateCode(func.code,0,true);
+        scopevars.pop();
+        buffer += subbuf;
+      } else if( code.substr(0,7) == 'forhead' ) {
+        var parmstr = code.substr(8).trim();
+        var params = processParams(parmstr);
+        console.log("Forhead params: ", params);
+
+        var loopsource = evalParam(params.loop);
+        var loopkey = litParam(params.key);
+        var loopval = litParam(params.value);
+        var loopind = params.index ? litParam(params.index) : '';
+
+        var _loopind, _loopkey, _loopval;
+
+        var displayhead = false;
+
+        console.log("For loop: ", loopsource);
+
+        if( Array.isArray(loopsource) ) {
+          if( loopsource.length == 0 ) {
+            displayhead = false;
+          } else {
+            displayhead = true;
+          }
+        } else {
+          if( Object.keys(loopsource).length == 0 ) {
+            displayhead = false;
+          } else {
+            displayhead = true;
+          }
+        }
+        if( displayhead ) {
+          [i2,subbuf] = translateCode(tpl,i+1,true);
+          buffer += subbuf;
+          i = i2-1;
+          startpt = i2;
+          wasif = true;
+        } else {
+          [i2,subbuf] = translateCode(tpl,i+1,false);
+          i = i2-1;
+          startpt = i2;
+          wasif = true;
+        }
+      } else if( code.substr(0,3) == 'for' ) {
+        var parmstr = code.substr(4).trim();
+        var params = processParams(parmstr);
+        console.log("For params: ", params);
+
+        var loopsource = evalParam(params.loop);
+        var loopkey = litParam(params.key);
+        var loopval = litParam(params.value);
+        var loopind = params.index ? litParam(params.index) : '';
+
+        var _loopind, _loopkey, _loopval;
+
+        if( !runtime ) {
+          console.log("Skip over for loop");
+          [i2,subbuf] = translateCode(tpl,i+1,false);
+          i=i2-1;
+          continue;
+        }
+
+        console.log("For loop: ", loopsource);
+
+        var scope = {};
+
+        if( Array.isArray(loopsource) ) {
+          for( _loopind=0; _loopind<loopsource.length; ++_loopind ) {
+            console.log("For ind: " + _loopind);
+            _loopkey=_loopind;
+            _loopval=loopsource[_loopkey];
+
+            scope[loopkey] = _loopkey;
+            if( loopind != '' )
+              scope[loopind] = _loopind;
+            scope[loopval] = _loopval;
+
+            scopevars.push(scope);
+            [i2,subbuf] = translateCode(tpl,i+1);
+            scopevars.pop();
+            buffer += subbuf;
+            console.log("Continue from loop index: " + _loopind);
+          }
+          i = i2-1;
+          continue;
+        } else {
+          _loopind=0;
+          for( _loopkey in loopsource ) {
+            _loopval = loopsource[_loopkey];
+
+            scope[loopkey] = _loopkey;
+            if( loopind != '' )
+              scope[loopind] = _loopind;
+            scope[loopval] = _loopval;
+
+            scopevars.push(scope);
+            [i2,subbuf] = translateCode(tpl,i+1);
+            scopevars.pop();
+            buffer += subbuf;
+            _loopind++;
+          }
+          i = i2-1;
+          continue;
+        }
+      } else if( code.substr(0,2) == 'if' ) {
+        var expr = code.substr(3).trim();
+        if( evalParam(expr) == true ) {
+          [i2,subbuf] = translateCode(tpl,i+1,true);
+          buffer += subbuf;
+          i = i2-1;
+          startpt = i2;
+          wasif = true;
+          continue;
+        } else {
+          [i2,subbuf] = translateCode(tpl,i+1,false);
+          i = i2-1;
+          startpt = i2;
+          wasif = false;
+        }
+      } else if( code.substr(0,6) == 'elseif' ) {
+        if( i != startpt )
+          return [i,buffer];
+        if( wasif ) {
+          [i2,subbuf] = translateCode(tpl,i+1,false);
+          i = i2-1;
+          starpt = i2;
+          wasif = true;
+        } else {
+          var expr = code.substr(7).trim();
+          if( evalParam(expr) == true ) {
+            [i2,subbuf] = translateCode(tpl,i+1,true);
+            buffer += subbuf;
+            i = i2-1;
+            startpt = i2;
+            wasif = true;
+          } else {
+            [i2,subbuf] = translateCode(tpl,i+1,false);
+            i = i2-1;
+            startpt = i2;
+            wasif = true;
+          }
+        }
+        continue;
+      } else if( code.substr(0,4) == 'else' ) {
+        if( i != startpt )
+          return [i,buffer];
+        if( wasif ) {
+          [i2,subbuf] = translateCode(tpl,i+1,false);
+          i = i2-1;
+          startpt = i2;
+        } else {
+          [i2,subbuf] = translateCode(tpl,i+1,true);
+          buffer += subbuf;
+          i = i2-1;
+          startpt = i2;
+        }
+        continue;
+      } else if( code.substr(0,5) == 'endif' ) {
+        return [i+1,buffer];
+      } else if( code.substr(0,3) == 'set' ) {
+        if( !runtime ) continue;
+        var parmstr = code.substr(4).trim();
+        var params = processParams(parmstr);
+        var j;
+        for( j in params )
+          contextvars[ j ] = litParam(params[j]);
+      } else if( code.substr(0,6) == 'endfor' ) {
+        return [i+1,buffer];
+      } else if( runtime ) {
+        buffer += evalParam(code);
+      }
+    }
+  }
+  return [i,buffer];
+}
+
+function compileFormVars()
+{
+  var data = radVar("gendata");
+  var mesh={};
+  var i, vname;
+
+  for( i in data ) {
+    if( i.startsWith("var") ) {
+      vname = i.substr(3);
+      if( data[i] == '' ) continue;
+      //if( vname in mesh ) continue;
+      mesh[vname] = data[i];
+    }
+  }
+
+  return mesh;
+}
+function generateCode()
+{
+  var catid = document.forms['gen'].cat.value;
+  var tplid = document.forms['gen'].template.value;
+  var tpl = templates[catid][tplid];
+  var i, mode, code;
+  var buffer = '', i;
+  var dets = compileFormVars();
+
+  var vars = tpl.vars;
+  resetContext();
+  for( i=0; i<vars.length; ++i ) {
+    switch( vars[i].stype ) {
+      case 'db':
+        contextvars[ vars[i].name ] = dbconns[ dets[vars[i].name]  ];
+        contextvars[ vars[i].name ].tables = dbtabs[ dets[vars[i].name] ];
+        break;
+      case 'obj': case 'object': case 'var':
+        if( typeof dets[vars[i].name] == 'string' ) {
+          contextvars[ vars[i].name ] = eval( statics[ dets[vars[i].name] ].code );
+        } else {
+          contextvars[ vars[i].name ] = dets[vars[i].name];
+        }
+        break;
+      case 'str': case 'string': case 'num': case 'number': case 'lit': case 'literal': case 'text':
+        contextvars[ vars[i].name ] = dets[vars[i].name];
+        break;
+    }
+  }
+  [i,buffer] = translateCode(tpl.tpl, 0);
+  console.log("Generated:",i,buffer);
+  radStore("gencode", buffer);
+}
+
+
+function initSkeleton()
+{
+// Initialize any variables here radStore("x", 42);
+  basicMenu = [
+      { 'title': 'User', 'children': [
+          { 'title': 'Profile', 'cast': 'userprofile' },
+          { 'title': 'Signup', 'cast': 'signup' },
+          { 'title': 'Signin', 'cast': 'signin' },
+          { 'title': 'Logout', 'cast': 'logout' },
+          { 'title': 'List', 'cast': 'userlist' }
+      ] },
+      { 'title': 'Categories', 'cast': 'categories' },
+      { 'title': 'Templates', 'cast': 'templates' },
+      { 'title': 'Databases', 'cast': 'databases' },
+      { 'title': 'Statics', 'cast': 'statics' },
+      { 'title': 'Generate', 'cast': 'generate' },
+      { 'title': 'Page', 'children': [
+          { 'title': 'Background', 'act': 'cycleBodyStyles' }
+      ]}
+      ];
+
+  var host;
+
+  //radHook( "hosts." + window.location.hostname + ".config", checkGroups )
+  host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
+  radStore( "hostname", host.hostname );
+  radStore( "hosts." + host.hostname, host );;
+
+  structMenu(basicMenu);
+
+  radLoad();
+  radHook('pagekey', authstat);
+  cycleBodyStyles();
+  HtmlRequestGet('/gen/start.json', '', gotStart);
+}
+function authstat()
+{
+  var sess = radVar("sess");
+
+  if( sess != null && 'userid' in sess && sess.userid != -1 ) {
+    console.log("Userid: " + sess.userid);
+  }
+}
+
+function gotStart(data)
+{
+  var i;
+  var obj = JSON.parse(data);
+  console.log(obj);
+  cats = obj.data.cats;
+  templates = obj.data.templates;
+  dbconns = obj.data.dbconns;
+  dbtabs = obj.data.dbtabs;
+  statics = obj.data.statics;
+  radStore("cats", cats);
+  makeCatsList();
+  radStore("templates", templates);
+  for( i in templates ) {
+    var n, ix;
+    for( n in templates[i] ) {
+      for( ix=0; ix<templates[i][n].vars.length; ix++ ) {
+        if( templates[i][n].vars[ix].stype == 'var' || templates[i][n].vars[ix].stype == 'obj' ) {
+          if( typeof templates[i][n].vars[ix].default != 'undefined' )
+            templates[i][n].vars[ix].data = buildObject(templates[i][n].vars[ix].default);
+        }
+      }
+    }
+    radStore("templates." + i, templates[i]);
+    makeTemplatesList(i);
+  }
+  radStore("dbconns", dbconns);
+  makeDbconnsList();
+  radStore("dbtabs", dbtabs);
+  radStore("statics", statics);
+  makeStaticsList();
+  radStore("sess", obj.data.auth);
+}
+
+function makeCatsList()
+{
+  var _cats = [], cats = radVar("cats");
+  var i;
+  _cats.push({ 'id': '', 'name': '' });
+  for( i in cats ) {
+    _cats.push( cats[i] );
+  }
+  radStore("catslist", _cats);
+}
+
+function makeStaticsList()
+{
+  var _statics = [], statics = radVar("statics");
+  var i;
+  _statics.push({ 'id': '', 'name': '' });
+  for( i in statics ) {
+    _statics.push( statics[i] );
+  }
+  radStore("staticslist", _statics);
+}
+
+function makeTemplatesList(catid)
+{
+  var _tpls = [], tpls = radVar("templates."+catid);
+  var i;
+  _tpls.push({ 'id': '', 'name': '' });
+  for( i in tpls ) {
+    _tpls.push( tpls[i] );
+  }
+  radStore("templateslist." + catid, _tpls);
+}
+
+function makeDbconnsList()
+{
+  var _dbs = [], dbs = radVar("dbconns");
+  var i;
+  _dbs.push({ 'id': '', 'name': '' });
+  for( i in dbs ) {
+    _dbs.push( dbs[i] );
+  }
+
+  radStore("dbconnslist", _dbs);
+}
+
+function cycleBodyStyles()
+{
+    var e = document.body;
+    if( typeof e.bgstate == 'undefined' )
+        e.bgstate=5;
+    e.bgstate = (e.bgstate+1)%9;
+    switch( e.bgstate ) {
+    case 1: e.className = 'bg0'; e.style.color = 'silver'; break;
+    case 2: e.className = 'bg1'; e.style.color = 'white'; break;
+    case 3: e.className = 'bg2'; e.style.color = 'black'; break;
+    case 4: e.className = 'bg3'; e.style.color = 'tan'; break;
+    case 5: e.className = 'bgsunrise'; e.style.color = 'white'; break;
+    case 6: e.className = 'bgmoonrise'; e.style.color = 'silver'; break;
+    case 7: e.className = 'bgmoonset'; e.style.color = 'silver'; break;
+    case 8: e.className = 'bgsunset'; e.style.color = 'black'; break;
+    }
+}
+
+registerStartup(initSkeleton);
+
+</script>
+</html>

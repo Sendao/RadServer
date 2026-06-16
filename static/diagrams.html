@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Diagram Library</title>
+</head>
+<body style='margin:0'>
+    <canvas id="myCanvas"></canvas>
+</body>
+<script src="js/diagram.js"></script>
+<script>
+
+
+
+// Example Usage (Demo with Spring Layout)
+const diagram = new Diagram('myCanvas', 800, 600, 'spring'); // Spring layout by default
+
+// Add shapes with auto-layout
+diagram.addShape('circle', 'Short Text', { });
+diagram.addShape('triangle', 'Medium Length Text', { });
+diagram.addShape('square', 'Very Long Text Here', { rounded: 10 });
+diagram.addShape('pentagon', 'Another Long Text', { });
+
+// Add connectors (manual for demo, but could be automated)
+const shapes = diagram.shapes;
+diagram.addConnector(0, 1, { isCurved: true, curveRatio: 0.7 });
+diagram.addConnector(1, 2, { });
+diagram.addConnector(2, 3, { isCurved: true, curveRatio: 0.6 });
+
+diagram.render();
+
+</script>
+</html>

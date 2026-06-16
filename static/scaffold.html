@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Single Page Application Scaffold</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@3.2.4/dist/tailwind.min.css" rel="stylesheet">
+    
+    <!-- FontAwesome CDN -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.2.0/css/all.min.css" integrity="sha512-xh6O/CkQoPOWDdYTDqeRdPCVd1SpvCA9XXcUnZS2FmJNp1coAFzvtCN9BmamE+4aHK8yyUHUSCcJHgXloTyT2A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body class="bg-gray-100">
+    <header class="bg-blue-600 text-white p-4">
+        <nav class="container mx-auto flex justify-between items-center">
+            <div>
+                <a href="#" class="text-xl font-bold">Brand Name</a>
+            </div>
+            <ul class="flex space-x-4">
+                <li><a href="#" class="hover:text-blue-200"><i class="fas fa-home"></i> Home</a></li>
+                <li><a href="#" class="hover:text-blue-200"><i class="fas fa-info-circle"></i> About</a></li>
+                <li><a href="#" class="hover:text-blue-200"><i class="fas fa-envelope"></i> Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4">
+        <!-- Dynamic content will be inserted here -->
+        <h1 class="text-2xl font-bold mb-4">Welcome to My SPA</h1>
+        <p>This is where your main content will go.</p>
+    </main>
+
+    <footer class="bg-gray-800 text-white text-center p-4">
+        <p>© 2025 Your Company Name</p>
+    </footer>
+
+    <script>
+        // Here's where you'd set up your SPA logic
+        document.addEventListener('DOMContentLoaded', (event) => {
+            console.log('SPA scaffold is ready to use!');
+        });
+    </script>
+</body>
+</html>

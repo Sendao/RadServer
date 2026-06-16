@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Collect Stuff Game</title>
+    <style>
+        canvas { border: 1px solid black; }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="800" height="600"></canvas>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const player = {
+            x: 400,
+            y: 300,
+            size: 20,
+            speed: 5
+        };
+
+        let items = [];
+        let score = 0;
+        const MAX_ITEMS = 50;
+
+        function drawPlayer() {
+            ctx.fillStyle = 'blue';
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+        }
+
+        function drawItems() {
+            ctx.fillStyle = 'red';
+            items.forEach(item => {
+                ctx.fillRect(item.x, item.y, item.size, item.size);
+            });
+        }
+
+        function spawnItem() {
+            items.push({
+                x: Math.random() * (canvas.width - 10),
+                y: Math.random() * (canvas.height - 10),
+                size: 10
+            });
+        }
+
+        function checkCollisions() {
+            items = items.filter(item => {
+                if (
+                    player.x < item.x + item.size &&
+                    player.x + player.size > item.x &&
+                    player.y < item.y + item.size &&
+                    player.y + player.size > item.y
+                ) {
+                    score++;
+                    return false;
+                }
+                return true;
+            });
+        }
+
+        function updateScore() {
+            ctx.fillStyle = 'black';
+            ctx.font = '20px Arial';
+            ctx.fillText(`Score: ${score}`, 10, 30);
+        }
+
+        function increaseDifficulty() {
+            player.speed = 5 + Math.floor(score / 10);
+            clearInterval(itemSpawnInterval);
+            itemSpawnInterval = setInterval(spawnItem, Math.max(100, 1000 - score * 10));
+        }
+
+        function gameLoop() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            drawPlayer();
+            drawItems();
+            checkCollisions();
+            updateScore();
+            increaseDifficulty();
+
+            if (items.length > MAX_ITEMS) {
+                items = items.slice(-MAX_ITEMS);
+            }
+
+            requestAnimationFrame(gameLoop);
+        }
+
+        document.addEventListener('keydown', movePlayer);
+
+        function movePlayer(e) {
+            switch(e.key) {
+                case 'ArrowUp':
+                    player.y = Math.max(0, player.y - player.speed);
+                    break;
+                case 'ArrowDown':
+                    player.y = Math.min(canvas.height - player.size, player.y + player.speed);
+                    break;
+                case 'ArrowLeft':
+                    player.x = Math.max(0, player.x - player.speed);
+                    break;
+                case 'ArrowRight':
+                    player.x = Math.min(canvas.width - player.size, player.x + player.speed);
+                    break;
+            }
+        }
+
+        let itemSpawnInterval = setInterval(spawnItem, 1000);
+        gameLoop();
+    </script>
+</body>
+</html>

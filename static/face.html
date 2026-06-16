@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face App</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        #game-container { margin: 0px auto; padding: 0 }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+    </div>
+</body>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.149.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        window.THREE = THREE;
+        window.OrbitControls = OrbitControls;
+    </script>
+<script language=javascript>
+
+function mergeColors(a, b)
+{
+    return (a+b)/2;
+}
+
+class Face {
+    constructor(params)
+    {
+        this.params = params || {};
+        this.parts = {};
+        this.initParts();
+    }
+
+    initParts() {
+        // Initialize face parts
+        this.parts.face = this.createFace();
+        this.parts.leftEye = this.createEye(true);
+        this.parts.rightEye = this.createEye(false);
+        this.parts.nose = this.createNose();
+        this.parts.mouth = this.createMouth();
+        this.parts.leftEyebrow = this.createEyebrow(true);
+        this.parts.rightEyebrow = this.createEyebrow(false);
+        this.parts.leftCheek = this.createCheek(true);
+        this.parts.rightCheek = this.createCheek(false);
+        this.parts.leftEar = this.createEar(true);
+        this.parts.rightEar = this.createEar(false);
+    }
+
+    updateToTrackMouse(mouseX, mouseY) {
+        // Function to rotate the eyes to follow the mouse
+        if (!this.parts.leftEye || !this.parts.rightEye) return;
+
+        const windowHalfX = window.innerWidth / 2;
+        const windowHalfY = window.innerHeight / 2;
+
+        // Convert mouse position to normalized device coordinates
+        const mousePosition = new THREE.Vector2(
+            (mouseX - windowHalfX) / windowHalfX,
+            -(mouseY - windowHalfY) / windowHalfY
+        );
+
+        //const worldPosition = new THREE.Vector3();
+        //face.getWorldPosition(worldPosition);
+
+        const mouseWorldPosition = new THREE.Vector3();
+        mouseWorldPosition.x = mousePosition.x;
+        mouseWorldPosition.y = mousePosition.y;
+        mouseWorldPosition.z = camera.position.z;
+
+        this.parts.leftEye.lookAt( mouseWorldPosition );
+        this.parts.rightEye.lookAt( mouseWorldPosition );/*
+
+        // Function to update eye rotation
+        const updateEye = (eye, isLeft) => {
+            // World position of the eye
+            const worldPosition = new THREE.Vector3();
+            eye.getWorldPosition(worldPosition);
+
+            // Vector from eye to mouse position
+            const direction = new THREE.Vector3();
+            direction.subVectors(new THREE.Vector3(mousePosition.x, mousePosition.y, camera.position.z), worldPosition);
+            direction.normalize();
+
+            // Calculate the angle
+            const angle1 = Math.atan2(direction.x, direction.z);
+            const angle2 = Math.atan2(-direction.y, direction.z);
+
+            // Rotate the eye
+            eye.rotation.y = angle1; // Adjust rotation based on left or right eye
+            eye.rotation.x = angle2; // Adjust rotation based on left or right eye
+        };
+
+        // Update left and right eyes
+        updateEye(this.parts.leftEye, true);
+        updateEye(this.parts.rightEye, false);*/
+    }
+
+    createFace() {
+        const geometry = new THREE.BoxGeometry(2, 2, 0.5); // Width, height, depth
+        const material = new THREE.MeshLambertMaterial({ color: this.params.skinColor });
+        return new THREE.Mesh(geometry, material);
+    }
+
+    createEye(isLeft) {
+        const geometry = new THREE.SphereGeometry(this.params.eyeSize / 2 || 0.2, 32, 32);
+        const material = new THREE.MeshLambertMaterial({ color: 0xffffff });
+        const eye = new THREE.Mesh(geometry, material);
+        eye.position.set(isLeft ? -this.params.eyeDistance / 2 : this.params.eyeDistance / 2, 0.5, 0.25);
+
+        const geo2 = new THREE.SphereGeometry(this.params.eyeSize / 4 || 0.05, 32, 32);
+        const mat2 = new THREE.MeshLambertMaterial({ color: this.params.eyeColor || 0xffffff });
+        const iris = new THREE.Mesh(geo2, mat2);
+        iris.position.set(0, 0, this.params.eyeSize/3 );
+        eye.add(iris);
+
+        const geo3 = new THREE.SphereGeometry(this.params.eyeSize / 6 || 0.05, 32, 32);
+        const mat3 = new THREE.MeshLambertMaterial({ color: 0x000000 });
+        const pupil = new THREE.Mesh(geo3, mat3);
+        pupil.position.set(0, 0, this.params.eyeSize/10 );
+        iris.add(pupil);
+        
+        return eye;
+    }
+
+    createEyebrow(isLeft) {
+        const geometry = new THREE.BoxGeometry(this.params.eyebrowSize || 1, 0.1, 0.1);
+        const material = new THREE.MeshLambertMaterial({ color: this.params.hairColor || 0x000000 });
+        const eyebrow = new THREE.Mesh(geometry, material);
+        eyebrow.position.set(isLeft ? -this.params.eyeDistance / 2 : this.params.eyeDistance / 2, 0.8, 0.25);
+        return eyebrow;
+    }
+
+    createMouth() {
+        const geometry = new THREE.BoxGeometry(this.params.mouthWidth || 1.5, 0.1, 0.1);
+        const material = new THREE.MeshLambertMaterial({ color: 0xff0000 });
+        const mouth = new THREE.Mesh(geometry, material);
+        mouth.position.set(0, -0.5, 0.25);
+        return mouth;
+    }    
+
+    createCheek(isLeft) {
+        // Creating a cylinder for cheeks
+        const geometry = new THREE.CylinderGeometry(
+            this.params.cheekWidth/2 || 0.2, // top radius
+            this.params.cheekWidth/2 || 0.2, // bottom radius
+            this.params.cheekDepth || 0.5, // height
+            32 // number of segments
+        );
+        const material = new THREE.MeshBasicMaterial({ color: mergeColors(this.params.skinColor, 0xff0000) });
+        const cheek = new THREE.Mesh(geometry, material);
+        cheek.rotation.x = Math.PI / 2; // Rotate to lay flat
+        cheek.position.set((isLeft ? -1 : 1) * ( this.params.cheekDistance / 2 ), 0, 0.1);
+        return cheek;
+    }
+
+    createNose() {
+        // Creating a diamond shape for the nose using TetrahedronGeometry as an approximation
+        const geometry = new THREE.TetrahedronGeometry((this.params.noseSize || 1) * 0.2);
+        const material = new THREE.MeshBasicMaterial({ color: 0x000000 });
+        const nose = new THREE.Mesh(geometry, material);
+        nose.rotation.x = Math.PI / 4; // Rotate to make it look like a diamond
+        nose.position.set(0, 0.2, 0.2);
+        return nose;
+    }
+
+    createEar(isLeft) {
+        const geometry = new THREE.BoxGeometry(this.params.earSize || 0.3, this.params.earSize || 0.3, 0.1);
+        const material = new THREE.MeshLambertMaterial({ color: this.params.skinColor });
+        const ear = new THREE.Mesh(geometry, material);
+        ear.position.set(isLeft ? -1.1 : 1.1, 0, 0.1);
+        return ear;
+    }
+
+    addToScene(scene) {
+        for (let part in this.parts) {
+            scene.add(this.parts[part]);
+        }
+    }
+    removeFromScene(scene) {
+        for (let part in this.parts) {
+            scene.remove(this.parts[part]);
+        }
+    }
+
+    update(params, scene) {
+        this.removeFromScene(scene);
+
+        // Update the face parameters if needed
+        Object.assign(this.params, params);
+
+        // Reinitialize parts with new parameters
+        this.initParts(); 
+        this.addToScene(scene);
+    }
+
+    validate(newparams, quiet=true) {
+        const {
+            skinColor, hairColor, eyeColor,
+            eyeSize,
+            eyebrowSize, 
+            cheekDepth, cheekWidth, cheekDistance,
+            earSize, 
+            eyeDistance,
+            noseSize,
+            mouthWidth 
+        } = newparams;
+
+        let isSymmetric = true;
+        let warnings = [];
+
+        // Eye Symmetry
+        if (Math.abs(eyeDistance - 1.0) > 0.2) { // Average eye distance for human faces
+            warnings.push("Eye distance might not reflect human norms.");
+            isSymmetric = false;
+        }
+
+        // Eye Size Symmetry
+        if (eyeSize > 0.44 || eyeSize < 0.22) {
+            warnings.push("Eye size is out of normal human range.");
+            isSymmetric = false;
+        }
+
+        // Nose Size and Position
+        if (noseSize > 1.2 || noseSize < 0.3) {
+            warnings.push("Nose size deviates from human norms.");
+            isSymmetric = false;
+        }
+
+        // Mouth Symmetry
+        if (mouthWidth > 1.2 || mouthWidth < 0.5) { // Assuming face width is normalized to 2 units
+            warnings.push("Mouth width might not be symmetrical or human-like.");
+            isSymmetric = false;
+        }
+
+        // Cheek Symmetry
+        if (cheekWidth > 0.6 || cheekWidth < 0.2) {
+            warnings.push("Cheek width might not match human symmetry.");
+            isSymmetric = false;
+        }
+        if (cheekDepth > 0.7 || cheekDepth < 0.3) {
+            warnings.push("Cheek depth might not match human symmetry.");
+            isSymmetric = false;
+        }
+        if( cheekDistance < 0.7 || cheekDistance > 1.5 ) {
+            warnings.push("Cheek distance might not match human symmetry.");
+            isSymmetric = false;
+        }
+
+        // Ear Symmetry
+        if (earSize > 0.3 || earSize < 0.05) {
+            warnings.push("Ear size is out of normal human range.");
+            isSymmetric = false;
+        }
+
+        // Eyebrow Symmetry
+        if (eyebrowSize > 1.1 || eyebrowSize < 0.5) { // Assuming eyebrow size relative to eye size
+            warnings.push("Eyebrow size might not match human symmetry.");
+            isSymmetric = false;
+        }
+        if( !quiet && !isSymmetric ) console.log(warnings);
+        return isSymmetric;
+    }
+}
+var scene, camera, renderer;
+var face;
+var lastUpdateTime=null;
+const inv_fps = 1/2;
+
+function startScene()
+{
+    scene = new THREE.Scene();
+    
+    camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+    camera.position.z = 5;
+    camera.position.y = 1;
+    camera.lookAt(scene.position);
+    
+    renderer = new THREE.WebGLRenderer();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+    document.getElementById('game-container').innerHTML = '';
+    document.getElementById('game-container').appendChild(renderer.domElement);
+
+    camera.position.z = 5;
+
+    const pointLight = new THREE.PointLight(0xffffff, 1);
+    pointLight.position.set(0, 2, 2);
+    scene.add(pointLight);
+
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+    scene.add(ambientLight);
+
+    const directionalLight = new THREE.DirectionalLight(0xffffff, 0.5);
+    directionalLight.position.set(0, 1, 0);
+    scene.add(directionalLight);
+
+    face = new Face({
+        skinColor: 0xb87333, hairColor: 0x000000,
+        eyeColor: 0xa0ffc3,
+        eyeSize: 0.4, 
+        eyebrowSize: 0.5,
+        cheekDepth: 0.5, cheekWidth: 0.3, cheekDistance: 1.0,
+        earSize: 0.3,
+        eyeDistance: 1,
+        noseSize: 1.2,
+        mouthWidth: 0.75
+    });
+    face.addToScene(scene);
+
+
+    // Add OrbitControls
+    const controls = new OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true; // Enable smooth transition
+    controls.dampingFactor = 0.05;
+    controls.screenSpacePanning = false;
+    controls.minDistance = 2;
+    controls.maxDistance = 10;
+
+
+    animate();
+}
+var newFace = null;
+
+const eyes = [ 'eyeColor' ];
+
+const tones = [
+    0xf5deb3, 0xfcdcc2, 0xf5c6aa, 0xe0ac69, 0xcfa177, 0xd2691e, 0xcd853f, 0x8b4513, 0x3d261a, 0x708090, 0x8fbc8f
+];
+const shades = [
+    0xb87333, 0x8b4513, 0x3d261a, 0x87ceeb, 0x4682b4, 0x191970, 0x98fb98, 0x32cd32, 0x006400, 0xdaa520, 0x8b864e,
+    0x556b2f, 0xd3d3d3, 0x808080, 0x2f4f4f, 0xffd700, 0xffbf00, 0xdaa520
+];
+const hairs = [
+    0xf5f5dc, 0xffe4b5, 0xe6b800, 0xcdb79e, 0x8b4513, 0x3d261a, 0x1b1717, 0x000000, 0xff7f50, 0xa52a2a, 0x800000,
+    0x808080, 0xc0c0c0, 0x696969, 0x954535, 0xdcdcdc, 0xb87333
+];
+
+function fluctuateFacialParameters() {
+    if (!face) return; // Make sure the face object exists
+    var newParams;
+    let scaling = 0.1;
+    do {
+        newParams = {};
+        for (let i in face.params) {
+            if (i.indexOf("Color") === -1) {
+                let r = 0.5 * (Math.random() - 0.5);
+                newParams[i] = face.params[i] + r * scaling * face.params[i];
+            } else {
+                newParams[i] = face.params[i]; // Colors remain unchanged for now
+            }
+        }
+        //newParams['skinColor'] = mergeColors( face.params['skinColor'], tones[Math.floor(Math.random()*tones.length)] );
+        newParams['eyeColor'] = mergeColors( face.params['eyeColor'], shades[Math.floor(Math.random()*shades.length)] );
+        //newParams['hairColor'] = mergeColors( face.params['hairColor'], hairs[Math.floor(Math.random()*hairs.length)] );
+        newParams['hairColor' ] = hairs[Math.floor(Math.random()*hairs.length)];
+        newParams['skinColor' ] = tones[Math.floor(Math.random()*tones.length)];
+    } while( !face.validate(newParams) );
+
+    face.update(newParams, scene);
+    face.updateToTrackMouse(mouseX, mouseY);
+}
+
+var mouseX, mouseY;
+
+function animate() {
+    requestAnimationFrame(animate);
+    // Example: rotate the face slightly for each frame
+    //face.parts.face.rotation.y += 0.01;
+    let nowTime = new Date().getTime()/1000;
+    if( lastUpdateTime===null || nowTime > lastUpdateTime + inv_fps ) {
+        lastUpdateTime = nowTime;
+        fluctuateFacialParameters();
+    }
+    renderer.render(scene, camera);
+}
+
+function onDocumentMouseMove(event) {
+    mouseX = event.clientX;
+    mouseY = event.clientY;
+    face.updateToTrackMouse(mouseX, mouseY);
+}
+document.addEventListener('mousemove', onDocumentMouseMove, false);
+window.addEventListener('DOMContentLoaded', startScene);
+
+</script>
+</html>

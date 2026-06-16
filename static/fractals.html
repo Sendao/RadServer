@@ -1,0 +1,508 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Castle Storage</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body style='background: black; color: tan'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<!--  setup -->
+<loadwheel></loadwheel>
+
+
+<!--  main view screen on -->
+<div xSect=main id=mainscroll class="margin-small">&nbsp;</div>
+
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+
+<div class=cl>&nbsp;</div>
+
+</div>
+<!--  main view screen off -->
+
+<zenbox></zenbox>
+
+</body>
+
+<script language=javascript>
+/*
+
+Todo:
+
+ - ed.js link functions
+ - story storage
+ - templates
+  * tag file browser
+   -  import/export/zip/archive
+  * htmldrag composer
+   - templating
+  * treeml idealyzer
+   - themeable
+  * code analyzer
+   - ctags integration
+   - rfs integration
+  * db editor
+
+
+
+ */
+var canvas, context;
+var magnificationFactor = .00125;
+var zoomX = 1, zoomY = 1;
+var maxiterations = 300;
+var maxiterationsJ = 450;
+
+var j_minx = -.5, j_maxx = .5;
+var j_miny = -.5, j_maxy = .5;
+var jsX = 0.285, jsY = 0.01;
+
+var mousestartx,mousestarty;
+var mousex,mousey;
+var isdown=false;
+
+function remap( x, t1, t2, s1, s2 ) {
+	var f = ( x - t1 ) / ( t2 - t1 ),
+		g = f * ( s2 - s1 ) + s1;
+	return g;
+}
+
+function mousedown(ev)
+{
+	if( isdown ) {
+		console.log("Dual action!");
+		canvas.onmousemove = mousemove;
+		canvas.onmouseup = mouseup;
+		return;
+	}
+	console.log(ev);
+	var clientX, clientY;
+	if( ev.changedTouches ) {
+		ev.preventDefault();
+		var touches = ev.changedTouches;
+		var i;
+
+		clientX = touches[ touches.length-1 ].clientX;
+		clientY = touches[ touches.length-1 ].clientY;
+	} else {
+		clientX = ev.clientX;
+		clientY = ev.clientY;
+	}
+	mousestartx = clientX - canvas.offsetLeft;
+	mousestarty = clientY - canvas.offsetTop;
+	canvas.onmousemove = mousemove;
+	canvas.onmouseup = mouseup;
+	canvas.addEventListener('touchmove', mousemove, false);
+	canvas.addEventListener('touchend', mouseup, false);
+	var e = document.createElement("div");
+	e.onmousemove = mousemove;
+	e.onmouseup = mouseup;
+	e.addEventListener('touchmove', mousemove, false);
+	e.addEventListener('touchend', mouseup, false);
+	e.style.border = "1px solid white";
+	e.style.position = "absolute";
+	e.style.left = (mousestartx + canvas.offsetLeft) + "px";
+	e.style.top = (mousestarty + canvas.offsetTop) + "px";
+	e.style.width = "10px";
+	e.style.height = "10px";
+	e.id = "mousemover";
+	document.documentElement.appendChild(e);
+}
+function mousemove(ev)
+{
+	var e = gE("mousemover");
+
+	var clientX, clientY;
+	if( ev.changedTouches ) {
+		ev.preventDefault();
+		var touches = ev.changedTouches;
+		var i;
+
+		clientX = touches[ touches.length-1 ].clientX;
+		clientY = touches[ touches.length-1 ].clientY;
+	} else {
+		clientX = ev.clientX;
+		clientY = ev.clientY;
+	}
+	mousex = clientX - canvas.offsetLeft;
+	mousey = clientY - canvas.offsetTop;
+	e.style.width = (mousex-mousestartx)+"px";
+	e.style.height = (mousey-mousestarty)+"px";
+}
+function mouseup(ev)
+{
+	var e = gE("mousemover");
+	canvas.onmousemove = null;
+	canvas.onmouseup = null;
+	canvas.removeEventListener('touchmove', mousemove, false);
+	canvas.removeEventListener('touchend', mouseup, false);
+
+	document.documentElement.removeChild(e);
+
+	var clientX, clientY;
+	if( ev.changedTouches ) {
+		ev.preventDefault();
+		var touches = ev.changedTouches;
+		var i;
+
+		clientX = touches[ touches.length-1 ].clientX;
+		clientY = touches[ touches.length-1 ].clientY;
+	} else {
+		clientX = ev.clientX;
+		clientY = ev.clientY;
+	}
+	mousex = clientX - canvas.offsetLeft;
+	mousey = clientY - canvas.offsetTop;
+	isdown = false;
+	if( mousex-mousestartx < 20 && mousey-mousestarty < 20 ) {
+		console.log("Discarded mousestrike");
+		return;
+	}
+	if( runmode == 0 ) {
+		panX += (mousestartx*magnificationFactor*zoomX);
+		panY += (mousestarty*magnificationFactor*zoomY);
+	} else {
+		panX += (mousestartx*zoomX);
+		panY += (mousestarty*zoomY);
+	}
+	var zoomwid = canvas.width / (mousex-mousestartx);
+	var zoomhgt = canvas.height / (mousey-mousestarty);
+	console.log("Zoom " + zoomwid + "x" + zoomhgt);
+	zoomX /= zoomwid;
+	zoomY /= zoomhgt;
+
+	if(started==-1)
+		drawImage();
+}
+function buildCanvas()
+{
+	var main = gE("mainscroll");
+	canvas = document.createElement("canvas");
+	canvas.width = main.clientWidth;
+	canvas.height = winH-100;
+	canvas.onmousedown = mousedown;
+	canvas.addEventListener('touchstart', mousedown, false);
+	main.appendChild(canvas);
+	context = canvas.getContext("2d");
+}
+function checkJulia(x,y)
+{
+	var a = remap(x,0,canvas.width,j_minx,j_maxx);
+	var b = remap(y,0,canvas.height,j_minx,j_maxx);
+	var cnt = 0;
+	var as, bs, za, zb;
+
+	while( ++cnt < maxiterationsJ ) {
+		za = a*a; zb = b*b;
+		if( za+zb > 4 ) break;
+		as = za - zb;
+		bs = 2 * a * b;
+		a = as + jsX;
+		b = bs + jsY;
+	}
+	return cnt;
+}
+function checkMandel(x,y)
+{
+	var a = 0;
+	var b = 0;
+	var rx = 0;
+	var ry = 0;
+
+	// Iterate
+	var iterations = 0;
+	while (iterations < maxiterations && (rx * rx + ry * ry <= 4)) {
+			rx = a * a - b * b + x;
+			ry = 2 * a * b + y;
+
+			// Next iteration
+			a = rx;
+			b = ry;
+			iterations++;
+	}
+	//console.log("Iterations at " + x + ": " + iterations);
+	return iterations;
+}
+var pixelsX, pixelsY;
+var panX = -1;
+var panY = 0;
+function testRegion(offx,offy,offzoom)
+{
+	var mandelval;
+	var x,y;
+	var scaleX, scaleY;
+	scaleX = canvas.width/pixelsX;
+	scaleY = canvas.height/pixelsY;
+	for(x=0; x < pixelsX; ++x) {
+		 for(y=0; y < pixelsY; ++y) {
+ 	       mandelval = checkMandel(x*(zoomX*magnificationFactor) + panX + offx, y*zoomY*magnificationFactor + panY + offy);
+				 if(mandelval < maxiterations)
+				 	return true;
+		 }
+	}
+	return false;
+}
+function HSVtoRGB(h, s, v) {
+    var r, g, b, i, f, p, q, t;
+    if (arguments.length === 1) {
+        s = h.s, v = h.v, h = h.h;
+    }
+    i = Math.floor(h * 6);
+    f = h * 6 - i;
+    p = v * (1 - s);
+    q = v * (1 - f * s);
+    t = v * (1 - (1 - f) * s);
+    switch (i % 6) {
+        case 0: r = v, g = t, b = p; break;
+        case 1: r = q, g = v, b = p; break;
+        case 2: r = p, g = v, b = t; break;
+        case 3: r = p, g = q, b = v; break;
+        case 4: r = t, g = p, b = v; break;
+        case 5: r = v, g = p, b = q; break;
+    }
+    return [ Math.round(r * 255), Math.round(g * 255), Math.round(b * 255) ];
+}
+var maxsqlog = Math.sqrt(Math.log(maxiterations-1));
+var maxsqlogJ = Math.sqrt(Math.log(maxiterationsJ-1));
+var maxlog = Math.sqrt(maxiterations-1);
+function pickColor(mandelval)
+{
+	if( mandelval >= maxiterations ) return -1;
+	//if( mandelval >= maxiterations*0.5 ) return 255;
+
+	c = Math.sqrt(Math.log(mandelval))/maxsqlog;
+	return c;
+}
+var minc=0, maxc=0;
+function pickColorJ(val)
+{
+	if( val >= maxiterationsJ ) return -1;
+
+	c = Math.sqrt(Math.log(val))/maxsqlogJ;
+	if( c < minc ) minc = c;
+	if( c > maxc ) maxc = c;
+	return c;
+}
+function pickColor2(mandelval)
+{
+	if( mandelval >= maxiterations ) return [0,0,0];
+	if( mandelval >= maxiterations*0.5 ) return [1,1,1];
+
+	c = 3 * Math.sqrt(Math.log(mandelval))/maxsqlog;
+
+	if( c < 1 ) {
+		r=0;
+		g=0;
+		b=255*c;
+	} else if( c < 2.5 ) {
+		[r,g,b] = HSVtoRGB((c-1)/1.5,1,1);
+		//r=255*(c-1);
+		//g=0;
+		//b=0;
+	} else {
+		r=0;
+		g=255*(c-2);
+		b=0;
+	}
+	return [r,g,b];
+}
+function drawMandel()
+{
+	var mandelval;
+	var x,y,c,r,g,b;
+	pixelsX=canvas.width;
+	pixelsY=canvas.height;
+	context.clearRect(0,0,canvas.width,canvas.height);
+	//console.log("Drawing");
+	var imgoffset = 0;
+	var img = context.createImageData(pixelsX, 1);
+	var s, samples, maxsamples=4;
+	var hue, hue0, hue1;
+	var offx,offy;
+	var xoffsets = [0.25,0.25,0.75,0.75];
+	var yoffsets = [0.25,0.75,0.25,0.75];
+	//sectors = [];
+	for(y=0; y < pixelsY; ++y) {
+		imgoffset=0;
+		for(x=0; x < pixelsX; ++x) {
+
+			r=g=b=hue=0;
+			hue0 = pickColor( checkMandel( x*zoomX*magnificationFactor + panX, y*zoomY*magnificationFactor + panY ) );
+			if( hue0 == -1 ) {
+				samples=maxsamples;
+				for(s=0; s<samples; ++s) {
+					offx = xoffsets[s];//Math.random();
+					offy = yoffsets[s];//Math.random();
+					hue1 = pickColor( checkMandel((x+offx)*(zoomX*magnificationFactor) + panX, (y+offy)*zoomY*magnificationFactor + panY) );
+					if( hue1 == -1 ) {
+						//samples--;
+						continue;
+					}
+					hue += hue1;
+					//[r0,g0,b0] = pickColor2( checkMandel((x+offx)*(zoomX*magnificationFactor) + panX, (y+offy)*zoomY*magnificationFactor + panY) );
+					//r += r0;	g += g0;	b += b0;
+				}
+				//r/=samples;	g/=samples;	b/=samples;
+				hue/=samples;
+				//hue = hue0;//hue0*0.9 + hue*0.1;
+				[r,g,b] = HSVtoRGB(hue,hue,hue);
+			} else {
+				[r,g,b] = HSVtoRGB(hue0,hue0,hue0);
+			}
+
+			img.data[imgoffset++] = r;
+			img.data[imgoffset++] = g;
+			img.data[imgoffset++] = b;
+			img.data[imgoffset++] = 255;
+
+	   }
+		 context.putImageData(img, 0, y);
+
+	}
+	console.log("Done");
+	//https://progur.com/2017/02/create-mandelbrot-fractal-javascript.html
+}
+function drawJulia()
+{
+	var x,y,c,r,g,b;
+	pixelsX=canvas.width;
+	pixelsY=canvas.height;
+	context.clearRect(0,0,canvas.width,canvas.height);
+	//console.log("Drawing");
+	var imgoffset = 0;
+	var img = context.createImageData(pixelsX, 1);
+	var s, samples, maxsamples=4;
+	var hue, hue0, hue1;
+	var offx,offy;
+	var xoffsets = [0.25,0.25,0.75,0.75];
+	var yoffsets = [0.25,0.75,0.25,0.75];
+	//sectors = [];
+	for(y=0; y < pixelsY; ++y) {
+		imgoffset=0;
+		for(x=0; x < pixelsX; ++x) {
+
+			r=g=b=hue=0;
+			hue0 = pickColorJ( checkJulia( x*zoomX + panX, y*zoomY + panY ) );
+			if( hue0 == -1 ) {
+				samples=maxsamples;
+				for(s=0; s<samples; ++s) {
+					offx = xoffsets[s];//Math.random();
+					offy = yoffsets[s];//Math.random();
+					hue1 = pickColorJ( checkJulia((x+offx)*zoomX + panX, (y+offy)*zoomY + panY) );
+					if( hue1 == -1 ) {
+						continue;
+					}
+					hue += hue1;
+				}
+				//r/=samples;	g/=samples;	b/=samples;
+				hue/=samples;
+				//hue = hue0;//hue0*0.9 + hue*0.1;
+				[r,g,b] = HSVtoRGB(hue,1,1);
+			} else {
+				[r,g,b] = HSVtoRGB(hue0,1,1);
+			}
+
+			img.data[imgoffset++] = r;
+			img.data[imgoffset++] = g;
+			img.data[imgoffset++] = b;
+			img.data[imgoffset++] = 255;
+
+	   }
+		 context.putImageData(img, 0, y);
+
+	}
+	console.log("Done");
+	//https://progur.com/2017/02/create-mandelbrot-fractal-javascript.html
+}
+var runmode=0;
+function drawImage()
+{
+	if( runmode == 0 )
+		drawMandel();
+	else
+		drawJulia();
+}
+var started=-1;
+function keyPress1(kc,ev)
+{
+	console.log(kc);
+	if( kc == 37 ) {
+		panX += 1;
+		if(started==-1)
+			drawImage();
+	} else if( kc == 39 ) {
+		panX -= 1;
+		if(started==-1)
+			drawImage();
+	} else if( kc == 38 ) {
+		panY += 1;
+		if(started==-1)
+			drawImage();
+	} else if( kc == 40 ) {
+		panY -= 1;
+		if(started==-1)
+			drawImage();
+	} else if( kc == 33 ) { // page up
+		magnificationFactor *= 5;
+		panX -= (canvas.width*0.5*magnificationFactor*zoomX);
+		panY -= (canvas.height*0.5*magnificationFactor*zoomY);
+		if(started==-1)
+			drawImage();
+	} else if( kc == 34 ) { // page down
+		magnificationFactor /= 5;
+		panX += (canvas.width*0.5*magnificationFactor*zoomX);
+		panY += (canvas.height*0.5*magnificationFactor*zoomY);
+		if(started==-1)
+			drawImage();
+	} else if( kc == 32 ) { // spacebar
+		if( runmode == 0 ) {
+			runmode = 1;
+			zoomX = zoomY = 1;
+			panX = 0;
+			panY = 0;
+			alert("Julia");
+		} else {
+			runmode = 0;
+			zoomX = zoomY = 1;
+			panX = -1;
+			panY = 0;
+			alert("Mandelbrot");
+		}
+		drawImage();
+	}
+}
+function start()
+{
+	setInterval('randomZoom()',5000);
+}
+function initSkeleton()
+{
+	radClass( { 'zenbox': { 'style': 'display: none', 'keepscan': 1 } } );
+  radLoad();
+	buildCanvas();
+	drawMandel();
+	alert("Instructions:\nClick and drag = zoom\nUp/down/left/right = scroll\nPageup = zoom out\nPagedown = zoom in\nSpacebar = toggle julia/mandelbrot\n");
+}
+
+registerStartup(initSkeleton);
+registerKeyUp(keyPress1);
+//registerKeyboard2(keyPress2);
+
+</script>
+</html>

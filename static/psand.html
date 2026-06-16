@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sand Game</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style type='text/tailwindcss'>
+.modal {
+    position: absolute;
+    left: 0px; top: 0px;
+    width: 100%; height: 100%; background: black; opacity: 0.8;
+}
+.modal-content {
+    @apply bg-gray-100 flex border-4 rounded-lg;
+    margin: 15% auto;
+    padding: 20px;
+    width: 80%;
+    max-width: 500px;
+}
+.hidden {
+    display: none
+}
+body {
+    background: black;
+}
+</style>
+</head>
+<body>
+    <div id="game-container" class="h-screen w-screen">
+        <canvas id='game-canvas'></canvas>
+        <div id="toolbar" class="fixed bottom-0 w-full bg-gray-800 text-white p-4 flex justify-center space-x-4">
+            <!-- Magnet buttons will go here -->
+            <button onclick='editSands()'>Edit Sands</button>
+        </div>
+    </div>
+    <div id="add-modal" class="modal hidden">
+        <div class="modal-content">
+        <div class="flex flex-col">
+            <div class="flex">
+                <label for="in-count">Count:</label>
+                <input type="number" id="in-count" min=10 max=10000 step=100>
+            </div>
+
+            <div class="flex">
+                <label for="in-velocity">Velocity:</label>
+                <input type="number" id="in-velocity" min=0 max=10 step=1>
+            </div>
+
+            <div class="flex">
+                <label for="in-color">Color:</label>
+                <input type="color" id="in-color" value="#0000ff">
+            </div>
+
+            <div class="flex">
+                <label for="in-update-area">Update:</label>
+                <textarea id="in-update-area"></textarea>
+            </div>
+
+            <div class="flex">
+                <label for="in-collide-area">Collide:</label>
+                <textarea id="in-collide-area"></textarea>
+            </div>
+
+            <div class="flex">
+                <button onclick='addSand()'>Create</button>
+            </div>
+        </div>
+        </div>
+    </div>
+    <div id="edit-modal" class="modal hidden">
+        <div class="modal-content flex flex-col">
+            <h1>Testing 123</h1>
+            <div id='sands-list'></div>
+        </div>
+    </div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.149.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.149.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <script type="module">
+        import * as THREE from 'three';
+        import { PointerLockControls } from 'three/addons/controls/PointerLockControls.js';
+
+        window.THREE = THREE;
+        window.PointerLockControls = PointerLockControls;
+    </script>
+
+    <script language="javascript">
+let gameCanvas = document.getElementById("game-canvas");
+let addModal = document.getElementById("add-modal");
+let editModal = document.getElementById("edit-modal");
+
+let scene, camera, renderer=null, controls;
+let maze, player, clock;
+let mapCanvas, mapContext, mapContainer;
+let timerElement, startTime;
+let sands = [];
+let groups = {};
+let objects = {};
+let instances = [];
+let gameState = 'init';
+
+function init() {
+    let width = window.innerWidth;
+    let height = window.innerHeight-60;
+
+    cellTracker.init();
+
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0x333333 );
+    camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 10000);
+    renderer = new THREE.WebGLRenderer({
+        antialias: true,
+        alpha: true,
+        canvas: document.getElementById('game-canvas')
+    });
+    renderer.setSize(width, height);
+    renderer.setPixelRatio( window.devicePixelRatio );
+    //renderer.shadowMap.enabled = true;
+
+    controls = new PointerLockControls(camera, renderer.domElement);
+    controls.minPolarAngle = Math.PI/8;
+    controls.maxPolarAngle = 5*Math.PI/8;
+    document.addEventListener('click', () => controls.lock());
+
+    var light3 = new THREE.AmbientLight(0xffffff, 1.0);
+    scene.add(light3);
+
+    // Set up camera
+    camera.position.set(0, 0, -10);
+    camera.rotation.order = 'YXZ';
+    
+    controls.getObject().lookAt(new THREE.Vector3(0,0,0));
+
+    let sand = { gravity: false, elasticity: 0.9, physics: true, collide: false, update: false, opacity: .5, initvel: 400, count: 10000, mass: 3, size: 5, red: 0.5, green: 0.5, blue: 1 };
+    sands.push(sand);
+    sand = { gravity: false, elasticity: 0.9, physics: true, collide: false, update: false, opacity: .5, initvel: 200, count: 15000, mass: 2, size: 3, red: 0.5, green: 1, blue: 0.5 };
+    sands.push(sand);
+    sand = { gravity: false, elasticity: 0.9, physics: true, collide: false, update: false, opacity: .5, initvel: 500, count: 30000, mass: 1, size: 1, red: 1, green: 0.5, blue: 0.5 };
+    sands.push(sand);
+    buildSands();
+
+    requestAnimationFrame(update);
+}
+
+function buildSands()
+{
+    var i;
+    for( i=0; i<sands.length; i++ ) {
+        buildInstance(i);
+    }
+}
+function buildInstance(sandid)
+{
+    let sand = sands[sandid];
+    let inst = instances[sandid];
+    if( typeof inst != 'undefined' && inst != null ) {
+        scene.remove(inst);
+    }
+
+    let geometry = new THREE.SphereGeometry(sand.size, 32, 16); //( sand.size, sand.size, sand.size );
+    let material = new THREE.MeshLambertMaterial( {color: 0xffffff} );
+    material.opacity = sand.opacity;
+    material.transparent = true;
+
+    sand.items = [];
+    var i,item;
+    for( i=0; i<sand.count; i++ ) {
+        item = [
+            false,
+            Math.random()*maxGrid*2-maxGrid, Math.random()*maxGrid*2-maxGrid, Math.random()*maxGrid*2-maxGrid,
+            Math.random()*sand.initvel*2-sand.initvel, Math.random()*sand.initvel*2-sand.initvel, Math.random()*sand.initvel*2-sand.initvel, 
+            0,0,0,
+            false
+        ];
+        sand.items.push(item);
+    }
+
+    inst = instances[sandid] = new THREE.InstancedMesh( geometry, material, sand.count );
+    inst.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
+    var i,j,k;
+    for( i=0; i<sand.items.length; i++ ) {
+        inst.setColorAt( i, new THREE.Color( sand.red, sand.green, sand.blue ) );
+        inst.setMatrixAt( i, new THREE.Matrix4().makeTranslation( sand.items[i][1], sand.items[i][2], sand.items[i][3] ) );
+    }
+    inst.instanceColor.needsUpdate = true;
+    inst.instanceMatrix.needsUpdate = true;
+    //inst.castShadow = inst.receiveShadow = true;
+    scene.add(inst);
+}
+
+
+let maxAccel = 10, maxVelocity = 100, maxGrid = 1000;
+
+let cellTracker = {
+    width: 0,
+    height: 0,
+    depth: 0,
+    cells: 100,
+    cw: 0,
+    ch: 0,
+    cd: 0,
+    data: null,
+    init: function(){
+        this.width=maxGrid;
+        this.height=maxGrid;
+        this.depth=maxGrid;
+        this.cells=100;
+        this.cw=2*maxGrid/this.cells;
+        this.ch=2*maxGrid/this.cells;
+        this.cd=2*maxGrid/this.cells;
+        this.data = new Array(this.cells+1);
+        var i,j,k;
+        for( i=0; i<this.cells+1; i++ ) {
+            this.data[i] = new Array(this.cells+1);
+            for( j=0; j<this.cells+1; j++ ) {
+                this.data[i][j] = new Array(this.cells+1);
+                for( k=0; k<this.cells+1; k++ ) {
+                    this.data[i][j][k] = new Array();
+                }
+            }
+        }
+    },
+    coord: function(x,y,z){
+        return [ parseInt(x/this.cw)+this.cells/2, parseInt(y/this.ch)+this.cells/2, parseInt(z/this.cd)+this.cells/2 ];
+    },
+    scan: function(x,y,z,range=1.5*this.cw){
+        var i,j,k, n;
+
+        var x0,y0,z0, x1,y1,z1;
+
+        x0 = x-range; x1 = x+range;
+        y0 = y-range; y1 = y+range;
+        z0 = z-range; z1 = z+range;
+
+        if( x0 < 0 ) x0=0;
+        if( y0 < 0 ) y0=0;
+        if( z0 < 0 ) z0=0;
+
+        let c0 = this.coord(x0,y0,z0);
+        let c1 = this.coord(x1,y1,z1);
+
+        // Clamp c0 to be at least 0
+        c0[0] = Math.max(c0[0], 0);
+        c0[1] = Math.max(c0[1], 0);
+        c0[2] = Math.max(c0[2], 0);
+
+        // Clamp c1 to be at most this.cells (100), and make the loop inclusive
+        c1[0] = Math.min(c1[0], this.cells);
+        c1[1] = Math.min(c1[1], this.cells);
+        c1[2] = Math.min(c1[2], this.cells);
+
+        var x,y,z;
+        let results = [];
+        for( x=c0[0]; x<=c1[0]; x++ ) {
+            for( y=c0[1]; y<=c1[1]; y++ ) {
+                for( z=c0[2]; z<=c1[2]; z++ ) {
+                    results.push( ...this.data[z][y][x] );
+                }
+            }
+        }
+
+        return results;
+    },
+    move: function(item,fx,fy,fz,tx,ty,tz){
+        let cxf = this.coord(fx,fy,fz);
+        let txf = this.coord(tx,ty,tz);
+
+        let pos = this.data[cxf[2]][cxf[1]][cxf[0]].indexOf(item);
+        if( pos >= 0 ) {
+            if( cxf[0] == txf[0] && cxf[1] == txf[1] && cxf[2] == txf[2] ) return;
+            this.data[cxf[2]][cxf[1]][cxf[0]].splice(pos,1);
+        }
+
+        this.add(item,tx,ty,tz);
+    },
+    add: function(item,x,y,z){
+        let cx = this.coord(x,y,z);
+        if( typeof this.data[cx[2]][cx[1]][cx[0]] != 'object' ) {
+            console.log("hello");
+        }
+        this.data[cx[2]][cx[1]][cx[0]].push(item);
+    }
+}
+function normal3(a,b,c)
+{
+    let s = fisqrt(a*a+b*b+c*c);
+    if( s == 0 ) return [0,0,0];
+    else return [a*s,b*s,c*s];
+}
+function setSandPos(sandid, tgtid, new_x, new_y, new_z)
+{
+    let groupid = sands[sandid].items[tgtid][0];
+    var group;
+    if( groupid === false ) {
+        group = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0 };
+    } else {
+        group = groups[groupid];
+    }
+    sands[sandid].items[tgtid][1] = new_x - group.x;
+    sands[sandid].items[tgtid][2] = new_y - group.y;
+    sands[sandid].items[tgtid][3] = new_z - group.z;
+
+    instances[sandid].setMatrixAt( tgtid, new THREE.Matrix4().makeTranslation( new_x, new_y, new_z ) );
+    instances[sandid].instanceMatrix.needsUpdate = true;
+}
+function fisqrt(number)
+{ 
+    var i;
+    var x2, y;
+    const threehalfs = 1.5;
+  
+    x2 = number * 0.5;
+    y = number;
+    //evil floating bit level hacking
+    var buf = new ArrayBuffer(4);
+    (new Float32Array(buf))[0] = number;
+    i =  (new Uint32Array(buf))[0];
+    i = (0x5f3759df - (i >> 1)); //What the fuck?
+    (new Uint32Array(buf))[0] = i;
+    y = (new Float32Array(buf))[0];
+    y  = y * ( threehalfs - ( x2 * y * y ) );   // 1st iteration
+//  y  = y * ( threehalfs - ( x2 * y * y ) );   // 2nd iteration, this can be removed
+
+    return y;
+}
+
+let timeLast = new Date().getTime()/1000;
+function update()
+{
+    let timeNow = new Date().getTime()/1000;
+    let deltaTime = timeNow - timeLast;
+    if( deltaTime > 0.01 ) deltaTime = 0.01;
+    var i, j, old_x, old_y, old_z, new_x, new_y, new_z;
+    var moved;
+
+    for( j=0; j<sands.length; j++ ) {
+        let sand = sands[j];
+        if( typeof sand.update == 'function' ) {
+            sand.update(j, deltaTime);
+        }
+        for( i=0; i<sand.items.length; i++ ) {
+            let groupid = sand.items[i][0];
+            let isbased = sand.items[i][10];
+            var group;
+            if( groupid === false ) {
+                group = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0 };
+            } else {
+                group = groups[groupid];
+            }
+
+            if( isbased ) continue; // done moving until reawakened
+
+            if( Math.abs(sand.items[i][7]) > maxAccel ) sand.items[i][7] = (sand.items[i][7]>0?1:-1) * maxAccel;
+            if( Math.abs(sand.items[i][8]) > maxAccel ) sand.items[i][8] = (sand.items[i][8]>0?1:-1) * maxAccel;
+            if( Math.abs(sand.items[i][9]) > maxAccel ) sand.items[i][9] = (sand.items[i][9]>0?1:-1) * maxAccel;
+
+            sand.items[i][4] += (group.ax+sand.items[i][7])*deltaTime;
+            sand.items[i][5] += (group.ay+sand.items[i][8])*deltaTime;
+            sand.items[i][6] += (group.az+sand.items[i][9])*deltaTime;
+            
+            if( Math.abs(sand.items[i][4]) > maxVelocity ) sand.items[i][4] = (sand.items[i][4]>0?1:-1) * maxVelocity;
+            if( Math.abs(sand.items[i][5]) > maxVelocity ) sand.items[i][5] = (sand.items[i][5]>0?1:-1) * maxVelocity;
+            if( Math.abs(sand.items[i][6]) > maxVelocity ) sand.items[i][6] = (sand.items[i][6]>0?1:-1) * maxVelocity;
+
+            let usedTime = 0;
+            do {
+                old_x = sand.items[i][1] + group.x;
+                old_y = sand.items[i][2] + group.y;
+                old_z = sand.items[i][3] + group.z;
+                new_x = old_x + (group.vx+sand.items[i][4])*(deltaTime-usedTime);
+                new_y = old_y + (group.vy+sand.items[i][5])*(deltaTime-usedTime);
+                new_z = old_z + (group.vz+sand.items[i][6])*(deltaTime-usedTime);
+
+                moved = false;
+                let incx = new_x - old_x;
+                let incy = new_y - old_y;
+                let incz = new_z - old_z;
+
+                if( sand.physics && ( Math.abs(incx) > 0 || Math.abs(incy) > 0 || Math.abs(incz) > 0 ) ) {
+                    let pos;
+                    var posx, posy, posz;
+                    var len = Math.sqrt( incx*incx + incy*incy + incz*incz );
+                    var fragment;
+                    if( len > 1.0 ) {
+                        fragment = (deltaTime-usedTime)/len;
+                        incx /= len;
+                        incy /= len;
+                        incz /= len;
+                    } else {
+                        fragment = deltaTime-usedTime;
+                    }
+                    posx = old_x;
+                    posy = old_y;
+                    posz = old_z;
+                    //len = 1/len;
+                    for( pos=0.0; pos<len; pos+=1.0 ) {
+                        posx += incx;
+                        posy += incy;
+                        posz += incz;
+                        usedTime += fragment;
+
+                        let colliders = cellTracker.scan(posx, posy, posz);
+
+                        for( n=0; n<colliders.length; n++ ) {
+                            var tgtsand, tgtid;
+
+                            [tgtsand,tgtid] = colliders[n].split(",");
+
+                            if( tgtsand == j && tgtid == i ) continue;
+
+                            let sand2 = sands[tgtsand];
+                            var x2, y2, z2;
+                            var dx, dy, dz;
+                            var dist;
+                            let isbased2 = sand2.items[tgtid][10];
+                            var groupid2 = sand2.items[tgtid][0];
+                            var group2;
+                            if( groupid2 === false ) {
+                                group2 = { x: 0, y: 0, z: 0, vx: 0, vy: 0, vz: 0, ax: 0, ay: 0, az: 0 };
+                            } else {
+                                group2 = groups[groupid2];
+                            }
+
+                            x2 = sand2.items[tgtid][1] + group2.x;
+                            y2 = sand2.items[tgtid][2] + group2.y;
+                            z2 = sand2.items[tgtid][3] + group2.z;
+
+                            dx = Math.abs( x2 - posx );
+                            dy = Math.abs( y2 - posy );
+                            dz = Math.abs( z2 - posz );
+                            let radii = sand.size + sand2.size;
+
+                            if( dx <= radii || dy <= radii || dz <= radii ) {
+                                dist = dx*dx + dy*dy + dz*dz;
+                            } else {
+                                dist = Infinity;
+                            }
+
+                            if( dist < radii*radii ) {
+                                let use_basic_collision = true;
+
+                                if( typeof sand.collide == 'function' ) {
+                                    if( !sand.collide(j,i,tgtsand,tgtid,new_x, new_y, new_z) )
+                                        use_basic_collision=false;
+                                }
+                                if( typeof sand2.collide == 'function' ) {
+                                    if( !sand2.collide(tgtsand,tgtid,j,i, x2, y2, z2) )
+                                        use_basic_collision=false;
+                                }
+                                if( use_basic_collision ) { // basic collision physics
+                                    var mx = (x2+new_x)/2, my = (y2+new_y)/2, mz = (z2+new_z)/2;
+                                    let p1x = posx-mx, p1y = posy-my, p1z = posz-mz;
+                                    let p2x = x2-mx, p2y = y2-my, p2z = z2-mz;
+                                    var n1x, n1y, n1z, n2x, n2y, n2z;
+                                    [n1x,n1y,n1z] = normal3(p1x,p1y,p1z);
+                                    [n2x,n2y,n2z] = normal3(p2x,p2y,p2z);
+
+                                    let m3 = Math.abs(sand.mass) + Math.abs(sand2.mass);
+                                    if( m3 != 0 ) {
+                                        let m1 = sand.mass/m3, m2 = sand2.mass/m3;
+                                        let vx = group.vx + group2.vx + sand2.items[tgtid][4] + sand.items[i][4];
+                                        let vy = group.vy + group2.vy + sand2.items[tgtid][5] + sand.items[i][5];
+                                        let vz = group.vz + group2.vz + sand2.items[tgtid][6] + sand.items[i][6];
+                                        var new_vx=0, new_vy=0, new_vz=0;
+
+                                        if( ( vx > 0 && n1x > 0 ) || ( vx < 0 && n1x < 0 ) ) {
+                                            new_vx = vx*m1;
+                                        }
+                                        if( ( vy > 0 && n1y > 0 ) || ( vy < 0 && n1y < 0 ) ) {
+                                            new_vy = vy*m1;
+                                        }
+                                        if( ( vz > 0 && n1z > 0 ) || ( vz < 0 && n1z < 0 ) ) {
+                                            new_vz = vz*m1;
+                                        }
+
+                                        let tx = posx;
+                                        let ty = posy;
+                                        let tz = posz;
+
+                                        while( tx < -maxGrid ) tx += 2*maxGrid;
+                                        while( ty < -maxGrid ) ty += 2*maxGrid;
+                                        while( tz < -maxGrid ) tz += 2*maxGrid;
+                                        while( tx > maxGrid ) tx -= 2*maxGrid;
+                                        while( ty > maxGrid ) ty -= 2*maxGrid;
+                                        while( tz > maxGrid ) tz -= 2*maxGrid;
+
+                                        setSandPos(j, i, tx, ty, tz);
+                                        sand.items[i][4] = new_vx - group.vx;
+                                        sand.items[i][5] = new_vy - group.vy;
+                                        sand.items[i][6] = new_vz - group.vz;
+                                        cellTracker.move(j + "," + i, old_x, old_y, old_z, posx, posy, posz );
+
+
+                                        var new_vx2=0, new_vy2=0, new_vz2=0;
+
+                                        if( ( vx > 0 && n2x > 0 ) || ( vx < 0 && n2x < 0 ) ) {
+                                            new_vx2 = vx*m2;
+                                        }
+                                        if( ( vy > 0 && n2y > 0 ) || ( vy < 0 && n2y < 0 ) ) {
+                                            new_vy2 = vy*m2;
+                                        }
+                                        if( ( vz > 0 && n2z > 0 ) || ( vz < 0 && n2z < 0 ) ) {
+                                            new_vz2 = vz*m2;
+                                        }
+
+                                        sand2.items[tgtid][4] = new_vx2 - group2.vx;
+                                        sand2.items[tgtid][5] = new_vy2 - group2.vy;
+                                        sand2.items[tgtid][6] = new_vz2 - group2.vz;
+
+                                        moved = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                        if( moved ) {
+                            break;
+                        }
+                    }
+                }
+                if( !moved ) {
+                    while( new_x < -maxGrid ) new_x += 2*maxGrid;
+                    while( new_y < -maxGrid ) new_y += 2*maxGrid;
+                    while( new_z < -maxGrid ) new_z += 2*maxGrid;
+                    while( new_x > maxGrid ) new_x -= 2*maxGrid;
+                    while( new_y > maxGrid ) new_y -= 2*maxGrid;
+                    while( new_z > maxGrid ) new_z -= 2*maxGrid;
+                    setSandPos(j,i,new_x,new_y,new_z);
+                    if( sand.physics ) {
+                        cellTracker.move(j + "," + i, old_x, old_y, old_z, new_x, new_y, new_z );
+                    }
+                    usedTime = deltaTime;
+                    break;
+                }
+            } while( Math.abs(usedTime-deltaTime) > 0.005 );
+        }
+    }
+    if( renderer !== null )
+        renderer.render( scene, camera );
+    requestAnimationFrame(update);
+}
+
+document.addEventListener("DOMContentLoaded", init);
+
+function addSand()
+{
+    addModal.classList.remove("hidden");
+    editModal.classList.add("hidden");
+}
+function editSands()
+{
+    editModal.classList.remove("hidden");
+}
+
+</script>
+</body>
+</html>

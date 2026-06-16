@@ -1,0 +1,490 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Proway The Dragon</title>
+<link rel=stylesheet href='./css/styles.css'></link>
+<style>
+#toptoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    top: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+#lefttoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    left: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+#righttoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    right: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+
+#yourtoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    bottom: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+@keyframes fadeOut {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+
+#controls { 
+    position: absolute; top: 10px; left: 10px; 
+    background: rgba(0,0,0,0.8); color: #fff; 
+    padding: 15px; font-family: Arial, sans-serif;
+    border-radius: 5px; width: 250px;
+}
+.system-controls { 
+    border: 1px solid #444; padding: 5px; 
+    border-radius: 3px;
+}
+.system-controls label {
+    display: block;
+    margin: 5px 0;
+}
+.system-controls input[type="text"] {
+    width: 180px;
+}
+#controls input { 
+    width: 200px; margin: 5px 0; padding: 4px;
+    background: #222; color: #fff; border: none;
+}
+#controls input[type="color"] { width: 50px; }
+#introModal { 
+    position: absolute; top: 50%; left: 50%; 
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.9); color: #fff; 
+    padding: 20px; text-align: center;
+    font-family: Arial, sans-serif; 
+}
+.toast { 
+    position: fixed; bottom: 20px; right: 20px; 
+    background: #333; color: #fff; padding: 10px; 
+    display: none; 
+}
+button {
+    background-color: #c3ef40;
+    border: 1px solid blue;
+    border-radius: 5px;
+}
+</style>
+<script async src="https://spiritshare.org/js/es_shims.js"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://spiritshare.org/js/three/build/three.module.js",
+      "three/addons/": "https://spiritshare.org/js/three/examples/jsm/"
+    }
+  }
+</script>
+<script type="module">
+import ProWay from './js/proway.js';
+window.pw = new ProWay();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//<--THUD
+</script>
+</head>
+<body style='background: black; color: tan'>
+<div xSect=main id=mainscroll class="margin-small">
+</div>
+<div id="controls" style='display: none; position: absolute; bottom: 0px'>
+    <div id='proMenu' style='float: left; clear: left'></div>
+    <button id="proSystem" style='float: left; clear: left'>Pro+</button>
+</div>
+
+<div id="toptoast"></div>
+<div id="lefttoast"></div>
+<div id="righttoast"></div>
+<div id="yourtoast"></div>
+
+</body>
+<script language=javascript>
+
+
+let toastLog = {};
+let toastTrackers = {};
+let toastTimers = {};
+let toastTime = 2000;
+let fadeOut = 1.0;
+let toastFlags = [];
+function flagToasts(keys)
+{
+    for( var key in keys ) {
+        toastFlags[key] = keys[key];
+    }
+    console.log("toastFlags set");
+}
+
+function nextToast(alt_type)
+{
+    let now = new Date().getTime();
+    if( toastTrackers[alt_type] < now - (toastTime+fadeOut) ) {
+        const toast = document.getElementById(alt_type + 'toast');
+        toast.textContent = '';
+        toastTrackers[alt_type] = 0;
+        toastTimers[alt_type] = -1;
+        return;
+    }
+    if( toastTrackers[alt_type] < now - toastTime ) {
+        const toast = document.getElementById(alt_type + 'toast');
+        toast.style.visibility = 'hidden';
+    }
+
+
+    toastTimers[alt_type] = setTimeout(nextToast.bind(null,alt_type), toastTime/8);
+}
+// Show toast with small bites taken out of it:
+function showToast(message, alt_type='your') {
+
+    if( alt_type == 'your' )
+        console.log(message);
+
+    if( !(alt_type in toastLog) ) toastLog[alt_type] = [];
+    toastLog[alt_type].push([message, new Date()]);
+    
+    let mlower = message.toLowerCase();
+    for( var key of toastFlags ) {
+        if( mlower.indexOf(key) != -1 ) {
+            if( alt_type != toastFlags[key] )
+                showToast(message, toastFlags[key]);
+        }
+    }
+
+    const toast = document.getElementById(alt_type + 'toast'); // what do you mean it's const
+
+    if( alt_type in toastTimers ) {
+        if( toastTimers[alt_type] != -1 ) {
+            clearTimeout(toastTimers[alt_type]);
+        }
+        toast.innerHTML += "\n<pre>" + message + "</pre>";
+    } else {
+        toast.innerHTML = "<pre>" + message + "</pre>";
+        toast.style.animation = 'fadeOut ' + fadeOut + 's, fadeIn 0.05s';
+        toast.style.visibility = 'visible';
+    }
+    toastTrackers[alt_type] = new Date().getTime();
+    toastTimers[alt_type] = setTimeout(nextToast.bind(null,alt_type), toastTime/8);
+}
+
+
+function clearStorage()
+{
+    let items=[];
+    for( var i=0; i<window.localStorage.length; i++ ) 
+        items.push( window.localStorage.key(i) );
+    for( var i of items )
+        window.localStorage.removeItem(i);
+    showToast("Cleaned storage.");
+}
+
+
+window.addEventListener('DOMContentLoaded', function(){
+    //document.getElementById('proSystem').addEventListener('click', proSystemMenu);
+
+    let config = [
+
+// within birther: birthed
+// within lifer: don't die
+// < min_death: die. > max_death: die
+
+    {   //1:
+        start_health: 1.25, max_health: 1000, health_limit: 900,  life_per_sec: 0.2,
+        damage: 100, healing_constant: .3, healing_factor: .003, damage_entropy: 1,
+        antidamage: 100, sizing: 0.3,
+        rules: [
+    {
+        cond: { above: 300000 },
+        min_birth: 3, max_birth: 6,
+        min_death: 9, max_death: 12,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        min_birth: 5, max_birth: 6,
+        min_death: 4, max_death: 10,
+        min_lifer: 6, max_lifer: 8
+    }]
+    },
+
+    {   //2:
+        start_health: 10, max_health: 500, health_limit: 499,  life_per_sec: 20,
+        damage: 30, healing_constant: 10.0, healing_factor: 6, damage_entropy: 0.3,
+        antidamage: 3, sizing: 0.34,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 3000 },
+        min_birth: 9, max_birth: 9,
+        min_death: 8, max_death: 10,
+        min_lifer: 5, max_lifer: 10
+    }, {
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }]
+    },
+
+    {   //3:
+        start_health: 9, max_health: 3500, health_limit: 3600, life_per_sec: 0.4,
+        damage: 33, healing_constant: 0.1, healing_factor: 0.5, damage_entropy: .3,
+        antidamage: 7, sizing: 0.28,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 15000 },
+        min_birth: 9, max_birth: 10,
+        min_death: 10, max_death: 13,
+        min_lifer: 5, max_lifer: 10
+    }, {
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }]
+    },
+
+    //4:
+
+    {   start_health: 1.25, max_health: 1000, health_limit: 900, life_per_sec: 25,
+        damage: 10, healing_constant: 1, healing_factor: 0.5, damage_entropy: 1.0,
+        antidamage: 10, sizing: 0.28,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 4000 },
+        min_birth: 11, max_birth: 13,
+        min_death: 7, max_death: 13,
+        min_lifer: 6, max_lifer: 12
+    }, { // growth rules (0+)
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }]        
+    },
+
+    //5:
+
+    {   start_health: 1, max_health: 1200, health_limit: 1400, life_per_sec: 25,
+        damage: 10, healing_constant: 1, healing_factor: 0.5, damage_entropy: 1.0,
+        antidamage: 10, sizing: 0.3,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 4000 },
+        min_birth: 11, max_birth: 13,
+        min_death: 7, max_death: 13,
+        min_lifer: 6, max_lifer: 12
+    }, { // growth rules (0+)
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }]        
+    },
+
+
+    {   //6:
+        start_health: 1.5, max_health: 4500, health_limit: 4501,  life_per_sec: 12,
+        damage: 90, healing_constant: 10.0, healing_factor: 1, damage_entropy: 0.3,
+        antidamage: 9,  sizing: 0.33,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 3000 },
+        min_birth: 9, max_birth: 9,
+        min_death: 9, max_death: 10,
+        min_lifer: 6, max_lifer: 10
+    }, {
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }]
+    },
+
+
+    {   //7:
+        start_health: 4, max_health: 1500, health_limit: 1400, life_per_sec: 5,
+        damage: 15, healing_constant: 0.3, healing_factor: 0.5, damage_entropy: 0.7,
+        antidamage: 7,  sizing: 0.33,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 15000 },
+        min_birth: 9, max_birth: 10,
+        min_death: 3, max_death: 13,
+        min_lifer: 6, max_lifer: 9
+    }, {
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }]
+    },
+
+    {   //8:
+        start_health: 10, max_health: 100, health_limit: 100, life_per_sec: 1,
+        damage: 1, healing_constant: 0.1, healing_factor: 0.1, damage_entropy: 0,
+        antidamage: 0,  sizing: 0.33,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 15000 },
+        min_birth: 4, max_birth: 5,
+        min_death: 3, max_death: 12,
+        min_lifer: 4, max_lifer: 11
+    }, {
+        min_birth: 4, max_birth: 7,
+        min_death: 3, max_death: 12,
+        min_lifer: 4, max_lifer: 11
+    }]
+    },
+
+    {   //9:
+        start_health: 2, max_health: 1000, health_limit: 100, life_per_sec: 0.1,
+        damage: 1, healing_constant: 0.001, healing_factor: 0.1, damage_entropy: 0,
+        antidamage: 0,   sizing: 0.33,
+        rules:
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 3000 },
+        min_birth: 4, max_birth: 4,
+        min_death: 3, max_death: 5,
+        min_lifer: 4, max_lifer: 11
+    }, {
+        min_birth: 4, max_birth: 7,
+        min_death: 3, max_death: 12,
+        min_lifer: 4, max_lifer: 11
+    }]
+    },
+    ];
+
+    document.addEventListener('keydown', window.pw.inKeys.bind(window.pw) );
+    window.pw.setConfig(config, showToast);
+});
+
+window.addEventListener('load', function(){
+    if( location.search && ( window.localStorage['proway_cfg'] || window.localStorage['proway_data'] ) ) {
+        let pw = window.localStorage['proway_cfg'];
+        window.pw.pickConfig(JSON.parse(pw));
+    } else {
+        window.pw.pickConfig(4);
+    }
+    window.pw.initialize();
+    window.pw.execute();
+
+    window.addEventListener('resize', window.pw.resizeScreen.bind(window.pw) );
+});
+
+//Scritch.-- >
+</script>
+</html>

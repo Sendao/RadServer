@@ -1,0 +1,462 @@
+<head>
+</head>
+<body>
+</body>
+<script>
+// Global configuration
+const cfg = {
+	use_sqrt: false,
+    universeSize: 100,
+    maxColorValue: 1.0,
+    sphereInfluenceProbability: 0.1,
+    sphereMoveProbability: 0.05,
+    moveDistance: 0.5,
+    maxForce: 10.0,
+    maxSpeed: 10.0,
+    mergeDistance: 2.4, // Distance at which voxels will merge
+    precision: 2      // Decimal precision for voxel positioning
+};
+
+function getVoxelKey(x, y, z) {
+	let vx = x.toFixed(1), vy = y.toFixed(1), vz = z.toFixed(1);
+    return `${vx},${vy},${vz}`;
+}
+
+function randStr(len)
+{
+    return str_rand(len);
+}
+function str_rand( len )
+{
+        var chars = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz";
+        var str = "";
+        for( var i=0;i<len;i++ ) {
+            str += chars.substr( Math.floor(Math.random()*chars.length), 1 );
+        }
+        return str;
+}
+function digi_rand( len )
+{
+        var chars = "0123456789";
+        var str = "";
+        var has0 = false, c;
+        for( var i=0;i<len;i++ ) {
+            do
+            {
+                c = chars.substr( Math.floor(Math.random()*chars.length), 1 );
+                if( !has0 && c != '0') has0 = true;
+            } while( !has0 );
+            str += c;
+        }
+        return str;
+}
+
+
+// Voxel class with recursive structure
+class Voxel {
+    constructor(x, y, z, scale=100, depth=1, size = 1) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.scale = scale;
+        this.depth = depth;
+        this.size = size;
+        this.ident = randStr(8);
+        this.color = {r,g,b};
+        this.subVoxels = new Map(); // For smaller voxels inside this one
+        this.parent = null; // Reference to parent voxel if this is a sub-voxel
+    }
+
+    getVoxelAt(x, y, z) {
+        let vx = Math.floor((x/this.scale)), vy = Math.floor((y/this.scale)), vz = Math.floor((z/this.scale));
+        let key = `${vx},${vy},${vz}`;
+        var v;
+        if( !this.subVoxels.has(key) ) this.subVoxels.set(v=[]);
+        else v=this.subVoxels.get(key);
+        if( v.length > 0 ) return v[0];
+        else {
+            let x = new Voxel(x,y,z,this.scale/10,this.depth+1,this.size/10);
+            v.push(x);
+            return x;
+        }
+    }
+
+    // Blend two colors
+    blendColors(a,b)
+    {
+        return {r:(a.r+b.r)/2,g:(a.g+b.g)/2,b:(a.b+b.b)/2};
+    }
+
+
+    depth() {
+    	return this.depth;
+    }
+
+    dist(voxel2) {
+		let xd = Math.abs(this.pos.x - voxel2.pos.x), yd = Math.abs(this.pos.y - voxel2.pos.y),
+			zd = Math.abs(this.pos.z - voxel2.pos.z);
+    	if( cfg.use_sqrt ) {
+    		return Math.sqrt( xd*xd + yd*yd + zd*zd );
+    	} else {
+    		return (xd+yd+zd)/3;
+    	}
+    }
+    distAbs(voxel2) {
+    	let pos = this.getPosition(), otherpos = voxel2.getPosition();
+    	let xd = Math.abs(pos.x - otherpos.x), yd = Math.abs(pos.y - otherpos.y),
+			zd = Math.abs(pos.z - otherpos.z);
+    	if( cfg.use_sqrt ) {
+    		return Math.sqrt( xd*xd + yd*yd + zd*zd );
+    	} else {
+    		return (xd+yd+zd)/3;
+    	}
+    }
+
+    // Gets the effective position of this voxel within the universe
+    getPosition() {
+        let pos = {x: 0+this.x, y: 0+this.y, z: 0+this.z};
+        if (this.parent) {
+            let parentPos = this.parent.getPosition();
+            pos.x += parentPos.x;
+            pos.y += parentPos.y;
+            pos.z += parentPos.z;
+        }
+        return pos;
+    }
+
+
+    // Adds color to this voxel
+    addColor(r, g, b, x, y, z, size) {
+        let newpoint = new Voxel(x,y,z,r,g,b,this.scale/10,this.depth+1,size);
+        addVoxel(newpoint);
+    }
+    addVoxel(other) {
+        let voxelKey = universe.hashVoxel(other.x,other.y,other.z);
+        if( !subVoxels.has(voxelKey) subVoxels.set(voxelKey,[]);
+        let lst = subVoxels.get(voxelKey);
+        lst.push(other);
+    }
+    delete(inner) {
+    	var sublst;
+        sublst=this.parent.subVoxels.get(getVoxelKey(`${inner.x},${inner.y},${inner.z}`));
+        for( var i=0; i<sublst.length; i++ ) {
+        	if( sublst[i].ident == inner.ident ) {
+        		sublst.splice(i,1);
+        		return true;
+        	}
+        }
+    	return false;
+    }
+
+
+    mergeTest(other) {
+        if( this.dist(other) < cfg.mergeDistance*Math.max(this.size, other.size) ) {
+            if( this.depth() > 3 ) {
+                this.mergeWith(other);
+                return 0;
+            } else {
+                this.mergeInto(other); // here we are fine just need to break this double loop though
+                return 1;
+            }
+        }
+        return 2;
+    }
+    mergeInside() {
+    	var voxel1, voxel2;
+    	var depth = this.depth();
+    	var found, matches;
+    	var i, j;
+
+        for( voxel1 of this.subVoxels.values() ) {
+            for( i=0; i<voxel1.length; i++ ) {
+                voxel1[i].mergeInside();
+            }
+        }
+
+    	do {
+    		found = false;
+	    	for( voxel1 of this.subVoxels.values() ) {
+	    		for( i=0; i<voxel1.length; i++ ) {
+	    			do {
+		    			matches = false;
+			    		for( voxel2 of this.subVoxels.values() ) {
+			    			for( j=0; j<voxel2.length; j++ ) {
+				    			if( voxel1[i].dist(voxel2[j]) < cfg.mergeDistance*Math.max(voxel1[i].size, voxel2[j].size) ) {
+				    				if( depth > 3 ) {
+				    					voxel1[i].mergeWith(voxel2[j]);
+				    					found = true; // have to start over when this happens for both double loops
+				    				} else {
+				    					voxel1[i].mergeInto(voxel2[j]); // here we are fine just need to break this double loop though
+				    					matches = true;
+				    				}
+				    				break;
+				    			}
+				    		}
+                            if( found || matches ) break;
+			    		}
+			    	} while( matches );
+		    	}
+                if( found ) break;
+		    }
+	    } while( found );
+    }
+
+    // Merges other into this voxel and makes a new voxel
+    mergeWith(other) {
+        this.parent.delete(this);
+
+    	this.pos.x = ( this.pos.x + other.pos.x ) / 2;
+    	this.pos.y = ( this.pos.y + other.pos.y ) / 2;
+    	this.pos.z = ( this.pos.z + other.pos.z ) / 2;
+    	this.color.r = ( this.color.r + other.color.r ) / 2;
+    	this.color.g = ( this.color.g + other.color.g ) / 2;
+    	this.color.b = ( this.color.b + other.color.b ) / 2;
+    	this.size += other.size;
+
+        if( this.parent ) {
+        	this.parent.delete(other);
+            this.parent.addVoxel(this);
+            newVoxel.parent = this.parent;
+        }
+    }
+
+
+    // Merges other into this voxel as a subvoxel
+    mergeInto(other) {
+    	this.parent.delete(other);
+
+    	other.pos.x -= this.pos.x;
+    	other.pos.y -= this.pos.y;
+    	other.pos.z -= this.pos.z;
+        
+        let subKey = getVoxelKey(`${other.pos.x},${other.pos.y},${other.pos.z}`);
+        if( !this.subVoxels.has(subKey) ) this.parent.subVoxels.set(subKey, []);
+        let lst = this.subVoxels.get(subKey);
+        lst.push( other );
+        other.parent = this;
+    }
+}
+
+// Sphere class updated for dynamic voxel sizes
+class Sphere {
+    constructor(x, y, z, radius, color) {
+        this.x = x;
+        this.y = y;
+        this.z = z;
+        this.radius = radius;
+        this.color = color;
+        this.velocity = {x: 0, y: 0, z: 0};
+    }
+
+    // Method to calculate acceleration based on nearby color density
+    calculateAcceleration(universe) {
+        let acceleration = {x: 0, y: 0, z: 0};
+        let positions = 4;
+        while( positions > 0 ) {
+        	var voxelX = Math.random(2.0) - 1.0, voxelY = Math.random(2.0) - 1.0, voxelZ = Math.random(2.0) - 1.0;
+        	let voxelKey = universe.hashVoxel(voxelX, voxelY, voxelZ);
+        }
+        for (let dx = -1; dx <= 1; dx++) {
+            for (let dy = -1; dy <= 1; dy++) {
+                for (let dz = -1; dz <= 1; dz++) {
+                    const voxelKey = getVoxelKey(voxelX, voxelY, voxelZ);
+                    if (universe.voxels.has(voxelKey)) {
+                        const voxel = universe.voxels.get(voxelKey);
+                        const distance = Math.sqrt(dx*dx + dy*dy + dz*dz);
+                        const influence = 1 / (distance || 1); // Avoid division by zero
+                        // Here we assume spheres are 'attracted' to areas with similar color
+                        acceleration.x += (this.color.r - voxel.color.r) * influence * dx;
+                        acceleration.y += (this.color.g - voxel.color.g) * influence * dy;
+                        acceleration.z += (this.color.b - voxel.color.b) * influence * dz;
+                    }
+                }
+            }
+        }
+        return acceleration;
+    }
+
+    // Method to potentially move the sphere
+    probabilisticMove(dt) {
+        if (Math.random() < cfg.sphereMoveProbability) {
+            const acceleration = this.calculateAcceleration(universe);
+            // Max accel
+            if( this.acceleration.x > cfg.maxForce ) this.acceleration.x = cfg.maxForce;
+            if( this.acceleration.x < -cfg.maxForce ) this.acceleration.x = -cfg.maxForce;
+            if( this.acceleration.y > cfg.maxForce ) this.acceleration.y = cfg.maxForce;
+            if( this.acceleration.y < -cfg.maxForce ) this.acceleration.y = -cfg.maxForce;
+            if( this.acceleration.z > cfg.maxForce ) this.acceleration.z = cfg.maxForce;
+            if( this.acceleration.z < -cfg.maxForce ) this.acceleration.z = -cfg.maxForce;
+            this.velocity.x += acceleration.x * dt;
+            this.velocity.y += acceleration.y * dt;
+            this.velocity.z += acceleration.z * dt;
+            // Max speed
+            if( this.velocity.x > cfg.maxSpeed ) this.velocity.x = cfg.maxSpeed;
+            if( this.velocity.x < -cfg.maxSpeed ) this.velocity.x = -cfg.maxSpeed;
+            if( this.velocity.y > cfg.maxSpeed ) this.velocity.y = cfg.maxSpeed;
+            if( this.velocity.y < -cfg.maxSpeed ) this.velocity.y = -cfg.maxSpeed;
+            if( this.velocity.z > cfg.maxSpeed ) this.velocity.z = cfg.maxSpeed;
+            if( this.velocity.z < -cfg.maxSpeed ) this.velocity.z = -cfg.maxSpeed;
+            this.x += this.velocity.x * dt * cfg.moveDistance;
+            this.y += this.velocity.y * dt * cfg.moveDistance;
+            this.z += this.velocity.z * dt * cfg.moveDistance;
+            // Spheres bounce
+            if( this.x > cfg.universeSize || this.x < -cfg.universeSize ) {
+            	this.velocity.x *= -1;
+            	this.acceleration.x *= -1;
+            }
+            if( this.y > cfg.universeSize || this.y < -cfg.universeSize ) {
+            	this.velocity.y *= -1;
+            	this.acceleration.y *= -1;
+            }
+            if( this.z > cfg.universeSize || this.z < -cfg.universeSize ) {
+            	this.velocity.z *= -1;
+            	this.acceleration.z *= -1;
+            }
+            // Keep spheres within universe bounds
+            this.x = Math.max(0, Math.min(this.x, cfg.universeSize));
+            this.y = Math.max(0, Math.min(this.y, cfg.universeSize));
+            this.z = Math.max(0, Math.min(this.z, cfg.universeSize));
+        }
+    }
+
+
+    // Affect voxels with two modes: precise and chaotic
+    affectVoxels(universe, dt, mode = 'precise') {
+        if (mode === 'precise') {
+            this.affectVoxelsPrecise(universe, dt);
+        } else if (mode === 'chaotic') {
+            this.affectVoxelsChaotic(universe, dt);
+        }
+    }
+
+    // Method to probabilistically apply color to nearby voxels
+    affectVoxelsPrecise(universe, dt) {
+        for (let x = -this.radius; x <= this.radius; x++) {
+            for (let y = -this.radius; y <= this.radius; y++) {
+                for (let z = -this.radius; z <= this.radius; z++) {
+                    if (Math.random() < cfg.sphereInfluenceProbability) {
+                        const voxelX = Math.floor(this.x / cfg.voxelSize + x/cfg.voxelSize);
+                        const voxelY = Math.floor(this.y / cfg.voxelSize + y/cfg.voxelSize);
+                        const voxelZ = Math.floor(this.z / cfg.voxelSize + z/cfg.voxelSize);
+                        const voxelKey = universe.hashVoxel(voxelX, voxelY, voxelZ);
+                        if (universe.voxels.has(voxelKey)) {
+                            this.addColor(universe.voxels.get(voxelKey), dt);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    affectVoxelsChaotic(universe, dt) {
+        for (let i = 0; i < 3; i++) { // Painting at 3 points
+            let angle = Math.random() * Math.PI * 2;
+            let phi = Math.acos(2 * Math.random() - 1);
+            let randomRadius = Math.random() * this.radius;
+            let x = this.x + randomRadius * Math.sin(phi) * Math.cos(angle);
+            let y = this.y + randomRadius * Math.sin(phi) * Math.sin(angle);
+            let z = this.z + randomRadius * Math.cos(phi);
+
+            let voxel = getVoxelAt(x, y, z);
+            if (universe.voxels.has(voxelKey)) {
+                universe.voxels.get(voxelKey).addColor(
+                    this.color.r * cfg.colorPerSecond * dt,
+                    this.color.g * cfg.colorPerSecond * dt,
+                    this.color.b * cfg.colorPerSecond * dt,
+                    x, y, z
+                );
+            }
+        }
+    }
+
+}
+
+// Universe class with dynamic voxel structure
+class Universe {
+    constructor() {
+        this.voxels = new Map();
+        this.spheres = [];
+    }
+
+    update(dt, mode = 'precise') {
+        var voxel, other, voxel1, voxel2;
+        var i, j;
+        var found, match;
+
+        this.spheres.forEach(sphere => {
+            sphere.probabilisticMove(dt);
+            sphere.affectVoxels(this, dt, mode);
+        });
+        
+        // Check for voxel merging
+        let toMerge = [];
+        for (voxel1 of this.voxels.values()) {
+            for( i=0; i<voxel1.length; i++ ) {
+                voxel = voxel1[i];
+                voxel.mergeInside();
+            }
+        }
+        do {
+            found=false;
+            for (voxel1 of this.voxels.values()) {
+                for( i=0; i<voxel1.length; i++ ) {
+                    voxel = voxel1[i];
+                    do {
+                        match=false;
+                        for (voxel2 of this.voxels.values()) {
+                            for( j=0; j<voxel2.length; j++ ) {
+                                other = voxel2[j];
+                                if (voxel === other ) continue;
+                                switch( voxel.mergeType(other) ) {
+                                case 0:
+                                    found=true;
+                                    break;
+                                case 1:
+                                    match=true;
+                                    break;
+                                case 2:
+                                    continue;
+                                }
+                                break;
+                            }
+                            if( found || match ) break;
+                        }
+                    } while( match );
+                }
+                if( found ) break;
+            }
+        } while( found );
+    }
+
+    // Add a voxel to the universe
+    addVoxel(x, y, z, r, g, b) {
+        const key = getVoxelKey(x, y, z);
+        if( !this.voxels.has(key) ) this.voxels.set(key,[]);
+        let lst = this.voxels.get(key);
+        lst.push(new Voxel(x,y,z));
+        this.voxels.set(key, lst);
+    }
+
+    // Add a sphere to the universe
+    addSphere(sphere) {
+        this.spheres.push(sphere);
+    }
+    // Get the color of a voxel for rendering or data retrieval
+    getVoxelColor(x, y, z) {
+        const key = getVoxelKey(x, y, z);
+        return this.voxels.has(key) ? this.voxels.get(key).color : {r: 0, g: 0, b: 0};
+    }
+}
+
+// Usage example remains similar, but now with dynamic voxel sizes
+const universe = new Universe();
+// Initialize universe with spheres
+for( var i=0; i<30; i++ ) {
+	universe.addSphere(new Sphere(50.5, 50.5, 50.5, 5, {r: 0.5, g: 0.5, b: 1.0}));
+}
+
+// Simulate time passing
+for (let t = 0; t < 100; t++) { // 100 time steps
+    universe.update(1); // Simulate 1 second per step
+}
+</script>

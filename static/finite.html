@@ -1,0 +1,361 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Castle Storage</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+<style>
+
+#linecounter::-webkit-scrollbar {
+    display: none;
+}
+
+pre {
+    margin: 0px;
+    float: left;
+    z-index: 101;
+    font-family: Monaco,Andale Mono,Ubuntu Mono,monospace
+}
+body {
+    font-size: 12pt;
+    margin: 0;
+}
+
+.clr {
+    float: left;
+    clear: left;
+}
+
+.endoffile {
+    width: 100%;
+    z-index: 100;
+}
+
+.section {
+    float: none;
+    clear: both;
+}
+
+.last {
+}
+
+.op {
+    color: lightblue;
+}
+.word {
+    color: tan;
+}
+.keyword {
+    color: green;
+}
+.literal {
+    color: gray;
+}
+.regexp {
+    color: #ff0000;
+}
+.number {
+    color: red;
+}
+.comment {
+    color: #c3b0ff;
+}
+.tag {
+    color: #0000ff;
+}
+.property {
+    color: #ff00ff;
+}
+.value {
+    color: #ff0000;
+}
+.markup {
+    color: gray;
+}
+.html {
+    color: tan;
+}
+.txt {
+    color: tan;
+}
+
+[contenteditable] {
+  outline: 0px solid transparent;
+}
+
+.ps {
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.br {
+    border-radius: 5px;
+}
+
+</style>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body style='background: black; color: tan'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<loadwheel></loadwheel>
+
+<div xSect=main id=mainscroll class="margin-small">
+
+<div class=cl>&nbsp;</div>
+
+</div>
+
+<!--  setup: use node.js backend to include rad.js templates: -->
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/mauth.html
+
+<templates>
+<div xTemplate='tools'>
+<button onclick='pickTool("Line")'>Draw</button>
+<button onclick='pickTool("Hand")'>Select</button>
+<button onclick='pickTool("Square")'>Rect</button>
+<button onclick='pickTool("Circle")'>Circle</button>
+<button onclick='pickTool("Upload")'>Upload</button>
+<div class=cl></div>
+<div></div>
+</div>
+<div xTemplate='upload'>
+
+<form action='/vfs/upload.js' method="post" enctype="multipart/form-data">
+
+<fl>Upload your files:</fl>
+<cl></cl>
+<input style='float: left' type='file' name='uploads' multiple />
+<cl></cl>
+<input style='float: left' type='submit' value='Upload' />
+<cl></cl>
+
+</form>
+
+</div>
+<div xTemplate=console>
+<pre style='float: left; min-width: 600px; overflow: auto; min-height: 100px; height: 400px; width: 600px' xId=result#code></pre>
+<cl></cl>
+<form name='#code' xMethod='event.preventDefault(); sendfromConsole("#code"); return false;'>
+<fl>Console:</fl><fl><input type=text name=msg value='' size=80/></fl>
+<cl></cl>
+<button xCmd='event.preventDefault(); sendfromConsole("#code"); return false;'>Send</button>
+</form>
+<cl></cl>
+</div>
+
+<div xTemplate=modules>
+
+<fl>Modules:</fl>
+<cl></cl>
+
+<fl xWatch=mods>
+<fl xLoop=mods xInd=k xVal=v>
+  <div style='width: 250px; float: left'>#k:</div>
+  <div style='width: 200px; float: left'>IndexSize</div>
+  <div style='width: 200px; float: left'>DataSize</div>
+  <div class='cl'></div>
+  <div xLoop=v xKey=kk xVal=vv>
+   <button style='width: 250px; float: left' xCmd='loadTable("#k","#vv")'>#vv</button>
+   <div style='width: 200px; float: left'>#[tables.#[k].#[vv].stats.totalIndexSize]</div>
+   <div style='width: 200px; float: left'>#[tables.#[k].#[vv].stats.size]</div>
+   <cl></cl>
+  </div>
+  <cl></cl>
+</fl>
+</fl>
+</div>
+
+<div xTemplate=lister>
+<fl>#module:#table</fl>
+<cl></cl>
+<fl xWatch='data.#[module].#[table]'>
+<fl xLoop=data.#[module].#[table] xKey=k xVal=v>
+ <div class=btn xCmd='editTable("#[module]", "#[table]", "#v.id")'>#v.id</div>
+ <div class=btn xCmd='deleteTable("#[module]", "#[table]", "#v.id")'>Remove</div>
+ <fl>#v.name</fl>
+ <cl></cl>
+</fl>
+
+<fl xTest='"#[page.#[module].#[table]]" > 0' xCmd='previousPage("#[module]","#[table]")'>Back</fl>
+<fl xTest='"#[data.#[module].#[table].length]">=100' xCmd='nextPage("#[module]","#[table]")'>Next</fl>
+<cl></cl>
+</fl>
+
+<cl></cl>
+<div id=tableviewer_#[module]_#[table]></div>
+
+<cl></cl>
+
+<form xCb=finishAddTable id=new_#[module]_#[table] method=post action='/ed/add.js'>
+<input type=hidden name=m value='#[module]'>
+<input type=hidden name=t value='#[table]'>
+<div xLoop=tables.#[module].#[table] xInd=k xVal=v>
+  <fl xTest='"#k"!="id"' style='width: 100%'>
+    <fl>#k:</fl>
+    <fl><input type=text name=#k></fl>
+  </fl>
+  <cl></cl>
+</div>
+<div class=formbtn>Submit</div>
+<cl></cl>
+</form>
+</div>
+
+<div xTemplate=edittable>
+<form xCb=finishEditTable id=edit_#[module]_#[table] xForm='data.#[module].#[table].#[editno]' method=post xMethod='' action='/ed/edit.js'>
+  <input type=hidden name=id xIgnore=true>
+  <input type=hidden name=m value='#[module]' xIgnore=true>
+  <input type=hidden name=t value='#[table]' xIgnore=true>
+  <div xLoop=tables.#[module].#[table] xInd=k xVal=v>
+    <fl xTest='"#k"!="id"' style='width: 100%'>
+      <fl>#k:</fl>
+      <fl><input type=text name=#k></fl>
+    </fl>
+    <cl></cl>
+  </div>
+  <div class=formbtn>Submit</div>
+  <cl></cl>
+</form>
+</div>
+
+</templates>
+
+</body>
+
+<script language='javascript' src='/js/cog/vfs.js'></script>
+<script language='javascript' src='/js/cog/lint.js'></script>
+<script language='javascript' src='/js/cog/canvas.js'></script>
+<script language='javascript' src='/js/cog/edit.js'></script>
+<script language='javascript' src='/js/cog/shell.js'></script>
+<script language='javascript' src='/js/cog/console.js'></script>
+<script language='javascript' src='/js/cog/db.js'></script>
+<script language='javascript' src='/js/cog/inf.js'></script>
+<script language=javascript>
+/*
+
+Todo:
+
+ - database interface
+Drawing:
+ - color wheel
+ - enable other tools
+Database:
+ - sizes (# of records, # of bytes?)
+
+- make outline track current tab
+- upload confirmation messages
+- refresh directory when reopened
+
+- affix closable outlines
+- zoom in and out
+- redraw editor on resize
+
+- Logout button
+
+ */
+let mainframe = null;
+function initSkeleton()
+{
+    radLoad();
+    openSocket(window.location.host, chatSocket);
+
+    mainframe = new Mainframe();
+
+    var mp = gE("mainscroll");
+    var area = mainframe.mainwin.build();
+    mp.appendChild(area);
+
+    createCanvas();
+    mainframe.build();  
+
+    socketRegister( 'sh', sendtoShell );
+    socketRegister( 'co', sendtoConsole );
+
+    mainframe.buildStatusbar();
+
+    radHook( "pagekey", pageUpdate );
+    if( radVar("pagekey") != null ) pageUpdate();
+}
+
+function chatSocket(ev)
+{
+}
+
+var shell_requests = [];
+function connectShell(shellobj)
+{
+    shell_requests.push(shellobj);
+    socketSend({c:'sh'});
+}
+function sendtoShell(event, code, usermsg, data)
+{
+    console.log("sendtoShell", data);
+    mainframe.sendtoShell(data.z, data.s);
+}
+
+var console_requests = [];
+function connectConsole(consoleobj)
+{
+    console_requests.push(consoleobj);
+    socketSend({c:'co'});
+}
+function sendtoConsole(event, code, usermsg, data)
+{
+    console.log("sendtoConsole", data);
+    mainframe.sendtoConsole(data.z, data.s);
+}
+function sendfromConsole(code)
+{
+    mainframe.sendfromConsole(code, "");
+}
+
+function pageUpdate()
+{
+    console.log("pageUpdate");
+    HtmlRequestGet('/vfs/start.js', '', gotStart);
+}
+
+function gotStart(data)
+{
+    var obj = JSON.parse(data);
+    if( obj.status == 'ok' && obj.data.status == 'ok' ) {
+        radStore("sess.user", obj.data.user);
+        mainframe.switchLogin();
+        mainframe.mainwin.areas['main'].close("Login");
+    } else {
+        radClear("sess.user");
+        mainframe.clickLogin();
+        return;
+    }
+}
+
+function pickTool(name)
+{
+    if( name ==  "Upload" ) {
+        mainframe.showUploads();
+    } else {
+        mainframe.pickTool(name);
+    }
+}
+
+registerStartup(initSkeleton)
+
+</script>
+</html>

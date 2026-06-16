@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Highcharts Tooltip Example</title>
+    <script src="https://code.highcharts.com/highcharts.js"></script>
+</head>
+<body>
+    <div id="chart-container" style="width: 800px; height: 400px;"></div>
+    <script>
+        // Sample data with additional information
+        var chartData = [
+            { x: 10, y: 20, description: 'A sunny day', category: 'Weather' },
+            { x: 20, y: 25, description: 'A windy day', category: 'Weather' },
+            { x: 30, y: 30, description: 'Rainy conditions', category: 'Weather' }
+        ];
+
+        Highcharts.chart('chart-container', {
+            chart: {
+                type: 'line'
+            },
+            title: {
+                text: 'Custom Tooltip Line Chart'
+            },
+            xAxis: {
+                title: {
+                    text: 'Time'
+                }
+            },
+            yAxis: {
+                title: {
+                    text: 'Value'
+                }
+            },
+            tooltip: {
+                useHTML: true, // Allows use of HTML in tooltip for better formatting
+                formatter: function() {
+                    return '<b>Time:</b> ' + this.x + '<br/>' +
+                           '<b>Value:</b> ' + this.y + '<br/>' +
+                           '<b>Description:</b> ' + this.point.description + '<br/>' +
+                           '<b>Category:</b> ' + this.point.category;
+                }
+            },
+            series: [{
+                data: chartData,
+                marker: {
+                    enabled: true
+                }
+            }]
+        });
+    </script>
+</body>
+</html>

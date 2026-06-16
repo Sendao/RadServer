@@ -1,0 +1,87 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Lem The Dragon</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+<style>
+#yourtoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    bottom: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+@keyframes fadeOut {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+</style>
+<script async src="https://spiritshare.org/js/es_shims.js"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://spiritshare.org/js/three/build/three.module.js",
+      "three/addons/": "https://spiritshare.org/js/three/examples/jsm/"
+    }
+  }
+</script>
+<script type="module">
+import { inKeys, setSizing, getSpacing, getSizing, setSpacing, animate, fetchIdent, resizeScreen2, colorBal, filterBal, exportPosn, rules } from './js/lem.js';
+window.fetchIdent = fetchIdent;
+window.inKeys = inKeys;
+window.animate = animate;
+window.setSpacing = setSpacing;
+window.setSizing = setSizing;
+window.resizeScreen2 = resizeScreen2;
+window.colorBal = colorBal;
+window.exportPosn = exportPosn;
+window.filterBal = filterBal;
+window.rules = rules;
+window.getSpacing = getSpacing;
+window.getSizing = getSizing;
+</script>
+</head>
+<body style='background: black; color: tan'>
+<div xSect=main id=mainscroll class="margin-small">
+</div>
+<div id="yourtoast"></div>
+</body>
+<script language=javascript>
+function scriptPick(name)
+{
+  console.log("scriptPick(" + name + ")");
+  const names = name.split('.');
+  const ext = names.length > 1 ? names[names.length-1] : '';
+  name = names[0];
+
+  window.fetchIdent( name + (ext===''?'':'.') + ext, (nm) => {
+      if( typeof nm != 'undefined' ) {
+        if( ext === 'bin' ) {
+          scriptPick(name + ".json");
+        } else if( ext === "json" ) {
+          alert("Couldn't load datafile - what a journey we have all had, yet never mind the missing earings, necklace, and watch -- you'll never be the same after you become one with the humane");
+        } else {
+          scriptPick(name + ".json");
+        }
+      }
+    });
+}
+window.addEventListener('DOMContentLoaded', function(){
+    console.log("Loaded");
+    document.addEventListener('keydown', window.inKeys);
+    scriptPick(typeof location.search == 'string' && location.search != '' ? location.search.substring(1) : 'first_visitor_saved');
+});
+</script>
+</html>

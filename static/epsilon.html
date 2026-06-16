@@ -1,0 +1,215 @@
+<html>
+<body>
+<script src="/js/sentiments.js"></script>
+<script language=javascript>
+var a,b,voices;
+let chosenVoice=0;
+let config = {};
+let length_set = false;
+let default_config = {
+ 'text': "Welcome to Epsilon.",
+ 'length': '200',
+ 'changing': true,
+ 'speaking': false
+};
+function saveConfig(reread=true)
+{
+  if( reread ) {
+    config.text = document.forms[0].txt.value;
+    config.flavor = document.forms[0].flavor.value;
+    config.speaking = document.forms[0].spokenword.checked;
+    config.changing = document.forms[0].changing.checked;
+    config.gen = document.getElementById('genarea').innerText;
+  }
+
+  window.localStorage['cfg'] = JSON.stringify(config);
+}
+function loadConfig()
+{
+  if( 'cfg' in window.localStorage ) {
+    config = JSON.parse(window.localStorage['cfg']);
+  } else {
+    config = default_config;
+  }
+
+	if( 'flavor' in config )
+	  document.forms[0].flavor.value = config.flavor;
+	if( 'text' in config )
+	  document.forms[0].txt.value = config.text;
+  if( 'speaking' in config )
+	  document.forms[0].spokenword.checked = config.speaking;
+  if( 'changing' in config )
+    document.forms[0].changing.checked = config.changing;
+
+	if( 'gen' in config ) {
+		document.getElementById('genarea').innerText = config.gen;
+	} else if( 'text' in config ) {
+    go( config.text );
+  } else {
+		go( "Epsilon online, reporting a new visitor to interstice Text Alpha 9" );
+	}
+
+}
+function run()
+{
+	if( !Array.isArray(b) )
+		b = [ 'hello,', 'world!' ];
+	let txt = b.join(" ");
+	go(txt);
+	setTimeout(run,20000);
+}
+function findZira()
+{	
+	for (let i = 0; i < voices.length; i++) {
+		if( !voices[i].localService ) continue;
+		if( voices[i].name.indexOf("Zira") != -1 ) {
+			chosenVoice = i;
+			break;
+		}
+	}
+}
+function reset()
+{
+  config = default_config;
+  saveConfig(false);
+  loadConfig();
+}
+function go(txt)
+{
+  let words = txt.split(" ");
+  if( words[0][0] == "-" ) {
+    let n = parseInt(words[0]) * -1;
+    if( !isNaN(n) ) {
+      config.length = n;
+    }
+  }
+    
+	document.forms[0].txt.value = txt;
+
+  if( !length_set && 'length' in config ) {
+    txt = "-" + config.length + " " + txt;
+    length_set = true;
+  }
+ 	[a,f] = gen(txt, document.forms[0].flavor.value, document.forms[0].changing.checked);
+
+  config.flavor = f;
+  config.gen = a;
+
+	b = a.split(' ').slice(-6);
+  config.text = b.join(" ");
+
+  saveConfig(false);
+  loadConfig();
+
+  if( config.speaking ) {
+    let utter = new SpeechSynthesisUtterance(a);
+    utter.voice = voices[ chosenVoice ];
+    utter.rate = 1.0;
+    window.speechSynthesis.speak(utter);
+  }
+}
+</script>
+
+<div id=genarea style='max-width: 640px; font-size: 18pt'></div>
+
+<div id=formarea>
+<form onsubmit="return false;">
+<BR>
+<div style='float: left'>
+<div style='float: left'>
+<div style='float: left'>gen:</div>
+<div style='float: left'>
+<input type=text onchange='saveConfig()' name=txt size=30 value='hello, world!'>
+</div>
+</div>
+<BR>
+<div style='float: left'>
+<div style='float: left'>em:</div>
+<div style='float: left'>
+<input type=text onchange='saveConfig()' name=flavor size=30 value='kind gentle'>
+</div>
+</div>
+<br>
+<div style='float: left'>
+	<div style='float: left'><input type=checkbox checked name=changing></div>
+	<div style='float: left'>changing emotions</div>
+</div>
+<div style='clear: both'></div>
+<div style='float: left'>
+	<div style='float: left'><input type=checkbox id=spokenword name=spokenword></div>
+	<div style='float: left'>spoken word</div>
+</div>
+</div>
+
+<button onclick="go(this.form.txt.value);" style='width: 100px; height: 100px; float: left'>Go</button>
+
+</form>
+<div style='clear:both'>&nbsp;</div>
+<div style='float: left; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='window.open("thebuggy.html?" + encodeURIComponent(a));'>TheBuggy</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='run();'>Think</div>
+<div style='clear:both'>&nbsp;</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("/2 " + b.join(" "));'>/2</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("/3 " + b.join(" "));'>/3</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("/4 " + b.join(" "));'>/4</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("/5 " + b.join(" "));'>/5</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("/6 " + b.join(" "));'>/6</div>
+<div style='height: 100px; clear: both'>&nbsp;</div>
+<div style='float: left; width: 100px; height: 100px; border: 1px solid black; background: gray; clear: both' onClick='go("-50 " + b.join(" "));'>50w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("-70 " + b.join(" "));'>70w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("-150 " + b.join(" "));'>150w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("-200 " + b.join(" "));'>200w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray; cursor: pointer' onClick='go("-300 " + b.join(" "));'>300w</div>
+<div style='height: 100px; clear: both'>&nbsp;</div>
+<div style='float: left; width: 100px; height: 100px; border: 1px solid black; background: gray; clear: both; cursor: pointer' onClick='reset()'>Reset</div>
+</div>
+
+</body>
+<script src='epsilon/tokens.js'></script>
+<script src='js/qrandom.js'></script>
+<script language=javascript>
+var rNums = [];
+var rC = 0, rndMax=2000;
+let cC = 0;
+let myseed = "stay";
+
+function qRandom() {
+  if (rNums.length < rndMax) {
+    startRandoms();
+  }
+  rC++;
+  if (rC >= rNums.length) rC -= rNums.length;
+  cC += Math.floor(rNums[rC] * 50);
+  while (cC >= rNums.length) cC -= rNums.length;
+  let x = (rNums[rC] * 0.1 + rNums[cC] * 0.9);
+
+  return x;
+}
+
+function startRandoms() {
+  myseed = Math.random(); // initial random seed
+  while (rNums.length < rndMax) {
+    rNums.push(myseed * Math.random());
+  }
+}
+</script>
+
+<script language=javascript>
+window.onload = function() {
+  loadConfig();
+
+}
+let registered=false;
+document.getElementById('spokenword').addEventListener('change', ()=>{
+	voices = window.speechSynthesis.getVoices();
+	if( voices.length != 0 ) {
+		findZira();
+	} else if( !registered ) {
+		registered=true;
+		speechSynthesis.addEventListener('voiceschanged', () => {
+    	voices = window.speechSynthesis.getVoices();
+    	findZira();
+		});
+	}
+});
+</script>
+</html>

@@ -1,0 +1,1240 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<!--Y flclclfl Y-->
+<title>Welcome to Castle Spiritshare</title>
+<!---->
+<link rel=stylesheet href='/css/styles.css'></link>
+<!---->
+<style>
+##!<!---->
+#linecounter::-webkit-scrollbar {
+    display: none;
+}
+
+pre {
+    margin: 0px;
+    float: left;
+    z-index: 101;
+    font-family: Monaco,Andale Mono,Ubuntu Mono,monospace
+}
+#toptoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    top: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+#lefttoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    left: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+#righttoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    top: 50%;
+    right: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+
+#yourtoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    bottom: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+@keyframes fadeOut {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+
+body {
+    font-size: 10pt;
+    margin: 0;
+    background-color: black;
+    color: tan;
+}
+
+.cl {
+    float: left;
+    clear: left;
+}
+.fl {
+    float: left;
+}
+
+.endoffile {
+    width: 100%;
+    z-index: 100;
+}
+
+.section {
+    float: none;
+    clear: both;
+}
+
+.last {
+}
+.op {
+    color: black;
+}
+.word {
+    color: tan;
+}
+.keyword {
+    color: purple;
+}
+.literal {
+    color: green;
+}
+.regexp {
+    color: #ff0000;
+}
+.number {
+    color: silver;
+}
+.comment {
+    color: #c3b0ff;
+}
+.tag {
+    color: #0000ff;
+}
+.property {
+    color: #ff00ff;
+}
+.value {
+    color: #ff0000;
+}
+.markup {
+    color: gray;
+}
+.html {
+    color: tent;
+}
+.txt {
+    color: tan;
+}
+
+[contenteditable] {
+  outline: 0px solid transparent;
+}
+
+.ps {
+    -webkit-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+.br {
+    border-radius: 5px;
+}
+
+</style>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<!--  setup -->
+<loadwheel></loadwheel>
+
+<div xWatch=menu_reset>
+<menu xSect=nav style='max-width: 200px; overflow: auto' xSet='target=mainscroll'></menu>
+</div>
+
+<!--  main view screen on -->
+<div xSect=main id=mainscroll class="margin-small" style='float: left; padding-left: 20px'>
+<div class=cl>&nbsp;</div>
+</div>
+
+<script language=javascript>
+function login()
+{
+    blitzTemplate(gE("mainscroll"), "signin");
+}
+
+function logout()
+{
+    blitzTemplate(gE("mainscroll"), "logout");
+}
+</script>
+
+<!--  main view screen off -->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--  setup -->
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/auth.html
+
+
+<templates>
+
+<div xTemplate=setup>
+    <form xForm='voices' id=voices>
+        <fl>Voice:</fl>
+        <fl><select name=voice onchange='chooseVoice()' xDraw='populateVoiceList(div)'></select></fl>
+    </form>
+</div>
+
+<div xTemplate=wordpainter>
+    <fl id=painterwords style='width: 1000px; overflow: hidden' xDraw='drawPainterWords()'></fl>
+    <cl></cl>
+    <button xCmd='renderWordLists()'>Render</button>
+</div>
+
+<div xTemplate=promptnew>
+    <form xForm='newprompt.#[selectedprompt]' id='newprompt' action='javascript: false;' xMethod='addprompt2(this)'>
+        <fl style='width: 88px'>Prompt:</fl>
+        <fl><textarea cols=77 rows=1 name='prompt' xId='newprompt.#[selectedprompt].prompt' xDraw='addEpsilon("newprompt.#[selectedprompt].prompt")' style='font-size: 18pt; overflow: auto; white-space: nowrap; min-height: 50px'></textarea>
+            <fl><input type='button' onClick='newprompt_save()' value='Save'>Save</input></fl>
+        <cl></cl>
+        </fl>
+        <cl></cl>
+        <fl><input type='submit' value='Add'></fl>
+    </form>
+</div>
+
+<div xTemplate=prompt>
+    <fl xId='prompt_#[selectedprompt]_edit' style='width: 900px'>
+        <form xForm='prompts.#[selectedprompt]' xId='#[selectedprompt]' action='javascript: false;' xMethod='editprompt(this)'>
+            <fl style='font-size: 18pt'>Prompt:</fl>
+            <cl></cl>
+            <cl>&nbsp;</cl>
+            <fl>Prompt:</fl>        
+            <fl><textarea cols=77 rows=1 name='prompt' xId='prompt.#[selectedprompt].prompt' xDraw='addEpsilon("prompt.#[selectedprompt].prompt")' style='font-size: 18pt; overflow: auto; white-space: nowrap;  min-height: 50px'></textarea>
+                <fl><input type='button' onClick='newprompt_save()' value='Save'>Save</input></fl>            
+            <cl></cl>
+            </fl>
+            <input type=hidden name=_id>
+            <cl>&nbsp;</cl>
+            <cl>&nbsp;</cl>
+            <fl><input type='submit' value='Update'></fl>
+        </form>
+        <cl></cl>
+    </fl>
+</div>
+
+<div xTemplate=clocks>
+
+    <!-- allclocks.push( { id: randStr(12), title: 'Clock ' + allclocks.length, rounds: 5, gear: 'minute', trigger: new Date().getTime()/1000 + (5*60), event: 'toast', data: '' } ); -->
+
+    <div xWatch='tock,clockn'> <!-- Watch out! -->
+
+        <div xLoop=tock xKey=k xVal=v>
+            <div style='float: left'>#[v.rounds] #[v.gear]: #[v.event] #[v.data] "#[v.title]"(rA)</div>
+        </div>
+
+        <div style='clear: left'><pre>:)</pre></div>
+
+        <form id=clockedit>
+            <div style='float: left'>Title:</div>
+            <div style='float: left'><input type=text name=title></div>
+            <div style='clear: left'>&nbsp;</div>
+
+            <div style='float: left'>Rounds:</div>
+            <div style='float: left'><input type=text name=rounds></div>
+            <div style='clear: left'>&nbsp;</div>
+
+            <div style='float: left'>Gear:</div>
+            <div style='float: left'><select name=gear><option>seconds</option><option>minutes</option><option>min*5</option><option>min*15min</option><option>min*30</option><option>min*45</option><option>hours</option></select></div>
+            <div style='clear: left'>&nbsp;</div>
+
+            <div style='float: left'>Event:</div>
+            <div style='float: left'><select name=event><option>toast</option><option>alert</option><option>(no) noise</option><option>link</option><option>newtab</option><option>script</option></select></div>
+            <div style='clear: left'>&nbsp;</div>
+
+            <div style='float: left'>Data:</div>
+            <div style='float: left'><textarea name=data></textarea></div>
+            <div style='clear: left'>&nbsp;</div>
+
+            <div value='Update' onClick='updateClockForm()'>Go</div>
+            <div value='Start' onClick='updateClockStart()'>Start</div>
+        </form>
+    </div>
+</div>
+
+
+<div xTemplate=notepad>
+    <form id=notepad>
+        <textarea id=zero name=zero xDraw='loadNotepad()'></textarea>
+        <div onClick='saveNotepad()' value='Save'>Save</div>
+    </form>
+</div>
+
+<script language=javascript>
+
+let epsilon_prompter, epi_canvas=null, epi_context;
+
+var talking = false;
+let a = null;
+let b = null;
+
+let voices = null, chosenVoice=0;
+
+function chooseVoice() {
+    voicefrm = document.forms['voices'];
+    
+    var chosen = voicefrm['voice'].value;
+    chosenVoice = chosen;
+    console.log("Chose voice " + voices[chosenVoice]);
+}
+function populateVoiceList(voiceSelect) {
+    voiceSelect.innerHTML = '';
+    
+    voices = window.speechSynthesis.getVoices();
+
+    for (let i = 0; i < voices.length; i++) {
+        if( !voices[i].localService ) continue;
+
+        console.log(voices[i]);
+        const option = document.createElement("option");
+        option.textContent = `${voices[i].name} (${voices[i].lang})`;
+
+        if (voices[i].default) {
+            option.textContent += " — DEFAULT";
+        }
+
+        option.setAttribute("data-lang", voices[i].lang);
+        option.setAttribute("data-name", voices[i].name);
+        option.value = i;
+        voiceSelect.appendChild(option);
+    }
+}
+
+
+function animate()
+{
+    go();
+}
+function run()
+{
+    if( paused ) {
+        resume();
+    } else {
+        pause();
+    }
+}
+
+let last_speech = 0;
+function go(cmd)
+{
+    let now = new Date().getTime();
+    if( now < last_speech+1000 ) return;
+    last_speech=now;
+    if( talking && ( window.speechSynthesis.pending || window.speechSynthesis.speaking ) ) return;
+
+    let txt = document.forms['epsilon'].txt.value;
+    if( typeof cmd != 'undefined' ) {
+        txt = cmd + " " + txt;
+    }
+    [a,f] = gen(txt, document.forms['epsilon'].flavor.value, document.forms['epsilon'].changing.checked);
+    document.getElementById('genarea').innerText = a;
+    saveGen(a);
+    b = a.split(' ').slice(-6);
+    document.forms['epsilon'].txt.value = b.join(" ");
+    saveText();
+    document.forms['epsilon'].flavor.value = f;
+    saveFlavor();
+
+    if( talking ) {
+        let utter = new SpeechSynthesisUtterance(a);
+        utter.voice = voices[ chosenVoice ];
+        //utter.pitch = 1.0;
+        utter.rate = 1.0;
+        window.speechSynthesis.speak(utter);
+    }
+}
+
+function epsilonTalk()
+{
+    talking = !talking;
+    if( talking ) {
+        resume();
+    } else {
+        pause();
+    }
+}
+
+function getTextWidth(textarea, text, fontSize=null)
+{
+  if( epi_canvas == null ) {
+    epi_canvas = document.createElement('canvas');
+    epi_canvas.style.overflow='hidden';
+    epi_canvas.style.maxWidth=epi_canvas.style.maxHeight='1px';
+    document.documentElement.appendChild(epi_canvas);
+    epi_context = epi_canvas.getContext('2d');
+  }
+  let tgt_font = window.getComputedStyle(textarea).font;
+  if( fontSize == null ) fontSize=window.getComputedStyle(textarea).fontSize;
+  if( epi_context.font != tgt_font ) {
+    epi_context.font = tgt_font;
+  }
+  if( epi_context.fontSize != fontSize ) {
+    epi_context.fontSize = fontSize;
+  }
+  return epi_context.measureText(text).width;
+}
+function addEpsilon(div, target)
+{
+    var el = gE(target);
+    el.addEventListener('onchange', chgEpsilon.bind(null,target));
+    el.setAttribute('xOldFocus', 'focusEpsilon("' + target + '")');
+    el.setAttribute('xOldBlur', 'blurEpsilon("' + target + '")');
+    el.style.marginBottom = (50*5)+"px";
+}
+
+let epi_focus_kb=null;
+function focusEpsilon(target)
+{
+    console.log("focusEpsilon(" +target+")");
+    if( epi_focus_kb != null ) return;
+    epi_focus_kb = registerKeyboard(chgEpsilon.bind(null,target));
+}
+function blurEpsilon(target)
+{
+    console.log("blurEpsilon(" + target + ")");
+    kbfuncs.splice(epi_focus_kb,1);
+    epi_focus_kb=null;
+}
+
+function chgEpsilon(target)
+{
+    var k;
+    var el = gE(target);
+    if( el == null ) {
+        console.error("null target " + target);
+        return;
+    }
+    var val;
+    if( typeof el.innerText != 'undefined' ) val = el.innerText;
+    if( ( typeof val == 'undefined' || val == "" ) && el.value != "" ) val = el.value;
+    let w = event.key;
+    if( typeof w != 'undefined' && letterType(w) <= 3 && w.length == 1 ) {
+        val += w;
+    }
+    let phrases = toTokens(val);
+//    console.log("chgEpsilon('" + val + "')");
+    var word;
+    var i, gen;
+    var offset_width=0;
+    var space_width = getTextWidth(el, " ");
+    var parent_node = el.parentNode;
+    for( i=0; i<parent_node.children.length; i++ ) {
+        if( parent_node.children[i].id.startsWith(target +"_") ) {
+            parent_node.removeChild(parent_node.children[i]);
+            i--;
+            continue;
+        }
+    }
+    let left,top;
+    [left,top] = getPosInside(el,document.documentElement);
+
+    var joinwords = [], next_jw_widths = [], jwwidths = [];
+    var wordseriesids = [];
+    var widths = [], poslast = [], phraseslider = [];
+
+    let joinword = "", jwwidth = 0;
+    let spins=5, spin;
+
+    for( i=0; i<spins; i++ ) {
+        phraseslider.push([]);
+        widths.push(0);
+        poslast.push(0);
+        next_jw_widths.push(0);
+        jwwidths.push(0);
+        joinwords.push('');
+        wordseriesids.push('');
+    }
+
+    for( i=0; i<phrases.length; i++ ) {
+        let t = phrases[i];
+
+        if( typeof phrases[i] == 'undefined' || phrases[i] == 'undefined' || phrases[i] >= dict.length ) {
+            console.log("Unknown phrase " + phrases[i]);
+            continue;
+        }
+        let w = dict[t];
+        joinword = joinWord(joinword, w);
+        jwwidth = getTextWidth(el, joinword);
+        let wwidth = getTextWidth(el, w);
+
+        if( phraseslider[0].length < i+1 ) {
+            for( spin=0; spin<spins; spin++ ) {
+                phraseslider[spin].push(t);
+                if( i == 0 )
+                    poslast[spin] = wwidth;
+            }
+        }
+        for( spin=0; spin<spins; spin++ ) {
+
+            let alternates = nextwordn( phraseslider[spin].slice(i<6?0:i-6,i+1) );
+            let alternates2 = nextwordn( phraseslider[spin].slice(i<6?0:i-6,i).concat( [t] ) );
+
+            var qs = 0;
+            for( k in alternates ) {
+                if( dict[k] == ' ' ) continue;
+                qs += alternates[k];
+            }
+            for( k in alternates2 ) {
+                if( dict[k] == ' ' ) continue;
+                qs += alternates2[k];
+            }
+
+            function generateDiv(k) {
+                if( i == 0 ) {
+                    wordseriesids[spin] = k;
+                } else {
+                    wordseriesids[spin] = wordseriesids[spin] + "_" + k;
+                }
+                joinwords[spin] = joinWord(joinwords[spin], dict[k]);
+                //console.log(i, spin, joinwords[spin]);
+                next_jw_widths[spin] = getTextWidth(el, joinwords[spin]);
+                let width = getTextWidth(el, dict[k], '16pt');
+                gen = document.createElement("div");
+                gen.style.backgroundColor = 'white';
+                gen.style.color = 'black';
+                gen.id = target + "_" + wordseriesids[spin] + "_" + spin + "_" + k;
+                gen.style.width = (width+4) + "px";
+                gen.style.height = "33px";
+                gen.style.position = 'absolute';
+                gen.style.fontSize = "16pt";
+                let leftadd = poslast[spin]+widths[spin];
+                gen.style.left = ( left + leftadd ) + "px";
+                gen.style.top = ( top + 35*(spin+1) ) + "px";
+                gen.innerText = dict[k];
+                gen.setAttribute('onclick', "switchEpsilon('" + target + "','" + wordseriesids[spin] + "'," + (i+1) + "," + k + ")");
+                el.parentNode.appendChild(gen);
+                widths[spin] = width+4;
+                poslast[spin] = leftadd;
+                if( i+1 >= phraseslider[spin].length )
+                    phraseslider[spin].push(k);
+                else
+                    phraseslider[spin][i+1]=k;
+            }
+
+            let found=false;
+            if( qs > 0 ) {
+                var q = qRandom(0,qs);
+                for( k in alternates ) {
+                    if( dict[k] == ' ' ) continue;
+                    q -= alternates[k];
+                    if( q <= 0 ) {
+                        found=true;
+                        generateDiv(k);
+                        break;
+                    }
+                }
+                if( !found ) {
+                    for( k in alternates2 ) {
+                        if( dict[k] == ' ' ) continue;
+                        q -= alternates2[k];
+                        if( q <= 0 ) {
+                            found=true;
+                            generateDiv(k);
+                            break;
+                        }
+                    }
+                }
+            }
+            if( !found ) {
+                generateDiv( xdict[nextof(nextwordn())] );
+            }
+
+            jwwidths[spin] = next_jw_widths[spin];
+        }
+    }
+}
+function switchEpsilon(target, wsid, i, a)
+{
+    var el = gE(target);
+    var val;
+    if( typeof el.innerText != 'undefined' ) val = el.innerText;
+    if( ( typeof val == 'undefined' || val == "" ) && el.value != "" ) val = el.value;
+    let phrases = toTokens(val);
+
+    if( i >= phrases.length ) {
+        phrases.push(a);
+        if( typeof el.innerText != 'undefined' ) el.selectionStart = el.selectionEnd = el.innerText.length;
+        else el.selectionStart = el.selectionEnd = el.value.length;
+    } else {
+        phrases[i]=a;
+    }
+
+    if( typeof el.value != 'undefined' && el.value != "" ) el.value = fromTokens(phrases);
+    else el.innerText = fromTokens(phrases);
+
+    chgEpsilon(target);
+}
+function saveGen(msg)
+{
+    window.localStorage['gen'] = msg;
+}
+function saveText()
+{
+    window.localStorage['text'] = document.forms.epsilon.txt.value;
+}
+function saveFlavor()
+{
+    window.localStorage['flavor'] = document.forms.epsilon.flavor.value;
+}
+function epOnLoad() {
+    var e = gE("mainscroll");
+    var sess = radVar("sess");
+    if( sess && sess.userid != -1 ) {
+        blitzTemplate(e, "epsilon");
+    }
+}
+function epOnLoad2() {
+    if( 'flavor' in window.localStorage ) {
+        document.forms['epsilon'].flavor.value = window.localStorage['flavor'];
+    }
+
+    if( 'gen' in window.localStorage ) {
+        document.getElementById('genarea').innerText = window.localStorage['gen'];
+    } else if( 'text' in window.localStorage ) {
+        document.forms['epsilon'].txt.value = window.localStorage['text'];
+        go( document.forms['epsilon'].txt.value );
+    } else {
+        go( document.forms['epsilon'].txt.value );
+    }
+}
+</script>
+
+<div xTemplate=epsilon>
+
+<div id=genarea style='max-width: 640px; font-size: 18pt'></div>
+
+<div id=formarea>
+
+<form id=epsilon onsubmit="return false;">
+<div style='float: left'>
+
+    <div style='float: left'>
+        <div style='float: left'>gen:</div>
+        <div style='float: left'><input type=text onchange='saveText()' name=txt size=80 value=''></div>
+    </div>
+
+    <BR>
+    <div style='float: left'>
+        <div style='float: left'>em:</div>
+        <div style='float: left'><input type=text onchange='saveFlavor()' name=flavor size=80 value='kind gentle'></div>
+    </div>
+
+    <BR>
+    <div style='float: left'>
+        <div style='float: left'><input type=checkbox checked name=changing></div>
+        <div style='float: left'>changing emotions</div>
+    </div>
+</div>
+
+<button onclick="go(this.form.txt.value);" style='width: 100px; height: 100px; float: left'>Go</button>
+</form>
+
+<div style='clear:both'>&nbsp;</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='epsilonTalk();'>Talk</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='run();'>Run</div>
+<div style='clear:both'>&nbsp;</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("/2");'>/2</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("/3");'>/3</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("/4");'>/4</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("/5");'>/5</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("/6");'>/6</div>
+<div style='height: 100px; clear: both'>&nbsp;</div>
+<div style='float: left; width: 100px; height: 100px; border: 1px solid black; background: gray; clear: both' onClick='go("-50 ");'>50w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("-70");'>70w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("-150");'>150w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("-200");'>200w</div>
+<div style='float: left; margin-left: 20px; width: 100px; height: 100px; border: 1px solid black; background: gray;' onClick='go("-300");'>300w</div>
+<div style='height: 100px; clear: both'>&nbsp;</div>
+<div style='float: left; width: 100px; height: 100px; border: 1px solid black; background: gray; clear: both' onClick='window.open("thebuggy.html?" + encodeURIComponent(window.localStorage["gen"]));'>WordGraph</div>
+<div id=container style='width: 1024px; height: 800px' xDraw='epOnLoad2()'></div>
+
+</div>
+
+</div>
+
+</div>
+
+</templates>
+
+<div id="toptoast"></div>
+<div id="lefttoast"></div>
+<div id="righttoast"></div>
+<div id="yourtoast"></div>
+
+</body>
+
+
+<script src='epsilon/tokens.js'></script>
+<script src='js/qrandom.js'></script>
+<script src="js/sentiments.js"></script>
+<script src="js/commons.js"></script>
+
+<script language=javascript>
+let initialized = false;
+var basicMenu, st=null;
+
+function initSkeleton()
+{
+    basicMenu = [
+        { title: 'Conversations', act: 'addPrompt()' },
+        { title: 'Local', children: [
+            { title: 'Options', act: "setup()" },
+            { title: 'Painter', act: "painter()" }
+        ]},
+        { title: 'Int', children: [
+            { title: 'Geometric Intelligence (Lexicon)', iview: 'https://spiritshare.org/lexicon.html' },
+            { title: 'Epsilon Intelligence', act: 'epOnLoad()' },
+            { title: 'Universal Intelligence', link: 'https://spiritshare.org/random.html'}
+        ]},
+        { title: 'Yes', children: [
+            { title: 'Wordsmith', iview: 'https://spiritshare.org/organ.html' },
+            { title: 'Proway The Dragon', iview: 'https://spiritshare.org/proway.html' }
+        ]},
+        { title: 'No', children: [
+            { title: 'Lem', link: 'https://spiritshare.org/lem.html' },
+            { title: 'Random', link: 'https://spiritshare.org/random.html' },
+            { title: 'Circles', link: 'https://spiritshare.org/circles.html' }
+        ]},
+        { title: 'Tools', children: [
+            { title: 'Notepad', act: "notepad()" },
+            { title: 'Clocks', act: "clocks()" },
+            { title: 'WordGraph', link: 'https://spiritshare.org/buggy.html' },
+            { title: 'Bench', link: 'https://spiritshare.org/benchmark.html?opinion+option' },
+            { title: 'Saw', link: 'https://spiritshare.org/benchmarkbr.html' }
+        ]},
+        { title: 'Epsilon', act: "epOnLoad()" }
+        ];
+
+    radLoad();
+    
+    socketRegister( 'update', socketUpdate );
+    socketRegister( 'registered', registeredSocket );
+
+    //socketRegister( 'outcome', socketOutcome );
+
+    buildMenu( ['prompts','contexts'], { Conversations: [] } /*paths,augments,options*/ );
+
+
+    if( st === null ) st = new StringTrie(); // Good?
+    // Test.
+
+    loadClocks();
+    //loadNotepad();
+    
+    //blitzTemplate(gE("mainscroll"), "epsilon");
+    
+    openSocket(window.location.host, chatSocket);    
+    if( radVar("pagekey") != null ) {
+        radHook( "pagekey", pageUpdate );
+        pageUpdate();
+    } else {
+        radHook( "pagekey", pageUpdate );
+        // eh heh hi
+    }
+
+    speechSynthesis.onvoiceschanged = radLoad;
+}
+
+function chatSocket( data )
+{
+    console.log("socket:",data);
+}
+
+function pageUpdate()
+{
+    var sess = radVar("sess");
+    console.log("pageUpdate: " + initialized, sess);
+
+    if( !initialized ) {
+        if( !sess ) return;
+        initialized = true;
+    } else return;
+
+    if( radVar("sess.login") != 1 ) {
+        //blitzTemplate(gE("mainscroll"), "signin");
+    }
+}
+
+function socketUpdate( msg )
+{
+    let data = JSON.parse(msg.data);
+    console.log("socketUpdate");
+    console.log(data);
+    if( data.code == "update" ) {
+        var actorn = getActorNum(data.actor);
+        var actor = radVar("actors")[actorn];
+        
+        if( 'notes' in data && data.notes.trim() != "" ) {
+            var notes = radVar("notes." + actor._id);
+            if( notes == null ) notes = [];
+            while( notes.length >= 12 ) notes.shift();
+            notes.push( { time: new Date().toString(), action: data.notes, actor: actor._id } );
+            radStore("notes." + actor._id, notes);
+        }
+    }
+}
+
+
+function registeredSocket()
+{
+    try 
+    {
+        HtmlRequestGet('/epinit.js', '', gotStart);
+    } catch( e )
+    {
+        console.log(e);
+    }
+}
+
+function gotStart(data)
+{
+    var obj = JSON.parse(data);
+    showToast("Server Contact: " + obj.status, obj);
+    if( obj.status == 'Logged In' ) {
+        
+    }
+    rebuildMenu();
+}
+
+function toggleDiv(eid)
+{
+    var e = gE(eid);
+    if( !e ) return;
+    if( e.style.display == "none" ) {
+        e.style.display = "block";
+    } else {
+        e.style.display = "none";
+    }
+}
+
+function hideMe(e)
+{
+    console.log("hideMe",e);
+    e.style.display='none';
+}
+function hidePrev(e)
+{
+    console.log("hideMe",e.previousSibling);
+    e.previousSibling.style.display='none';
+}
+
+
+function getMenu(menu, label)
+{
+    for( var a=0; a<menu.length; a++ ) {
+        if( menu[a].title == label ) return menu[a];
+    }
+    return false;
+}
+
+function rebuildMenu(overlay=false)
+{
+    let menu = cloneObject2(basicMenu);
+    var user = radVar("sess.userid");
+    var menu_a;
+
+    if( user != -1 && typeof user != 'undefined' && user !== null ) {
+        if( getMenu(menu, 'Logout') === false )
+            menu.unshift({ title: 'Logout', act: "logout()" });
+        for( var a=0; a<menu.length; a++ ) {
+            if( menu[a].title == 'Login' ) {
+                menu.splice(a,1);
+            }
+        }
+    } else {
+        if( getMenu(menu, 'Login') === false )
+            menu.unshift({ title: 'Login', act: "login()" });
+        for( var a=0; a<menu.length; a++ ) {
+            if( menu[a].title == 'Logout' ) {
+                menu.splice(a,1);
+            }
+        }
+    }
+    
+    if( overlay ) {
+        for( var a in overlay ) {
+            menu_a = getMenu(menu, a);
+            if( !menu_a ) continue;
+
+            for( var b in overlay[a] )
+                menu_a[b] = overlay[a][b];
+        }
+    }
+    basicMenu = menu;
+    structMenu(menu);
+}
+
+function buildMenu(paths, augments, overlay)
+{
+    let menu = cloneObject2(basicMenu);
+
+    let variables = [];
+    for( var path of paths ) variables[path] = radVar(path); // mapt all over this shittt(t)
+
+    var key, val;
+    var menu_a, menu_b;
+
+    for( var title in augments ) {
+        let aug = augments[title];
+        let cmd = aug[0];
+        let src = aug[0];
+
+        menu_a = getMenu(menu, title);
+        if( !menu_a )
+            menu.children.push(menu_a = {title});
+
+        menu_a.children = [];
+        for( key in variables[src] ) {
+            val = variables[src][key];
+            menu_a.children.push({ title: "<font size=3>" + val.name + "</font>", act: cmd + "(\"" + val._id + "\")"});
+        }
+    }
+
+    var user = radVar("sess.userid");
+    if( user != null && user != "-1" ) {
+        if( getMenu(menu, 'Logout') === false )
+            menu.push({ title: 'Logout', act: "logout()" });
+    } else {
+        if( getMenu(menu, 'Login') === false )
+            menu.push({ title: 'Login', act: "login()" });
+    }
+    
+    for( var a in overlay ) {
+        menu_a = getMenu(menu, a);
+        if( !menu_a ) continue;
+
+        for( var b in overlay[a] )
+            menu_a[b] = overlay[a][b];
+    }
+
+    basicMenu = menu;
+    structMenu(menu);
+}
+
+
+
+
+function setup()
+{
+    blitzTemplate(gE("mainscroll"), "setup");
+}
+
+
+
+registerStartup(initSkeleton);
+
+
+let toastLog = {};
+let toastTrackers = {};
+let toastTimers = {};
+let toastTime = 10000;
+let fadeOut = 1.0;
+let toastFlags = [];
+function flagToasts(keys)
+{
+    for( var key in keys ) {
+        toastFlags[key] = keys[key];
+    }
+    console.log("toastFlags set");
+}
+
+function nextToast(alt_type)
+{
+    let now = new Date().getTime();
+    if( toastTrackers[alt_type] < now - (toastTime+fadeOut) ) {
+        const toast = document.getElementById(alt_type + 'toast');
+        toast.textContent = '';
+        toastTrackers[alt_type] = 0;
+        toastTimers[alt_type] = -1;
+        return;
+    }
+    if( toastTrackers[alt_type] < now - toastTime ) {
+        const toast = document.getElementById(alt_type + 'toast');
+        toast.style.visibility = 'hidden';
+    }
+
+
+    toastTimers[alt_type] = setTimeout(nextToast.bind(null,alt_type), toastTime/8);
+}
+// Show toast with small bites taken out of it:
+function showToast(message, alt_type='your') {
+
+    if( alt_type == 'your' )
+        console.log(message);
+
+    if( !(alt_type in toastLog) ) toastLog[alt_type] = [];
+    toastLog[alt_type].push([message, new Date()]);
+    
+    let mlower = message.toLowerCase();
+    for( var key of toastFlags ) {
+        if( mlower.indexOf(key) != -1 ) {
+            if( alt_type != toastFlags[key] )
+                showToast(message, toastFlags[key]);
+        }
+    }
+
+    const toast = document.getElementById(alt_type + 'toast'); // what do you mean it's const
+
+    if( alt_type in toastTimers ) {
+        if( toastTimers[alt_type] != -1 ) {
+            clearTimeout(toastTimers[alt_type]);
+        }
+        toast.innerHTML += "\n<pre>" + message + "</pre>";
+    } else {
+        toast.innerHTML = "<pre>" + message + "</pre>";
+        toast.style.animation = 'fadeOut ' + fadeOut + 's, fadeIn 0.05s';
+        toast.style.visibility = 'visible';
+    }
+    toastTrackers[alt_type] = new Date().getTime();
+    toastTimers[alt_type] = setTimeout(nextToast.bind(null,alt_type), toastTime/8);
+}
+
+
+</script>
+</html>

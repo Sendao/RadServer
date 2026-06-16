@@ -1,0 +1,260 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Radiant Cast</title>
+<link rel=stylesheet href='/css/support.css'></link>
+<meta charset="UTF-8" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body class=start style='color: black; margin: 0px'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<main style='margin-top: 16px' xCast='start'></main>
+<loadwheel></loadwheel>
+
+<!--  setup -->
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/auth.html
+#include tpl/meta.html
+
+<templates>
+
+<div xTemplate=chatbox>
+    
+    <div id="chatBoxContainer" class="open">
+        <div id="chatBox">
+          <header id="chatHeader" style="color: black">
+            <h3>Sendao</h3>
+            <button id="closeChatBox">X</button>
+          </header>
+          <div id="chatsContainer">
+            <div class="sender chatContent">
+              <p>
+                Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+                Temporibus, consectetur. Sed dolore aut maiores ut illum sunt
+                exercitationem quia reiciendis, eligendi assumenda et dolorum
+                repudiandae quod ratione magnam ea nihil!
+              </p>
+            </div>
+            <div class="receiver chatContent">
+              <p>
+                Lorem ipsum dolor sit amet consectetur adipisicing elit. Sapiente
+                officia atque quisquam accusamus perferendis ipsam possimus! Ipsum
+                accusamus adipisci ut.
+              </p>
+            </div>
+          </div>
+  
+          <div id="sendArea">
+            <textarea id="chatText" placeholder="Message"></textarea>
+            <div>
+              <!-- <button class="btn" id="receive">Sendy</button> -->
+              <button class="btn" id="send">Send</button>
+            </div>
+          </div>
+  
+        </div>
+      </div>
+
+</div>
+
+<div xTemplate=tickets>
+  <div class="center">
+    <select id="sort" class="btn">
+        <option value="none">None</option>
+        <option value="failed">Failed</option>
+        <option value="done">Done</option>
+        <option value="pending">Pending</option>
+    </select>
+    <h1 class="title">Tickets</h1>
+  </div>
+  <div class="tableContainer">
+    <table xWatch=tickets id="ticketsTable">
+      <thead>
+        <tr>
+          <th>##Ticket</th>
+          <th>Subject</th>
+          <th>Status</th>
+          <th>Assigned to</th>
+          <th>Creation time</th>
+        </tr>
+      </thead>
+
+      <tbody xLoop=tickets xKey=k xVal=ticket>
+              <tr class="ticket">
+                <td><fl>###k</fl></td>
+                <td>
+                  <fl>#ticket.subject</fl>
+                  <span class="ticketDescToggle btn">&gt;</span>
+                  <p class="ticketDesc">
+                    #ticket.message
+                  </p>
+                </td>
+                <td>
+                    <form id=ticket#k>
+                  <select class="state btn">
+                    <option value="pending">Pending</option>
+                    <option value="done">Done</option>
+                    <option value="failed">Failed</option>
+                  </select>
+                    </form>
+                </td>
+                <td><fl>#ticket.author</fl></td>
+                <td>
+                  <fl>#ticket.dt</fl>
+                  <button class="chatBtn btn fl">Chat</button>
+                </td>
+              </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div xTemplate='start'>
+    <div class="container">
+        <form action="" id=requestform name="requestform" xMethod='sendRequest'>
+        <h2>Get in Touch</h2>
+        <label for="name">Name</label>
+        <input type="text" id="name" placeholder="#[~'#[sess.user.name]' || 'Name']" class="filler">
+
+        <label for="email">Email</label>
+        <input type="email" placeholder="#[~'#[sess.user.email]' || 'Email']" id="email" class="filler" required />
+
+        <label for="email">Subject</label>
+        <input type="text" id="subject" class="filler" placeholder="Too much money!!">
+
+        <label for="issue">Please describe the issue. </label>
+        <textarea id="issue" cols="30" rows="10" class="filler" placeholder="Hey, I'm bombed with money.."></textarea>
+
+        <div>
+            <input type="button" value="SEND" class="btn" xCmd='sendRequest()' />
+        </div>
+        </form>
+
+        <div id="thanks">
+        <div>Thank <br>You.</div>
+        <hr>
+        <div>We'll be in touch. <br>Soon!</div>
+        </div>
+
+    </div>
+</div>
+
+<div xTemplate='chatbox'>
+<div id="chatBox">
+    <header id="chatHeader" style="color: black">Sendao</header>
+    <div id="chatsContainer">
+        <div class="sender chatContent">
+        <p>
+            Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+            Temporibus, consectetur. Sed dolore aut maiores ut illum sunt
+            exercitationem quia reiciendis, eligendi assumenda et dolorum
+            repudiandae quod ratione magnam ea nihil!
+        </p>
+        </div>
+        <div class="receiver chatContent">
+        <p>
+            Lorem ipsum dolor sit amet consectetur adipisicing elit. Sapiente
+            officia atque quisquam accusamus perferendis ipsam possimus! Ipsum
+            accusamus adipisci ut.
+        </p>
+        </div>
+    </div>
+    <div id="sendArea">
+        <textarea id="chatText" placeholder="Message"></textarea>
+        <div>
+        <button class="circleBtn" id="receive"><</button>
+        <button class="circleBtn" id="send">></button>
+        </div>
+    </div>
+</div>
+</div>
+
+
+</templates>
+
+<script language=javascript>
+
+function sendRequest()
+{
+    var f = document.forms.requestform;
+    var obj = { subject: f.subject.value || f.subject.placeholder, message: f.issue.value||f.issue.placeholder };
+
+    obj.name = f.name.value || f.name.placeholder;
+    obj.email = f.email.value || f.email.placeholder;
+    HtmlRequest("/support/request.js", buildArgString(obj), gotRequestHandled);
+}
+
+function gotRequestHandled(data)
+{
+    console.log("grh",data);
+    alert("Your request has been submitted.");
+}
+
+function initSkeleton()
+{
+    radLoad();
+    radHook( "sess", pageUpdate );
+    socketRegister( 'msg', gotMessage );
+    openSocket(window.location.host, chatSocket);
+}
+registerStartup(initSkeleton);
+
+function pageUpdate() {
+    HtmlRequestGet('/support/start.js', '', gotStart);
+    //HtmlRequestGet('/support/tickets.js', '', gotTickets);
+}
+
+function chatSocket(data) {
+
+}
+
+
+function gotStart(result)
+{
+    var data = JSON.parse(result).data;
+    console.log("Data:",data);
+    radStore("player", data.user);
+    radStore("tickets", data.tickets);
+    if( data.tickets.length > 0 ) {
+        blitzTemplate(gE("mainscroll"),"tickets");
+    } else {
+        blitzTemplate(gE("mainscroll"),"start");
+    }
+}
+
+function gotTickets(result)
+{
+    var data = JSON.parse(result).data;
+    console.log("Tickets: ", data);
+}
+
+function gotMessages(result)
+{
+    var data = JSON.parse(result).data;
+    console.log("Messages: ", data);
+}
+
+function gotMessage(data)
+{
+    
+}
+
+</script>

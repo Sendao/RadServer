@@ -1,0 +1,215 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Castle Storage</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body style='background: black; color: tan'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<!--  setup -->
+<loadwheel></loadwheel>
+
+
+<!--  main view screen on -->
+<div xSect=main id=mainscroll class="margin-small">&nbsp;</div>
+
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+
+<div class=cl>&nbsp;</div>
+
+</div>
+<!--  main view screen off -->
+
+<zenbox></zenbox>
+
+</body>
+
+<script language=javascript>
+/*
+
+Todo:
+
+ - ed.js link functions
+ - story storage
+ - templates
+  * tag file browser
+   -  import/export/zip/archive
+  * htmldrag composer
+   - templating
+  * treeml idealyzer
+   - themeable
+  * code analyzer
+   - ctags integration
+   - rfs integration
+  * db editor
+
+
+
+ */
+var canvas, context;
+var magnificationFactor = 500;
+var zoomX = 1, zoomY = 1;
+var zoomingX = 1, zoomingY = 1;
+var camerax = 0, cameray = 400;
+var maxiterations = 100;
+function buildCanvas()
+{
+	var main = gE("mainscroll");
+	canvas = document.createElement("canvas");
+	canvas.width = main.clientWidth;
+	canvas.height = winH-100;
+	main.appendChild(canvas);
+	context = canvas.getContext("2d");
+}
+function checkMandel(x,y)
+{
+	var a = 0;
+	var b = 0;
+	var rx = 0;
+	var ry = 0;
+
+	// Iterate
+	var iterations = 0;
+	while (iterations < maxiterations && (rx * rx + ry * ry <= 4)) {
+			rx = a * a - b * b + x;
+			ry = 2 * a * b + y;
+
+			// Next iteration
+			a = rx;
+			b = ry;
+			iterations++;
+	}
+	//console.log("Iterations at " + x + ": " + iterations);
+	return iterations;
+}
+function panBy(x,y)
+{
+	camerax -= x;
+	cameray -= y;
+	drawMandel();
+}
+function zoomBy(z)
+{
+	magnificationFactor *= z;
+	drawMandel();
+}
+var pixelsX, pixelsY;
+var panX = 0;
+var panY = 0;
+var maxiterations2 = maxiterations * 0.5;
+var sectors = [];
+function testRegion(offx,offy,offzoom)
+{
+	var mandelval;
+	var x,y;
+	var scaleX, scaleY;
+	scaleX = canvas.width*zoomX/pixelsX;
+	scaleY = canvas.height*zoomY/pixelsY;
+	for(x=0; x < pixelsX; ++x) {
+		 for(y=0; y < pixelsY; ++y) {
+				 mandelval = checkMandel((x-(offx+camerax))/(offzoom*magnificationFactor*zoomingX) - panX, (y-(offy+cameray))/(offzoom*magnificationFactor*zoomingY) - panY);
+				 if(mandelval < maxiterations)
+				 	return true;
+		 }
+	}
+	return false;
+}
+function randomZoom()
+{
+	var ptx, pty;
+	var speed = 0.20;
+
+	while( true ) {
+		ptx = Math.random()*pixelsX*speed;
+		pty = Math.random()*pixelsY*speed;
+
+		if( testRegion(ptx, pty, 2.0) ) {
+		//var mandelval = checkMandel( (ptx-camerax)/magnificationFactor - panX, (pty-cameray)/magnificationFactor - panY );
+		//if( mandelval < maxiterations2 ) { // it is valid
+			console.log("Found point");
+			camerax += ptx;
+			cameray += pty;
+			magnificationFactor *= 1.8;
+			break;
+		} else {
+			magnificationFactor /= 1.5;
+			break;
+		}
+	}
+	drawMandel();
+	console.log("Done");
+}
+function drawMandel()
+{
+	var mandelval;
+	var x,y;
+	pixelsX=canvas.width;
+	pixelsY=canvas.height;
+	var scaleX, scaleY;
+	scaleX = canvas.width*zoomX*zoomingX/pixelsX;
+	scaleY = canvas.height*zoomY*zoomingY/pixelsY;
+	context.clearRect(0,0,canvas.width,canvas.height);
+	//sectors = [];
+	for(x=0; x < pixelsX; ++x) {
+		//if( x%4 == 0 )
+			//sectors[x/4] = [];
+	   for(y=0; y < pixelsY; ++y) {
+			 //if( y%4 == 0 )
+			 	//sectors[x/4][y/4] = false;
+
+	       mandelval = checkMandel((x-camerax)/magnificationFactor - panX, (y-cameray)/magnificationFactor - panY);
+	       if(mandelval < maxiterations) {
+					 //sectors[x/4][y/4] = true;
+					 context.fillStyle = 'rgb(30%, ' + mandelval + '%, 30%)';
+	         context.fillRect(x*scaleX,y*scaleY, scaleX,scaleY); // Draw a pixel
+				 }
+	   }
+	}
+	//https://progur.com/2017/02/create-mandelbrot-fractal-javascript.html
+}
+function zoomMandel(ev)
+{
+	xmin = xmin + Math.floor(event.pageX/4)/magnificationFactor;
+	ymin = -Math.floor(event.pageY/4)/magnificationFactor;
+	magnificationFactor = magnificationFactor*2;
+	drawMandel();
+}
+function pageMandel(ev)
+{
+	camerax -= event.pageX;
+	cameray -= event.pageY;
+}
+function initSkeleton()
+{
+	radClass( { 'zenbox': { 'style': 'display: none', 'keepscan': 1 } } );
+  radLoad();
+	buildCanvas();
+	//drawMandel();
+	start();
+}
+function start()
+{
+	setInterval('randomZoom()',5000);
+}
+
+registerStartup(initSkeleton)
+
+</script>
+</html>

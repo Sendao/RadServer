@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <title>Hls.js demo - basic usage</title>
+  </head>
+
+  <body>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js"></script>
+    <center>
+      <video id="video"> </video>
+    </center>
+
+    <script>
+      var video = document.getElementById('video');
+      if (Hls.isSupported()) {
+        var hls = new Hls({
+          debug: true,
+        });
+        hls.loadSource("https://alpha.genunix.com:4443/blastwave/original.m3u8");
+        hls.attachMedia(video);
+        hls.on(Hls.Events.MEDIA_ATTACHED, function () {
+          video.muted = false;
+          video.play();
+        });
+      }
+      
+      else if (video.canPlayType('application/vnd.apple.mpegurl')) {
+        video.src = "https://alpha.genunix.com:4443/blastwave/original.m3u8";
+        video.addEventListener('canplay', function () {
+          video.play();
+        });
+      }
+    </script>
+  </body>
+</html>

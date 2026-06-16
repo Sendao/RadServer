@@ -1,0 +1,236 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Castle Storage</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+<style>
+
+#linecounter::-webkit-scrollbar {
+    display: none;
+}
+
+pre {
+    margin: 0px;
+    float: left;
+    z-index: 101;
+    font-family: Monaco,Andale Mono,Ubuntu Mono,monospace
+}
+
+.clr {
+    float: left;
+    clear: left;
+}
+
+.endoffile {
+    width: 100%;
+    z-index: 100;
+}
+
+.section {
+    display: inline-block;
+}
+
+.last {
+}
+
+.op {
+    color: lightblue;
+}
+.word {
+    color: tan;
+}
+.keyword {
+    color: green;
+}
+.literal {
+    color: gray;
+}
+.regexp {
+    color: #ff0000;
+}
+.number {
+    color: red;
+}
+.comment {
+    color: #c3b0ff;
+}
+.tag {
+    color: #0000ff;
+}
+.property {
+    color: #ff00ff;
+}
+.value {
+    color: #ff0000;
+}
+.markup {
+    color: gray;
+}
+.html {
+    color: tan;
+}
+.txt {
+    color: tan;
+}
+
+[contenteditable] {
+  outline: 0px solid transparent;
+}
+
+</style>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body style='background: black; color: tan'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<!--  setup -->
+<loadwheel></loadwheel>
+
+
+<!--  main view screen on -->
+<div xSect=main id=mainscroll class="margin-small">
+
+<div class=cl>&nbsp;</div>
+
+</div>
+
+<!--  main view screen off -->
+<!--  setup -->
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/mauth.html
+
+
+</body>
+
+<script language='javascript' src='/js/cog/vfs.js'></script>
+<script language='javascript' src='/js/cog/lint.js'></script>
+<script language='javascript' src='/js/cog/edit.js'></script>
+<script language='javascript' src='/js/cog/cog.js'></script>
+<script language=javascript>
+/*
+
+Todo:
+
+ - fix line numbers will overflow scroll area at 1000
+ - fix deleting large amounts of text will show scroll area limitations
+
+ - change pre tabs to spaces and set param tab=1
+ - process tabs correctly in copy/save
+ 
+  - hover over filename to show full path
+  - save files
+  - remove 'login' from statusbar
+  - statusbar should pop open with history and linter bugs
+
+  - local file save on selection
+
+ - bookmarks via ctrl+b integrated w/ vfs
+ - user database storage (via ed.html)
+ - layout editor (generate html)
+  - various box layouts
+  - active data objects  
+  
+ */
+let myeditors = [];
+
+
+function initSkeleton()
+{
+    radLoad();
+    var mp = gE("mainscroll");
+    var user = radVar("sess.user");
+    let j = new MultiPaneTextEditor(mp);
+    j.panes.id = "editpane";
+    myeditors.push(j);
+
+    var sb = buildStatusbar();
+    mp.appendChild(sb);
+
+    var loginarea = document.createElement("div");
+    loginarea.id = "loginarea";
+    mp.appendChild(loginarea);
+
+    if( radVar("pagekey") != null ) {
+        HtmlRequestGet('/vfs/start.js', '', gotStart);
+    }
+    radHook( "pagekey", pageUpdate );
+    //radHook( "sess", pageUpdate );
+    //j.clickAddPane();
+    if( radVar("pagekey") != null ) pageUpdate();
+}
+
+function pageUpdate()
+{
+    console.log("pageUpdate");
+    HtmlRequestGet('/vfs/start.js', '', gotStart);
+}
+
+function gotStart(data)
+{
+    console.log(data);
+    var obj = JSON.parse(data);
+    if( obj.status == 'ok' && obj.data.status == 'ok' ) {
+        radStore("sess.user", obj.data.user);
+        var panes = gE("editpane");
+        var loginarea = gE("loginarea");
+        panes.style.display = 'block';
+        loginarea.style.display = 'none';
+    } else {
+        clickLogin();
+        return;
+    }
+}
+
+function clickLogin()
+{
+    var panes = gE("editpane");
+    panes.style.display = 'none';
+    var loginarea = gE("loginarea");
+    loginarea.style.display = 'block';
+    blitzTemplate(loginarea, "signin");
+}
+
+function buildStatusbar()
+{
+    var bar = document.createElement("div");
+    bar.style.position = 'absolute';
+    bar.style.bottom = "0px";
+    bar.style.left = '0px';
+    bar.style.width = '100%';
+    bar.style.height = '36px';
+
+    var btn = document.createElement("button");
+    btn.style.position = 'absolute';
+    btn.style.right = '0px';
+    btn.style.top = '4px';
+
+    //<btn xCmd='blitzTemplate(gE("mainscroll"), "signin")'>Login</btn>
+    var user = radVar("sess.user");
+    if( user == null ) {
+        btn.innerHTML = "Login";
+        btn.addEventListener("click", clickLogin);
+
+        bar.appendChild(btn);
+    }
+
+    return bar;
+}
+registerStartup(initSkeleton)
+
+</script>
+</html>

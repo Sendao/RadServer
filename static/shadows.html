@@ -43,15 +43,16 @@ Loading
 
 #include controls/edit.html
 #include controls/watch.html
-#include controls/github.html
 #include controls/console.html
-#include controls/marky.html
-#include controls/vfs.html
+<!--
+include controls/marky.html
+include controls/vfs.html
+include controls/github.html
+include controls/fb.html
+-->
 #include controls/branches.html
-#include controls/fb.html
 #include controls/spring.html
 #include controls/netutil.html 
-#include controls/edit.html
 
 
 <div xTemplate=userlist>
@@ -140,12 +141,10 @@ Spider operating targets
 
 <dataforms>
 
-<div xDataname='ais' xUrl='/markers.json?c=#cookie' xCb='loadedAis'></div>
-
 </dataforms>
 
 </body>
-
+<script src='/js/marky.js'></script>
 <script language=javascript>
 var basicMenu = [];
 
@@ -169,6 +168,13 @@ function loadedAis(obj,req)
     var menuItem = i;
     for( i=0; i<ais.length; ++i ) {
         basicMenu[menuItem].children.push( { 'title': ais[i].name, 'cast': 'marky', 'set': 'm=' + ais[i].name } );
+        radStore("talking_marky." + ais[i].name,
+        		{ 
+        	'title': ais[i].name,
+        	'usespeech': 1, 'synchronize': 1,
+        	'voice': 2, 'volume': 0.12, 'rate': 0.8, 'pitch': 1.3,
+        	'storedbuffer': 0
+        		});
     }
     structMenu(basicMenu);
     if( radVar("menu_reset") == 1 )
@@ -212,13 +218,14 @@ function initSkeleton()
             { 'title': 'Stockmatch', 'cast': 'smatch' }
         ] },
         { 'title': 'Tools', 'children': [
-            { 'title': 'Console', 'cast': 'console' },
+            { 'title': 'Console', 'cast': 'tool_console' },
             { 'title': 'Database', 'cast': 'database' },
             { 'title': 'Ping', 'cast': 'tool_ping' },
             { 'title': 'Branch', 'cast': 'branches' },
             { 'title': 'Spring', 'cast': 'spring' },
             { 'title': 'Netscan', 'cast': 'net_scan' },
-            { 'title': 'Markygen', 'cast': 'markygen' }
+            { 'title': 'Markygen', 'cast': 'markygen' },
+            { 'title': 'VFS', 'cast': 'vfs' }
         ] },
         { 'title': 'Tracks', 'children': [
             { 'title': 'Scrape', 'cast': 'tool_scrape' },
@@ -237,7 +244,9 @@ function initSkeleton()
             { 'title': 'Xdb', 'aview': 'xdb' },
             { 'title': 'Warpkit', 'aview': 'warpkit' },
             { 'title': 'Links', 'aview': 'links' },
-            { 'title': 'About', 'aview': 'about' }
+            { 'title': 'About', 'aview': 'about' },
+            { 'title': 'Concept Intel', 'aview': 'game/concepts' },
+            { 'title': 'Secrets', 'aview': 'secret' }
         ] },
         { 'title': 'Ais', 'children': [] },
         { 'title': 'Data', 'children': [] },
@@ -254,21 +263,34 @@ function initSkeleton()
             { 'title': 'Background', 'act': 'cycleBodyStyles' }
         ]}
         ];
-    structStartup();    
+    //structStartup();    
     var host;
-    
-    radStartup();
-    
-    //radHook( "hosts." + window.location.hostname + ".config", checkGroups )
-    host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
-    radStore( "hostname", host.hostname );
-    radStore( "hosts." + host.hostname, host );
+
+    host = {
+      'hostname': window.location.hostname,
+      'procs': {},
+      'config': {}
+    };
+    radStore("hostname", host.hostname);
+    radStore("hosts." + host.hostname, host);
+    radStore("marky_in_brain", {'linelength': 24, 'linecount': 7, 'refreshrate': 0, limwords: 3, limrecord: 4, 'keywords': 'a this in the that there then', 'refill': 1, 'remake': 1, 'scanner': 0 });
+
+    RadRequest("/marky/data", {}, gotMarkyData);
+    // marky likes this one: radHook( 'lists', renderHomePage );
+    //socketRegister('registered', cardSockedIn);
 
     structMenu(basicMenu);
+    initBranches();
+
+    useRadiantSocket();
+    socketRegister('registered', cardSockedIn);
 
     radLoad();
-    cycleBodyStyles();
     openSocket(window.location.host, chatSocket);
+
+    //radHook( "pagekey", pageUpdate );
+    //radHook( "sess", pageUpdate );
+    //if( radVar("pagekey") != null ) pageUpdate();
 }
 function cycleBodyStyles()
 {

@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Escape Room</title>
+    <style>
+        :root {
+            --tile-line-height: 30px;
+            --tile-size: 10px;
+            --clr: gray;
+            --pl-clr:
+                radial-gradient(circle at 75% 50%, white 1px, transparent 2px),
+                radial-gradient(circle at 25% 50%, white 1px, transparent 2px),
+                radial-gradient(circle at 75% 40%, black 3px, transparent 4px),
+                radial-gradient(circle at 25% 40%, black 3px, transparent 4px),
+                white;
+        }
+
+        html,
+        body {
+            min-width: 100vw;
+            min-height: 100vh;
+            overflow: hidden;
+            margin: 0;
+            display: grid;
+            place-items: center;
+            background: #111;
+        }
+
+        #game_console {
+            width: 100%;
+            max-width: 1000px;
+            aspect-ratio: 16 / 9;
+            position: relative;
+            background: #200;
+            text-align: center;
+            line-height: var(--tile-line-height);
+            font-size: 0;
+            color: transparent;
+            user-select: none;
+            box-shadow: 0 20px 20px black;
+        }
+
+        #game_alert {
+            padding: 1rem 2rem;
+            font-size: 16px;
+            font-family: system-ui, serif;
+            color: white;
+            background: rgba(0, 0, 0, .75);
+            border: 1px dashed white;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 99999;
+            border-radius: 50px;
+            transition: .5s;
+            opacity: 0;
+            pointer-events: none;
+            user-select: none;
+        }
+
+        h2 {
+            margin: 0;
+            margin-bottom: 10px;
+        }
+
+        .ground {
+            background: dimgray;
+            box-shadow:
+                inset 2px 2px 0 2px rgba(0, 0, 0, .25),
+                inset -2px -2px 0 2px rgba(0, 0, 0, .5);
+        }
+
+        .door {
+            box-shadow: none !important;
+        }
+
+        .cube {
+            background: var(--clr);
+            box-sizing: border-box;
+            border-top: 5px solid rgba(0, 0, 0, .25);
+            border-right: 5px solid rgba(0, 0, 0, .65);
+            border-bottom: 5px solid rgba(0, 0, 0, .65);
+            border-left: 5px solid rgba(0, 0, 0, .25);
+        }
+
+        .stripes {
+            background:
+                linear-gradient(to right, transparent 3px, rgba(0, 0, 0, .25) 2px),
+                var(--clr);
+            background-size: 6px 11px;
+            background-repeat: repeat-x;
+            background-position: 3px 5px;
+        }
+
+        .lava {
+            background:
+                linear-gradient(to top, orangered, gold 90%, transparent 90%);
+            background-size: 100% 200%;
+            background-position: 0 0;
+        }
+
+        .key,
+        .finalgoal {
+            box-sizing: border-box;
+            border-top: 5px solid rgba(0, 0, 0, .25);
+            border-right: 5px solid rgba(0, 0, 0, .65);
+            border-bottom: 5px solid rgba(0, 0, 0, .65);
+            border-left: 5px solid rgba(0, 0, 0, .25);
+        }
+
+        .highjump {
+            clip-path: polygon(40% 100%, 60% 100%, 100% 0%, 0% 0%);
+            background: linear-gradient(to bottom, aqua 3px, transparent 3px);
+            background-size: 100% 6px;
+        }
+
+        #player,
+        #player:after {
+            content: '';
+            width: var(--tile-line-height);
+            height: var(--tile-line-height);
+            background: transparent;
+            position: absolute;
+            z-index: 10000;
+            pointer-events: none;
+        }
+
+        #player:after {
+            background: var(--pl-clr);
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 10000;
+            border-radius: 5px;
+            clip-path: polygon(0% 0%, 100% 0%, 100% 80%, 90% 80%, 90% 100%, 80% 100%, 80% 80%, 20% 80%, 20% 100%, 10% 100%, 10% 80%, 0% 80%);
+            pointer-events: none;
+            transform-origin: 50% 100%;
+
+        }
+
+        .goleft:after {
+            transform: skewX(10deg);
+            animation: moving .25s linear infinite;
+        }
+
+        .goright:after {
+            transform: skewX(-10deg);
+            animation: moving .25s linear infinite;
+        }
+
+        @keyframes moving {
+            50% {
+                clip-path: polygon(0% 0%, 100% 0%, 100% 80%, 80% 80%, 80% 100%, 70% 100%, 70% 80%, 30% 80%, 30% 100%, 20% 100%, 20% 80%, 0% 80%)
+            }
+        }
+
+
+
+        #big_rocket {
+            width: 40px;
+            height: 125px;
+            background:
+                linear-gradient(to right, transparent 45%, firebrick 45%, firebrick 55%, transparent 55%),
+                radial-gradient(circle at 50% 40%, rgba(255, 255, 255, 1) 10%, #aaa 11%, #aaa 15%, transparent 16%),
+                linear-gradient(to right, transparent 50%, rgba(0, 0, 0, .1) 50%),
+                linear-gradient(to bottom, firebrick 12%, transparent 12%),
+                lightgray;
+            background-size: 100% 40%, 100% 100%, 100% 100%, 100% 100%, 100% 100%, 100% 100%;
+            background-position: 50% 95%, 0 0, 0 0, 0 0, 0 0;
+            background-repeat: no-repeat;
+            border-radius: 50px 50px 50px 50px / 200px 200px 10px 10px;
+            position: absolute;
+            left: 54.25%;
+            top: 0;
+            box-shadow: 0 15px 0 -5px gray;
+        }
+
+        #big_rocket:before {
+            content: '';
+            width: 200%;
+            height: 50%;
+            position: absolute;
+            top: 55%;
+            left: -50%;
+            background:
+                radial-gradient(circle at 50% 100%, transparent 50%, firebrick 51%);
+            clip-path: polygon(0% 0%, 25% 0%, 25% 100%, 75% 100%, 75% 0%, 100% 0%, 100% 100%, 0% 100%);
+            border-radius: 100% 100% 0 0;
+        }
+
+        #big_rocket:after {
+            content: '';
+            width: 60%;
+            height: 25%;
+            position: absolute;
+            top: 108%;
+            left: 20%;
+            background:
+                linear-gradient(to bottom, orangered, gold);
+            border-radius: 0 0 25% 25%;
+            filter: blur(2px);
+            opacity: .75;
+            animation: blast_off .75s linear infinite;
+        }
+
+        @keyframes blast_off {
+            33% {
+                background:
+                    linear-gradient(to bottom, orangered 25%, gold 75%);
+            }
+
+            66% {
+                background:
+                    linear-gradient(to bottom, orangered 50%, gold 90%);
+            }
+        }
+
+        .adios {
+            animation: adios 2s ease-in forwards;
+        }
+
+        @keyframes adios {
+            100% {
+                transform: translateY(-200%);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div id='game_console'>
+        <div id='player'>
+            <div id='level_mask'></div>
+        </div>
+        <div id='big_rocket'></div>
+        <div id='game_alert'></div>
+    </div>
+
+    <script>
+        const gc = document.querySelector('#game_console')
+        const ga = document.querySelector('#game_alert')
+        const gc_loc = gc.getBoundingClientRect()
+        const pl = document.querySelector('#player')
+        var cols = 48 // multiple of 16
+        var rows = 27 // multiple of 9
+        const tile_size = gc_loc.width * (100 / cols / 100)
+        document.body.style.setProperty('--tile-line-height', tile_size + 'px')
+
+        pl.style.top = (tile_size * 13) + 'px'
+        pl.style.left = (tile_size * 27) + 'px'
+        var pl_loc = pl.getBoundingClientRect()
+        gc.style.width = '1000px'
+        gc.style.height = tile_size * rows + 'px'
+
+        var gravity = 8,
+            kd,
+            x = pl_loc.left,
+            x_speed = 5,
+            pb_y = 0,
+            score = 0,
+            rot = 0,
+            data_p = 0,
+            bonus = 1,
+            dead = false,
+            kd_list = [],
+            d = {},
+            highjump = false,
+            timer = 0;
+
+        const level = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 8, 8, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 8, 8, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+            0, 1, 'B', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 8, 8, 8, 1, 9, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0,
+            0, 1, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 0, 8, 8, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 0,
+            0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 8, 8, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0,
+            0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 8, 8, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0,
+            0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 8, 8, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 0,
+            0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 8, 8, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 0,
+            0, 1, 1, 1, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 0, 2, 2, 0, 0, 2, 2, 0, 1, 1, 1, 0, 8, 8, 0, 0, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 1, 0,
+            0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0,
+            0, 'BD', 'BD', 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 0,
+            0, 1, 1, 1, 0, 1, 'G', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0,
+            0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 2, 2, 0, 1, 1, 1, 1, 1, 1, 0, 'PD', 'PD', 0, 0,
+            0, 1, 1, 1, 0, 0, 0, 0, 0, 2, 2, 0, 2, 2, 0, 2, 2, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0,
+            0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 'GD', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+            0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 'GD', 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+            0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 'BD', 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0,
+            0, 0, 1, 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0,
+            0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 'P', 1, 0, 1, 1, 0, 1, 1, 1, 1, 'H', 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+            0, 1, 1, 1, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+            0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+            0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0,
+            0, 0, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 0,
+            0, 0, 0, 1, 0, 1, 1, 0, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0,
+            0, 0, 0, 2, 0, 0, 2, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 2, 2, 0, 2, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+
+        function buildGame() {
+            for (var i = 0; i < cols * rows; i++) {
+                var d = document.createElement('div')
+                d.className = 'tile'
+                if (level[i] == 0) {  
+                    d.className = 'tile ground'
+                }
+                if (level[i] == 2) {
+                    d.className = 'tile lava'
+                }
+                if (level[i] == 8) {
+                    d.className = 'tile rocket'
+                    d.style.background = 'dimgray'
+                }
+                if (level[i] == 9) {
+                    d.className = 'tile finalgoal'
+                    d.style.background = 'goldenrod'
+                    d.style.borderRadius = '50%'
+                }
+                if (level[i] == 'B') {
+                    d.className = 'tile key blue'
+                    d.style.background = 'dodgerblue'
+                    d.style.borderRadius = '50%'
+                }
+                if (level[i] == 'BD') {
+                    d.className = 'tile door ground blue'
+                    d.style.background = 'linear-gradient(to bottom, transparent 20%, dodgerblue 20%, dodgerblue 40%, transparent 40%, transparent 60%, dodgerblue 60%, dodgerblue 80%, transparent 80%'
+                }
+                if (level[i] == 'G') {
+                    d.className = 'tile key green'
+                    d.style.background = 'limegreen'
+                    d.style.borderRadius = '50%'
+                }
+                if (level[i] == 'GD') {
+                    d.className = 'tile door ground green'
+                    d.style.background = 'linear-gradient(to right, transparent 20%, limegreen 20%, limegreen 40%, transparent 40%, transparent 60%, limegreen 60%, limegreen 80%, transparent 80%'
+                }
+                if (level[i] == 'P') {
+                    d.className = 'tile key purple'
+                    d.style.background = 'MediumOrchid'
+                    d.style.borderRadius = '50%'
+                }
+                if (level[i] == 'PD') {
+                    d.className = 'tile door ground purple'
+                    d.style.background = 'linear-gradient(to bottom, transparent 20%, MediumOrchid 20%, MediumOrchid 40%, transparent 40%, transparent 60%, MediumOrchid 60%, MediumOrchid 80%, transparent 80%'
+                }
+                if (level[i] == 'H') {
+                    d.className = 'tile highjump'
+                }
+                d.setAttribute('grid_loc', [i % cols, Math.floor(i / cols)])
+                d.style.width = tile_size + 'px'
+                d.style.height = tile_size + 'px'
+                d.style.position = 'absolute'
+                d.style.left = (i % cols) * tile_size + 'px'
+                d.style.top = Math.floor(i / cols) * tile_size + 'px'
+
+                gc.appendChild(d)
+            }
+
+        }
+
+        buildGame()
+
+        function updatePlayer() {
+            var pl_loc = pl.getBoundingClientRect()
+            var pl_center = document.elementFromPoint(pl_loc.x + (tile_size * .5), pl_loc.y + (tile_size * .5))
+            var pl_xy1 = document.elementFromPoint(pl_loc.x + (pl_loc.width * .25), pl_loc.y + pl_loc.height + (gravity * .5))
+            var pl_xy2 = document.elementFromPoint(pl_loc.x + (pl_loc.width * .75), pl_loc.y + pl_loc.height + (gravity * .5))
+            var pl_xy3 = document.elementFromPoint(pl_loc.x - (x_speed * .5), pl_loc.y + (pl_loc.height * .5))
+            var pl_xy4 = document.elementFromPoint(pl_loc.x + pl_loc.width + (x_speed * .5), pl_loc.y + (pl_loc.height * .5))
+            var pl_xy5 = document.elementFromPoint(pl_loc.x + (pl_loc.width * .5), pl_loc.y - (gravity * .5))
+
+            function endGame() {
+                alert('you died')
+            }
+
+            //if dead stop, else update player and everything else
+            if (!pl_xy1 || !pl_xy2 || dead) {
+                endGame()
+            } else {
+
+                // set player top   
+                // if player on ground set new top
+                if ((pl_xy1.classList.contains('ground') ||
+                    pl_xy2.classList.contains('ground'))) {
+                    gravity = 0
+                } else {
+                    if (gravity < 8) {
+                        gravity += .51
+                    } else {
+                        gravity = 8
+                    }
+                }
+                pl.style.top = pl_loc.top - gc_loc.top + gravity + 'px'
+
+                // add jump-force
+                if (d[38] && gravity == 0) {
+                    gravity = -8
+                    if (highjump) {
+                        gravity = -9
+                    }
+                }
+                if (pl_xy5.classList.contains('ground')) {
+                    gravity = 5
+                }
+                pl.style.top = pl_loc.top - gc_loc.top + gravity + 'px'
+                // track left/right movement
+                if (d[37] && x > gc_loc.x) {
+                    if (!pl_xy3.classList.contains('ground')) {
+                        x -= x_speed
+                        pl.className = ''
+                        pl.classList.add('goleft')
+                    } else {
+                        pl.className = ''
+                    }
+                }
+                if (d[39] && x + pl_loc.width < gc_loc.x + gc_loc.width) {
+                    if (!pl_xy4.classList.contains('ground')) {
+                        x += x_speed
+                        pl.className = ''
+                        pl.classList.add('goright')
+                    } else {
+                        pl.className = ''
+                    }
+                }
+                pl.style.left = x - gc_loc.left + 'px'
+
+                if (pl_center.classList.contains('lava')) {
+                    pl.style.top = (tile_size * 13) + 'px'
+                    pl.style.left = (tile_size * 27) + 'px'
+                    pl_loc = pl.getBoundingClientRect()
+                    x = pl_loc.left
+                }
+                if (pl_center.classList.contains('highjump')) {
+                    highjump = true
+                    pl_center.style.display = 'none'
+                    ga.innerHTML = 'You got high jump!'
+                    ga.style.opacity = '1'
+                    setTimeout(function () {
+                        ga.style.opacity = '0'
+                    }, 4000)
+                }
+                if (pl_center.classList.contains('key')) {
+                    pl_center.style.display = 'none'
+                    var clr = pl_center.classList[2]
+                    ga.innerHTML = 'You got the ' + clr + ' key!'
+                    ga.style.opacity = '1'
+                    setTimeout(function () {
+                        ga.style.opacity = '0'
+                    }, 4000)
+                    var doors = document.querySelectorAll('.door')
+                    doors.forEach(function (elm) {
+                        if (elm.classList[3] == clr) {
+                            elm.classList.remove('ground')
+                        }
+                    })
+                }
+                if (pl_center.classList.contains('door')) {
+                    pl_center.style.display = 'none'
+                }
+                if (pl_center.classList.contains('finalgoal')) {
+                    pl_center.style.display = 'none'
+                    var clr = pl_center.style.background
+                    var doors = document.querySelectorAll('.rocket')
+                    doors.forEach(function (elm) {
+                        elm.style.display = 'none'
+                    })
+
+                    setTimeout(function () {
+                        pl.style.opacity = '0'
+                        document.body.style.setProperty('--pl-clr', 'transparent')
+                        document.querySelector('#big_rocket').classList.add('adios')
+                        setTimeout(function () {
+                            var time = (timer / 30)
+                            ga.innerHTML = '<h2>YOU WIN!</h2>' + time.toFixed(2) + ' seconds'
+                            ga.style.opacity = '1'       
+                        }, 2250)
+                    }, 250)
+                }
+
+                timer++
+                setTimeout(updatePlayer, 1000 / 30)
+            }
+        }
+
+        updatePlayer()
+
+        window.focus()
+
+        ga.innerHTML = 'Arrow keys to move and jump'
+        ga.style.opacity = '1'
+        setTimeout(function () {
+            ga.style.opacity = '0'
+        }, 4000)
+
+        window.addEventListener('keydown', function (e) { d[e.which] = true; })
+        window.addEventListener('keyup', function (e) {
+            d[e.which] = false;
+            pl.className = ''
+        })
+
+    </script>
+</body>
+
+</html>

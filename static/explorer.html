@@ -1,0 +1,322 @@
+<html>
+<body style='margin: 0px; padding: 0px'>
+  <button id=btn onClick='go()' style='padding: 3px'>Go</button>
+</body>
+
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script> -->
+<script src="./commons.js"></script>
+<script src="./sentiments.js"></script>
+
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.156.1/examples/jsm/"
+    }
+  }
+</script>
+<script type="module">
+//    import { THREE, OrbitControls } from "./orbit.js";
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+import { TextGeometry } from 'three/addons/geometries/TextGeometry.js';
+import { FontLoader } from 'three/addons/loaders/FontLoader.js';
+window.THREE = THREE;
+window.OrbitControls = OrbitControls;
+window.TextGeometry = TextGeometry;
+window.FontLoader = FontLoader;
+</script>
+<script language=javascript>
+
+let graph = {
+  'silly': {
+    connections: ['ridiculous', 0.85, 'serious', -0.7, 'important', 0],
+    position: [0,0,0],
+    length: 0,
+    sentiment: 0, // Placeholder value, should be computed
+    commonality: 0, // Placeholder value, should be computed
+    definitionClarity: 0.5, // Placeholder value, should be computed
+    binarySum: 448, // Placeholder value, should be computed
+    extraDimensions: [] // To store additional dimensions dynamically
+  },
+  // Add more words and their parameters here
+};
+
+
+var scene=null, renderer, controls, camera;
+
+function threeCanvas()
+{
+  if( scene !== null ) return;
+
+  scene = new THREE.Scene();
+  scene.background = new THREE.Color( 0x000000 );
+  renderer = new THREE.WebGLRenderer({
+      antialias: true
+      //alpha: true
+  });
+  renderer.setPixelRatio( window.devicePixelRatio );  
+  renderer.setSize( window.innerWidth, window.innerHeight );
+  camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.01, 10000);
+
+  renderer.domElement.style.padding = renderer.domElement.style.margin = "0px";
+
+  document.body.appendChild( renderer.domElement );
+
+  var light3 = new THREE.AmbientLight(0xffffff, 1.0);
+  scene.add(light3);
+  
+  controls = new OrbitControls( camera, renderer.domElement );
+
+  let mywidth = window.innerWidth, myheight = window.innerHeight;
+  let mydepth = (mywidth+myheight)/2;
+
+  camera.position.set( mywidth*0.5, myheight*0.5, -mydepth*0.5 );
+  camera.lookAt(new THREE.Vector3(0, 0, 0) );
+  controls.target = new THREE.Vector3(0,0,0);
+  controls.update();
+}
+//camera.position.z = 50;
+
+let nodes = {};
+let edges = [];
+let nodelist = [];
+
+// Prepare graph
+let addCon = function(word1,word2,weight) { // from word1 to word2 with weight
+  graph[word1].connections.push(word2,weight);
+}
+let added_keys = [];
+let validWord = word => ( ( word in commons ) && ( word in sentiments ) );
+
+let prepareWord = function(word ) {
+  if( !validWord(word) ) {
+    delete graph[word];
+    return;
+  }
+  graph[word].length = word.length;
+  graph[word].commonality = commons[word];
+  graph[word].sentiment = sentiments[word][0] + sentiments[word][1] - sentiments[word][2];
+
+  let total_weight=0;
+  for( var w=0; w<graph[word].connections.length; w+=2 ) {
+    let nw = graph[word].connections[w];
+    if( !validWord(nw) ) {
+      console.log("Invalid word link " + word + "->" + nw);
+      graph[word].connections.splice(w,2);
+      w -= 2;
+      continue;
+    }
+    total_weight += Math.abs(graph[word].connections[w+1]);
+    if( nw in graph ) {
+      if( graph[nw].connections.indexOf(word) == -1 )
+        addCon(nw,word,graph[word].connections[w+1]);
+      continue;
+    }
+    added_keys.push(nw);
+    graph[nw] = { connections: [ ], length: nw.length, sentiment: 0.0, commonality: 0.0, definitionClarity: 0.5, binarySum: 0, extraDimensions: [] };
+    addCon(nw,word,graph[word].connections[w+1]);
+  }
+  graph[word].definitionClarity = total_weight;
+};
+
+let instances = null;
+
+function setup() {
+
+  let graph_keys = Object.keys(graph);
+  graph_keys.forEach(prepareWord);
+  added_keys.forEach(prepareWord);
+
+  if( instances != null )
+      scene.remove(instances);
+
+  let sizing = 5.0, opacity = 1.0, scaling = 100.0;
+
+  geometry = new THREE.BoxGeometry( sizing, sizing, sizing );
+  material = new THREE.MeshLambertMaterial( {color: 0x00e3e3 } );
+  material.opacity = opacity;
+  material.transparent = false;
+
+  const loader = new FontLoader();
+  nodelist=[];
+  Object.keys(graph).forEach(word => {
+    graph[word].ident = nodelist.length;
+    nodelist.push(word);
+    nodes[word] = [ Math.random() * scaling, Math.random() * scaling, Math.random() * scaling, 0,0,0 ];
+  });
+
+  instances = new THREE.InstancedMesh( geometry, material, nodelist.length );
+  instances.instanceMatrix.setUsage( THREE.DynamicDrawUsage ); // will be updated every frame
+  scene.add(instances);
+
+  // Create nodes
+  loader.load( './typeface.json', function ( font ) {
+    console.log("Font loaded, drawing graph");
+    Object.keys(graph).forEach(word => {
+      let node = nodes[word];
+      instances.setMatrixAt( graph[word].ident, new THREE.Matrix4().makeTranslation( node[0], node[1], node[2] ) );
+      scene.add(node);
+      instances.setColorAt( graph[word].ident, new THREE.Color( .5,.5,.5 ) );
+      nodelist.push(word);
+      let geo = new THREE.TextGeometry( word, {
+            font: font,
+
+            size: size,
+            depth: depth} );
+
+      scene.add(geo);
+    });
+    instances.instanceColor.needsUpdate = true;
+
+  // Create edges
+
+    console.log("Drawing edges");
+    Object.keys(graph).forEach(word => {
+      for (let i = 0; i < graph[word].connections.length; i += 2) {
+        const connectedWord = graph[word].connections[i];
+        const weight = graph[word].connections[i + 1];
+        const start = nodes[word];
+        const end = nodes[connectedWord];
+
+        const material = new THREE.LineBasicMaterial({ color: weight > 0 ? 0x0000ff : 0xff0000 });
+        const points = [];
+        points.push(new THREE.Vector3(start[0], start[1], start[2]));
+        points.push(new THREE.Vector3(end[0], end[1], end[2]));
+        const geometry = new THREE.BufferGeometry().setFromPoints(points);
+        const line = new THREE.Line(geometry, material);
+        scene.add(line);
+        edges.push({ geometry, weight, start: word, end: connectedWord });
+      }
+    });
+  });
+}
+
+const addDimension = (node) => {
+  const newDimensionValue = Math.random() * 10 - 5;
+  graph[node].extraDimensions.push(newDimensionValue);
+};
+
+/*
+    const k = 0.1 * Math.abs(weight); // Adjust the spring constant based on the weight
+    const length = 10 * (1 - Math.abs(weight)); // Shorter length for higher weights
+*/
+function dist(a,b) {
+  var i, sum=0;
+  var d;
+
+  d = Math.abs( nodes[a][0] - nodes[b][0] );
+  sum += d*d;
+
+  d = Math.abs( nodes[a][1] - nodes[b][1] );
+  sum += d*d;
+
+  d = Math.abs( nodes[a][2] - nodes[b][2] );
+  sum += d*d;
+
+  for( i=0;i<graph[a].extraDimensions.length;i++) {
+    if( i < graph[b].extraDimensions.length ) {
+      d = Math.abs( graph[a].extraDimensions[i] - graph[b].extraDimensions[i] );
+    } else {
+      d = Math.abs(graph[a].extraDimensions[i]);
+    }
+    sum += d*d;
+  }
+  for( ;i<graph[b].extraDimensions.length;i++) {
+    d = Math.abs(graph[b].extraDimensions[i]);
+    sum += d*d;
+  }
+
+  return Math.sqrt( sum );
+}
+
+const projectTo3D = (node) => {
+  const extraDimensions = graph[node].extraDimensions;
+  node = nodes[node];
+  if (extraDimensions.length > 0) {
+    const scale = 0.1; // Scale factor for projection
+    const projection = extraDimensions.reduce((acc, val) => acc + val, 0) * scale;
+    nodes[node][2] += projection; // add to z value
+  }
+};
+
+const springForce = (k, length, a, b) => {
+  let dir = new THREE.Vector3( nodes[b][0] - nodes[a][0], nodes[b][1] - nodes[a][1], nodes[b][2] - nodes[a][2] ).normalize();
+  let distance = dist(a,b) - length;
+  return dir.multiplyScalar(k * distance);
+};
+
+let last_time = null;
+
+const updatePositions = () => {
+
+  let time_now = new Date().getTime();
+  if( last_time == null ) {
+    last_time = time_now;
+    return;
+  }
+  let td = ( time_now - last_time ) / 1000.0;
+
+  edges.forEach(edge => {
+    const { line, weight, start, end } = edge;
+    const startPosition = nodes[start];
+    const endPosition = nodes[end];
+    const k = 0.1 * Math.abs(weight); // Adjust the spring constant based on the weight
+    const length = 10 * (1 - Math.abs(weight)); // Shorter length for higher weights
+    const force = springForce(k, length, start, end);
+
+    // Update positions with force
+    startPosition[3] += force.x * td;
+    startPosition[4] += force.y * td;
+    startPosition[5] += force.z * td;
+
+    endPosition[3] += force.x * td;
+    endPosition[4] += force.y * td;
+    endPosition[5] += force.z * td;
+
+    // Check tension
+    const tension = force.length();
+    if (tension > 10) { // Threshold for adding a dimension
+      addDimension(start);
+      addDimension(end);
+    }
+    // Project extra dimensions to 3D
+    projectTo3D(start);
+    projectTo3D(end);
+
+    line.setFromPoints(
+      new THREE.Vector3( startPosition[0], startPosition[1], startPosition[2] ),
+      new THREE.Vector3( endPosition[0], endPosition[1], endPosition[2] )
+      );
+
+
+    // Update line geometry
+    line.verticesNeedUpdate = true;
+  });
+
+  for( var word in graph ) {
+    let node = graph[word];
+    node[0] += node[3] * td;
+    node[1] += node[4] * td;
+    node[2] += node[5] * td;
+  }
+
+};
+
+const animate = () => {
+  requestAnimationFrame(animate);
+  updatePositions();
+  renderer.render(scene, camera);
+};
+
+function go() {
+  document.body.removeChild( document.body.children[0] );
+  threeCanvas();
+  setup();
+  animate();
+}
+
+</script>
+
+</html>

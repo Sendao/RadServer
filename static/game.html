@@ -1,0 +1,443 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Radiant Cast</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+
+<!--
+<body style="background-image: url('dragontribe.jpg'); background-color: black; color: tan">
+ -->
+ <body class=bg5 style='color: tan; margin: 0px'>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+<div xWatch=menu_reset>
+<div xPostdraw='console.info'></div>
+<menu ></menu>
+</div>
+<main style='margin-top: 16px; font-size: 14pt' xWatch=window xCast='main_start'></main>
+
+<loadwheel></loadwheel>
+
+<!--  setup -->
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/auth.html
+#include tpl/meta.html
+
+
+#include controls/edit.html
+#include controls/console.html
+#include controls/gameconsole.html
+#include controls/whiteboard.html
+#include controls/watch.html
+
+#include controls/game/db.html
+#include controls/game/castle.html
+
+<templates>
+
+<div xTemplate=main_start>
+
+<div xWatch=sess>
+
+<div xTest='"#sess" == ""'>I'm verifying your identity. This should only take a few seconds.</div>
+<div xTest='"#sess" != ""'>
+
+<div xTest='"#sess.userid" == "false"'>
+
+<fl>You should probably</fl>
+<fl>&nbsp;</fl>
+<btn xCmd='blitzTemplate(gE("mainscroll"), "signin")'>Login</btn>
+<cl></cl>
+
+</div>
+
+<div xTest='"#sess.userid" != "false"'>
+
+<div xWatch=game.uptime>
+<div xTest='"#[game.online]" == "1"'>Server online since #game.uptime</div>
+<div xTest='"#[game.online]" == "0"'>Server offline.</div>
+</div>
+<div id=whiteboardtarget xCast=whiteboard_main></div>
+
+</div>
+
+</div>
+</div>
+</div>
+
+<div xTemplate=userlist>
+<div xDataname=users xSocket='/ed.json?base=users&table=users'></div>
+<div xEmptyLoop=users>No data found</div>
+<div xLoopHead=users>Users:</div>
+<div xLoop=users xKey=k xVal=v>
+</div>
+
+<div xTemplate='tool_caster'>
+<form xForm='cast' name=caster xMethod='castSpell()'>
+<div id=zenbox></div>
+<fieldarea #title='Spell' #name=spell></field>
+<div class=formbtn></div>
+</form>
+</div>
+
+<div xTemplate='game_status'>
+<div xWatch=game.uptime>Server online since #game.uptime</div>
+</div>
+
+<div xTemplate='game_config'>
+<form xForm=game.vars xMethod=updateConfig(this)>
+<div #titlewidth=200 xWatch=game.vars xLoop=game.vars xInd=k xVal=v>
+<field #title=#k #name=#k></field>
+</div>
+<formbtn>Submit</formbtn>
+</form>
+</div>
+
+</templates>
+
+<dataforms>
+
+</dataforms>
+
+</body>
+
+<script language=javascript>
+var basicMenu = [];
+
+//! It'd be nice to have the configuration values one color until changed
+//! another way might be #( this.value == #game.varscopy.#[{this.name}] ? "blue" : "white" )
+function configChange( v )
+{
+	v.style.color = 'blue';
+}
+function updateConfig(f)
+{
+	//! send configuration changes from varscopy to vars
+	var i;
+	var v = radVar("game.vars"), vc = radVar("game.varscopy");
+
+	var fx = {};
+
+	for( i in v ) {
+		if( v[i] != vc[i] ) {
+			fx[i] = v[i];
+			gsCommand( 'set', { 'name': i, 'value': v[i] } );
+		}
+	}
+
+	console.log("Changes sent", fx);
+	//! send fx
+	//! recvConfig will update values when the change has been confirmed
+}
+
+function recvConfig( data )
+{
+	console.info("recvConfig", data);
+	//! store in game.vars and game.varscopy
+	//! update form fields, first via radFormUpdate, then do the colors
+}
+
+function castSpell()
+{
+    var f = document.forms['caster'];
+    var e = gE("zenbox");
+    e.innerHTML = eval(f.spell.value);
+    return false;
+}
+
+function initSkeleton()
+{
+// Initialize any variables here radStore("x", 42);
+    basicMenu = [
+        { 'title': 'User', 'children': [
+            { 'title': 'Profile', 'cast': 'userprofile' },
+            { 'title': 'Signup', 'cast': 'signup' },
+            { 'title': 'Signin', 'cast': 'signin' },
+            { 'title': 'Logout', 'cast': 'logout' },
+            { 'title': 'List', 'cast': 'userlist' }
+        ] },
+        { 'title': 'Status', 'cast': 'game_status' },
+        { 'title': 'Config', 'cast': 'game_config' },
+        { 'title': 'GameDB', 'cast': 'game_db' },
+        { 'title': 'WebDB', 'cast': 'database' },
+        { 'title': 'WebConsole', 'cast': 'tool_console' },
+        { 'title': 'GameConsole', 'cast': 'tool_game_console' },
+        { 'title': 'Monitor', 'cast': 'watch_monitor' },
+        { 'title': 'Page', 'children': [
+            { 'title': 'Background', 'act': 'cycleBodyStyles' }
+        ]}
+        ];
+
+    var host;
+
+    //radHook( "hosts." + window.location.hostname + ".config", checkGroups )
+    host = { 'hostname': window.location.hostname, 'procs': {}, 'config': {} };
+    radStore( "hostname", host.hostname );
+    radStore( "hosts." + host.hostname, host );
+    radStore( "game", { 'vars': {}, 'varscopy': {} } );
+
+    structMenu(basicMenu);
+
+    radLoad();
+    cycleBodyStyles();
+
+  	onAuthenticate(gameConnected);
+    //socketRegister( 'registered', socketStarted );
+    socketRegister( 'game', radAutoSocket );
+    openSocket(window.location.host, chatSocket);
+
+    configureGame();
+}
+
+function cycleBodyStyles()
+{
+    var e = document.body;
+    if( typeof e.bgstate == 'undefined' )
+        e.bgstate=5;
+    e.bgstate = (e.bgstate+1)%9;
+    switch( e.bgstate ) {
+    case 1: e.className = 'bg0'; e.style.color = 'silver'; break;
+    case 2: e.className = 'bg1'; e.style.color = 'white'; break;
+    case 3: e.className = 'bg2'; e.style.color = 'black'; break;
+    case 4: e.className = 'bg3'; e.style.color = 'tan'; break;
+    case 5: e.className = 'bgsunrise'; e.style.color = 'white'; break;
+    case 6: e.className = 'bgmoonrise'; e.style.color = 'silver'; break;
+    case 7: e.className = 'bgmoonset'; e.style.color = 'silver'; break;
+    case 8: e.className = 'bgsunset'; e.style.color = 'black'; break;
+    }
+}
+
+function socketStarted( event )
+{
+	getUptime();
+}
+
+function chatSocket( event )
+{
+    //console.log("Socket event: ", event);
+}
+
+function socketGame( objdata )
+{
+	var msg = objdata.split("\n"), cmd = msg.shift();
+	//console.log("gameSocket: " + cmd, msg);
+
+	if( cmd in cmd_handlers ) {
+		cmd_handlers[ cmd ]( msg );
+	} else {
+		console.info(cmd, msg);
+	}
+}
+
+function gameConnected()
+{
+  console.log("gameConnected");
+	radCommand('get');
+  radCommand('start');
+	getUptime();
+  getTables();
+}
+
+function configureGame()
+{
+	var cmds = [ 'uptime', 'get', 'set', 'register',  'dbrecords', 'dbtables', 'dbget', 'dbset' ];
+
+	cmdRegister( 'uptime', '/g.uptime', rcvUptime, null, noUptime );
+  cmdRegister( 'start', '/g.start', rcvStart, null, noStart );
+	cmdRegister( 'get', '/g.get', rcvGet, null, noGet );
+	cmdRegister( 'set', '/g.set', rcvSet, null, noSet, 'POST' );
+	cmdRegister( 'register', '/g.register', rcvRegister, null, noRegister, 'POST' );
+  cmdRegister( 'dbget', '/g.dbget', rcvDbGet, null, noDbGet, 'POST' );
+  cmdRegister( 'dbset', '/g.dbset', rcvDbSet, null, noDbSet, 'POST' );
+  cmdRegister( 'dbrecords', '/g.dbs', rcvDbRecords, null, noDbRecords, 'POST' ); // for refreshing only
+  cmdRegister( 'dbtables', '/g.tables', rcvDbTables, gotDbTables, noDbTables );
+  cmdRegisterType( 'default', rcvDbData );
+
+	for( var i = 0; i < cmds.length; ++i ) {
+		cmdConfigure( cmds[i], socketGame, "obj.data.data" );
+	}
+}
+
+function getUptime()
+{
+	radCommand( 'uptime' );
+}
+function getTables()
+{
+  radCommand( 'dbtables' );
+}
+
+function updRecordsOf(tab)
+{
+  radCommand( 'dbrecords', { 'db': tab } );
+}
+
+function loadDbItem(tab, id)
+{
+  radCommand( 'dbget', { 'db': tab, 'id': id } );
+}
+
+function rcvRegister( data )
+{
+  console.log("rcvRegister");
+  console.log(data);
+}
+
+function noRegister()
+{
+  console.log("noRegister");
+}
+
+function rcvStart( data )
+{
+  console.log("rcvStart");
+  console.log(data);
+}
+
+
+function noStart()
+{
+  console.log("noStart");
+}
+
+function rcvUptime( data )
+{
+	radStore("game.online", 1);
+	radStore("game.uptime_int", data[0]);
+	radStore("game.uptime", data[1]);
+	setTimeout("getUptime()", 30000);
+}
+
+function noUptime()
+{
+	radStore("game.online", 0);
+	radStore("game.uptime", "offline");
+	setTimeout("getUptime()", 15000);
+}
+
+function rcvGet( data )
+{
+	var x, xkey, xval;
+
+	var gv = radVar("game.vars");
+	if( gv == null ) gv = {};
+
+	for( x=0; x<data.length; x+=2 ) {
+		xkey = data[x];
+		xval = data[x+1];
+		xkey = xkey.replace(/\./g, '_');
+		gv[xkey] = xval;
+	}
+	radStore("game.vars", gv);
+	radStore("game.varscopy", gv);
+	console.info("Updated game variables");
+}
+
+function noGet()
+{
+	console.log("noGet");
+}
+
+function rcvSet( data )
+{
+	console.log("rcvSet", data);
+}
+
+function noSet()
+{
+	console.log("noSet");
+}
+
+function rcvDbGet( data )
+{
+  console.log("rcvDbGet", data);
+  var table, id;
+  var e = gE("bo_" + table + "_" + id);
+  if( e ) {
+    console.log("Location found");
+    blitzTemplate(e, "dbtabitem", "dbtables." + table + "." + id);
+  }
+}
+function rcvDbData( data, dobj )
+{
+  console.log("rcvDbData", dobj, data);
+  var idd = dobj.label.split(',');
+  if( idd[0] == 'db' ) {
+    var tab = idd[1];
+    var id = parseInt(idd[2]);
+    radStore( "dbtables." + tab + "." + id, data );
+    var e = gE("bo_" + tab + "_" + id);
+    if( e ) {
+      console.log("Location found");
+      blitzTemplate(e, "dbtabitem", "dbtables." + tab + "." + id);
+    }
+  }
+}
+function noDbGet()
+{
+}
+
+function rcvDbSet( data )
+{
+  console.log("rcvDbSet", data);
+}
+function noDbSet()
+{
+}
+
+function rcvDbTables( data )
+{
+  var i, dbt = radVar("dbtables");
+  if( dbt == null ) dbt = {};
+  for( i in data ) {
+    if( !(i in dbt) ) {
+      dbt[i] = data[i];
+    } else {
+      dbt[i].vars = data[i].vars;
+    }
+  }
+  radStore("dbtables", dbt);
+  console.log("rcvDbTables", data);
+}
+function gotDbTables( data )
+{
+  var td = JSON.parse(data);
+  console.log("gotDbTables");
+  rcvDbTables(td.data);
+}
+function noDbTables()
+{
+  console.log("noDbTables");
+}
+
+function rcvDbRecords( data )
+{
+  console.log("rcvDbRecords", data);
+}
+function noDbRecords()
+{
+}
+
+
+registerStartup(initSkeleton);
+
+</script>
+</html>

@@ -1,0 +1,959 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Artboard</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+        #canvas-container {
+            position: relative;
+            width: 100%;
+            height: calc(100% - 60px);
+        }
+        #defaultCanvas0 {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        #toolbar {
+            position: absolute;
+            bottom: 2px;
+            left: 10px;
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        #color-picker, #color-picker-bg {
+            width: 30px;
+            height: 30px;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            z-index: 5;
+        }
+        #color-picker-bg {
+            top: 10px;
+            left: -25px; margin: 0px; padding: 0px;
+            z-index: 2;
+        }
+        .tool-btn {
+            margin: 5px;
+            padding: 5px 10px;
+            background: #e0e0e0;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .tool-holder {
+            display: inline-block;
+            margin: 5px;
+            padding: 5px 10px;
+            cursor: pointer;
+        }
+        #size-input {
+            width: 50px;
+        }
+        .sticky-note {
+            position: absolute;
+            background: #ffffcc;
+            border: 1px solid #ccc;
+            padding: 5px;
+            resize: both;
+            font-size: 18px;
+            overflow: auto;
+            font-family: Arial, sans-serif;
+        }
+        .text-box {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.8);
+            border: 1px solid #000;
+            padding: 5px;
+            resize: both;
+            font-size: 18px;
+            overflow: auto;
+            font-family: Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="canvas-container"><canvas id="myCanvas"></canvas></div>
+    <div id="toolbar">
+        <div class='tool-holder'>
+            <input type="color" id="color-picker" value="#000000">
+            <input type="color" id="color-picker-bg" value="#ffffff">
+            <input type="checkbox" id=color-fill value=1 checked>
+            <label for="color-fill">Fill</label>
+        </div>
+        <button class="tool-btn" onclick="selectTool('hand',event)">Hand</button>
+        <button class="tool-btn" onclick="selectTool('brush',event)">Brush</button>
+        <button class="tool-btn" onclick="selectTool('line',event)">Line</button>
+        <button class="tool-btn" onclick="selectTool('rectangle',event)">Rectangle</button>
+        <button class="tool-btn" onclick="selectTool('circle',event)">Circle</button>
+        <button class="tool-btn" onclick="selectTool('note',event)">Note</button>
+        <button class="tool-btn" onclick="selectTool('text',event)">Text</button>
+        <button class="tool-btn" onclick="undo(event)">Undo</button>
+        <button class="tool-btn" onclick="redo(event)">Redo</button>
+        <button class="tool-btn" onclick="exportImage(event)">Export</button>
+    </div>
+
+    <script>
+        let canvas, ctx, myWidth, myHeight;
+        let currentTool = '';
+        let currentColor = '#000000', currentFill = '#ffffff';
+        let brushSize = 5;
+        let drawing = [];
+        let history = [];
+        let redoHistory = [];
+        let startX, startY, started = false, selectedHistory = false, displayedText = false, moved = false;
+        let renderedImgs = new Map();
+        let current_canvas_changes=null;
+
+        function init() {
+            canvas = document.getElementById('myCanvas');
+            ctx = canvas.getContext('2d');
+            resizeCanvas();
+            canvas.addEventListener('mousedown', startClicking);
+            canvas.addEventListener('mousemove', keepClicking);
+            canvas.addEventListener('mouseup', stopClicking);
+            canvas.addEventListener('mouseout', stopClicking);
+
+            document.getElementById('color-picker').addEventListener('input', (e) => {
+                currentColor = e.target.value;
+            });
+            document.getElementById('color-fill').addEventListener('input', (e) => {
+                currentFill = !e.target.checked ? '' : document.getElementById('color-picker-bg').value;
+            });
+            document.getElementById('color-picker-bg').addEventListener('input', (e) => {
+                currentFill = !document.getElementById('color-fill').checked ? '' : e.target.value;
+            });
+        }
+
+        function resizeCanvas() {
+            myWidth = canvas.width = window.innerWidth;
+            myHeight = canvas.height = window.innerHeight - 60;
+            redrawCanvas();
+        }
+
+        function selectTool(tool, event) {
+            event.preventDefault();
+            currentTool = tool;
+        }
+
+        function undo(event) {
+            event.preventDefault();
+            if (history.length > 0) {
+                redoHistory.push(history.pop());
+                resetCanvasChanges();
+                redrawCanvas();
+            }
+        }
+
+        function redo(event) {
+            event.preventDefault();
+            if (redoHistory.length > 0) {
+                history.push(redoHistory.pop());
+                resetCanvasChanges();
+                redrawCanvas();
+            }
+        }
+
+        function measureText( txt, maxWidth ) {
+            let lines = txt.split("\n");
+            let dims, i;
+            let wid=0, hgt=0, offset=0;
+
+            ctx.font = '18px Arial, sans-serif';
+            for( i=0; i<lines.length; i++ ) {
+                dims = ctx.measureText(lines[i], maxWidth);
+                if( dims.width > wid ) wid = dims.width;
+                hgt += dims.fontBoundingBoxAscent + 1 + dims.fontBoundingBoxDescent;
+                if( offset == 0 ) offset = dims.fontBoundingBoxDescent;
+            }
+            return {width:wid,height:hgt,offset};
+        }
+
+        function getToolType( drawingIndex ) {
+
+            if( drawingIndex < 0 || drawingIndex >= history.length ) return false;
+
+            let strokes = history[drawingIndex];
+            if( strokes[0].length == 6 ) {
+                if( !isNaN(strokes[0][0]) ) return 'brush';
+                return strokes[0][0];
+            }
+            return strokes[0][6];
+        }
+
+        function startClicking(e) {
+            let min_brush_square_dist = 12;
+            let min_line_dist = 0.5;
+            const rect = canvas.getBoundingClientRect();
+            let mouseX = e.clientX - rect.left;
+            let mouseY = e.clientY - rect.top;
+
+            var i, j, tool, mindist, minitem, dist;
+            var strokes, strokeData, tgt, key;
+
+            if( currentTool == 'hand' || currentTool == '' ) { // select tools (hand for movement, clear for text select and editting)
+                if( current_canvas_changes === null ) {
+                    getCanvasChanges();
+                }
+                tgt = current_canvas_changes;
+                selectedHistory = false;
+                mindist = Infinity;
+                minitem = false;
+                for( i=0; i<history.length; i++ ) { // see what we are clicking on
+                    if( history[i][0].length == 3 ) continue;
+                    strokes = history[i];
+                    tool = getToolType(i);
+
+                    for( j=0; j<strokes.length; j++ ) {
+                        strokeData = cloneDrawing(strokes[j]);
+
+                        key = i + "," + j;
+                        if( (key in tgt) || ( (i + ",-") in tgt) ) { // adjust for changes
+                            if( !(key in tgt) ) key = i + ",-";
+                            var k;
+                            for( k=0; k<tgt[key].length; k++ ) {
+                                addr = tgt[key][k][0];
+                                value = tgt[key][k][1];
+                                if( isNaN(value) || value === '' || (tgt[key][k].length>2&&tgt[key][k][2] === 0) ) {
+                                    strokeData[addr]=value;
+                                } else if( tool == 'brush' || tool == 'line' || (tgt[key][k].length>2&&tgt[key][k][2] === 1) ) {
+                                    strokeData[addr]+=parseFloat(value);
+                                } else {
+                                    strokeData[addr]=parseFloat(value);
+                                }
+                            }
+                        }
+
+                        switch( tool ) {
+                        case 'text': case 'note':
+                            if( (mouseX >= strokeData[1]) &&
+                                (mouseY >= strokeData[2]) &&
+                                (mouseX <= strokeData[1] + strokeData[4])  &&
+                                (mouseY <= strokeData[2] + strokeData[5]) ) {
+                                dist = Math.sqrt( Math.pow( strokeData[1]+strokeData[4]/2-mouseX, 2 ) + Math.pow( strokeData[1]+strokeData[5]/2 - mouseY, 2 ) );
+                                if( dist < mindist ) {
+                                    dist = mindist;
+                                    minitem = i;
+                                    startX = mouseX;
+                                    startY = mouseY;
+                                }
+                            }
+                            break;
+                        case 'circle':
+                            const radius = Math.sqrt(Math.pow(strokeData[2], 2) + Math.pow(strokeData[3], 2));
+                            dist = Math.sqrt( Math.pow( strokeData[0]-mouseX, 2 ) + Math.pow( strokeData[1] - mouseY, 2 ) );
+                            if( dist <= radius ) {
+                                if( dist < mindist ) {
+                                    mindist = dist;
+                                    minitem = i;
+                                    startX = mouseX;
+                                    startY = mouseY;
+                                }
+                            }
+                            break;
+                        case 'rectangle':
+                            if( mouseX >= strokeData[0] && mouseY >= strokeData[1] &&
+                                mouseX <= strokeData[0] + strokeData[2] && mouseY <= strokeData[1] + strokeData[3] ) {
+                                dist = Math.sqrt( Math.pow( strokeData[0]+strokeData[2]/2-mouseX, 2 ) + Math.pow( strokeData[1]+strokeData[3]/2 - mouseY, 2 ) );
+                                if( dist < mindist ) {
+                                    dist = mindist;
+                                    minitem = i;
+                                    startX = mouseX;
+                                    startY = mouseY;
+                                }
+                            }
+                            break;
+                        case 'line':
+                            var ad1, ad2;
+                            var linedist = 0.5*Math.sqrt( Math.pow( strokeData[2]-strokeData[0], 2) + Math.pow( strokeData[3]-strokeData[1], 2) );
+                            var ptdist = Math.sqrt( Math.pow( (strokeData[0]+strokeData[2])/2 - mouseX, 2) + Math.pow( (strokeData[1]+strokeData[3])/2 - mouseY, 2) );
+                            ad1 = ( strokeData[0] - strokeData[2] ) / ( strokeData[1] - strokeData[3] );
+                            ad2 = ( strokeData[0] - mouseX ) / ( strokeData[1] - mouseY );
+                            dist = Math.abs(ad1-ad2);
+                            if( dist < mindist && dist < min_line_dist && ptdist < linedist ) {
+                                dist = mindist;
+                                minitem = i;
+                                startX = mouseX;
+                                startY = mouseY;
+                            }
+                            break;
+                        case 'brush':
+                            dist = Math.abs((strokeData[0]+strokeData[2])/2-mouseX) + Math.abs((strokeData[1]+strokeData[3])/2-mouseY);
+                            if( dist < min_brush_square_dist ) {
+                                dist = Math.sqrt( Math.pow( (strokeData[0]+strokeData[2])/2-mouseX, 2 ) + Math.pow( (strokeData[1]+strokeData[3])/2-mouseY, 2 ) );
+                                if( dist < mindist ) {
+                                    dist = mindist;
+                                    minitem = i;
+                                    startX = mouseX;
+                                    startY = mouseY;
+                                }
+                            }
+                            break;
+                        }
+                    }
+                }
+                if( minitem !== false ) {
+                    selectedHistory = minitem;
+                    started = true;
+                    moved = false;
+                    return;
+                }
+            }
+
+            if( mouseY > canvas.height || mouseX > canvas.width || mouseX < 0 || mouseY < 0 ) {
+                started = false;
+                return;
+            }
+
+            if (['brush', 'circle', 'rectangle', 'line'].includes(currentTool)) {
+                drawing = [];
+                startX = mouseX;
+                startY = mouseY;
+                started = true;
+                redoHistory = [];
+            } else if (currentTool === 'note') {
+                redoHistory = [];
+                currentTool = '';
+                createStickyNote(mouseX, mouseY);
+            } else if (currentTool === 'text') {
+                redoHistory = [];
+                currentTool = '';
+                createTextBox(mouseX, mouseY);
+            }
+        }
+
+        function smoothDrawing() {
+            let min_smooth_dist = 0.5;
+            let min_gaps = 12;
+
+            var xa0, xa1, ya0, ya1;
+            var xb0, xb1, yb0, yb1;
+            var xc0, xc1, yc0, yc1;
+
+            var midx, midy;
+            var i;
+
+            if( drawing.length < 3 ) {
+                // check for gaps w/ previous drawing
+                if( history.length < 1 ) return;
+                let pdrawing = history[history.length-1];
+                if( pdrawing[0].length == 6 ) { // it is a drawing
+                    i = pdrawing.length-1;
+                    xa0 = pdrawing[i][2];
+                    ya0 = pdrawing[i][3];
+
+                    if( Math.abs(drawing[0][0]-xa0) + Math.abs(drawing[0][1]-ya0) < min_gaps*min_smooth_dist ) {
+                        pdrawing[i][2] = drawing[0][0];
+                        pdrawing[i][3] = drawing[0][1];
+                    }
+                }
+                return;
+            }
+            i = drawing.length-1;
+            xa0 = drawing[i][0];
+            ya0 = drawing[i][1];
+            xa1 = drawing[i][2];
+            ya1 = drawing[i][3];
+            i = drawing.length-3;
+            xb0 = drawing[i][0];
+            yb0 = drawing[i][1];
+            xb1 = drawing[i][2];
+            yb1 = drawing[i][3];
+            midx = (xa0 + xb0 + xa1 + xb1)/4;
+            midy = (ya0 + yb0 + ya1 + yb1)/4;
+
+            i = drawing.length-2;
+            xc0 = drawing[i][0];
+            yc0 = drawing[i][1];
+            xc1 = drawing[i][2];
+            yc1 = drawing[i][3];
+            var xc = (xc0+xc1)/2, yc = (yc0+yc1)/2;
+
+            var dist = Math.sqrt( Math.pow( midx - xc, 2 ) + Math.pow( midy - yc, 2 ) );
+            if( dist > min_smooth_dist ) {
+                drawing[i][0] = drawing[i-1][2];
+                drawing[i][1] = drawing[i-1][3];
+                drawing[i][2] = midx;
+                drawing[i][3] = midy;
+            }
+        }
+
+        function keepClicking(e) {
+            if (!started) return;
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            if( !moved && Math.abs(startX-mouseX) < 4 && Math.abs(startY-mouseY) < 4 ) return;
+
+            moved = true;
+
+            let diffX = mouseX - startX;
+            let diffY = mouseY - startY;
+
+            if( selectedHistory !== false ) {
+                if( drawing == history[history.length-1] ) {
+                    drawing[0][2] = [diffX,diffY];
+                } else {
+                    drawing = [[ 'move', selectedHistory, [ diffX, diffY ] ]];
+                    history.push(drawing);
+                }
+                resetCanvasChanges();
+                redrawCanvas();
+                return;
+            }
+
+            switch(currentTool) {
+            case 'brush':
+                var i;
+                i = drawing.length-1;
+                if( i > 0 ) {
+                    let pdrawing = drawing[i];
+                    let xdist = Math.abs(pdrawing[2] - mouseX), ydist = Math.abs(pdrawing[3] - mouseY);
+                    if( xdist+ydist > 4 )
+                        drawing.push([0+pdrawing[2], 0+pdrawing[3], mouseX, mouseY, currentColor, brushSize]);
+                } else {
+                    drawing.push([startX, startY, mouseX, mouseY, currentColor, brushSize]);
+                }
+                smoothDrawing();
+                startX = mouseX;
+                startY = mouseY;
+                resetCanvasChanges();
+                redrawCanvas();
+                break;
+            case 'line':
+                drawing =[[startX, startY, mouseX, mouseY, currentColor, brushSize, currentTool]];
+                resetCanvasChanges();
+                redrawCanvas();
+                break;
+            case 'rectangle':
+                drawing =[[startX, startY, mouseX - startX, mouseY - startY, currentColor, brushSize, currentTool, currentFill]];
+                resetCanvasChanges();
+                redrawCanvas();
+                break;
+            case 'circle':
+                const radius = Math.sqrt(Math.pow(mouseX - startX, 2) + Math.pow(mouseY - startY, 2));
+                drawing =[[startX, startY, mouseX - startX, mouseY - startY, currentColor, brushSize, currentTool, currentFill]];
+                resetCanvasChanges();
+                redrawCanvas();
+                break;
+            }
+        }
+
+        function stopClicking(e) {
+            if( !started ) {
+                selectedHistory = false;
+                return;
+            }
+
+            const rect = canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            var item, text, note, tool, key;
+
+            if( selectedHistory !== false ) {
+                if( current_canvas_changes === null ) {
+                    getCanvasChanges();
+                }
+                var tgt = current_canvas_changes;
+                if( moved === false ) {
+                    item = history[selectedHistory];
+                    tool = getToolType(selectedHistory);
+
+                    if( item.length == 1 && item[0].length == 6 ) {
+                        // text or sticky note
+                        item = cloneDrawing(item[0]);
+                        key = selectedHistory + ",-";
+                        if( (key in tgt) || ( (i + ",-") in tgt) ) { // adjust for changes
+                            if( !(key in tgt) ) key = i + ",-";
+                            var k;
+                            for( k=0; k<tgt[key].length; k++ ) {
+                                addr = tgt[key][k][0];
+                                value = tgt[key][k][1];
+                                if( isNaN(value) || value === '' || (tgt[key][k].length>2&&tgt[key][k][2] === 0) ) {
+                                    item[addr]=value;
+                                } else if( tool == 'brush' || tool == 'line' || (tgt[key][k].length>2&&tgt[key][k][2] === 1) ) {
+                                    item[addr]+=parseFloat(value);
+                                } else {
+                                    item[addr]=parseFloat(value);
+                                }
+                            }
+                        }
+
+                        switch( tool ) {
+                        case 'text':
+                            text = addTextBox(item[1], item[2], item[3], item[4], item[5]);
+                            text.hook = selectedHistory + ",-";
+                            break;
+                        case 'note':
+                            note = addStickyNote(item[1], item[2], item[3], item[4], item[5]);
+                            note.hook = selectedHistory + ",-";
+                            break;
+                        }
+                    }
+                } else {
+                    drawing = [];
+                }
+                redoHistory = [];
+                started = false;
+                selectedHistory = false;
+                return;
+            }
+
+            if (['brush', 'circle', 'rectangle', 'line'].includes(currentTool)) {
+                if( drawing.length > 0 ) {
+                    if( drawing[0][2] < 0 ) {
+                        drawing[0][0] += drawing[0][2];
+                        drawing[0][2] = Math.abs(drawing[0][2]);
+                    }
+                    if( drawing[0][3] < 0 ) {
+                        drawing[0][1] += drawing[0][3];
+                        drawing[0][3] = Math.abs(drawing[0][3]);
+                    }
+
+                    if( drawing[0][2] == 0 || drawing[0][3] == 0 ) {
+                        drawing = [];
+                    } else {
+                        history.push(drawing);
+                        drawing = [];
+                    }
+                    resetCanvasChanges();
+                    redoHistory = [];
+                }
+                started = false;
+                drawing = false;
+            }
+        }
+
+        function resetCanvasChanges() {
+            current_canvas_changes=null;
+        }
+        function getCanvasChanges() {
+            var changes = {};
+            var addr, value, key, wid, hgt;
+            var i, j;
+
+            if( current_canvas_changes !== null )
+                return current_canvas_changes;
+
+            for( i=0; i<=history.length; i++ ) {
+                var strokes;
+                if( i == history.length ) {
+                    if( drawing === false || drawing === history[history.length-1] ) break;
+                    strokes = drawing;
+                } else {
+                    strokes = history[i];
+                }
+                for( j=0; j<strokes.length; j++ ) {
+                    let strokeData = strokes[j];
+                    if( strokeData.length != 3 ) continue;
+                    readStrokeChanges(changes,strokeData);
+                }
+            }
+            return current_canvas_changes=changes;
+        }
+        function readStrokeChanges( changes, strokeData, replace_data=false )
+        {
+            var addr, key, value, wid, hgt;
+            var tgt_tool;
+
+            if( strokeData[0] == 'change' ) {
+                addr = strokeData[1];
+                value = strokeData[2];
+                key = addr[0] + "," + addr[1];
+                if( !(key in changes) ) changes[key]=[];
+                changes[ key ].push( [ addr[2], value ] );
+            } else if( strokeData[0] == 'move' ) {
+                addr = strokeData[1];
+                wid = strokeData[2][0];
+                hgt = strokeData[2][1];
+                key = addr + ",-";
+                if( !(key in changes) ) changes[key]=[];
+                tgt_tool = getToolType(addr);
+                switch( tgt_tool ) {
+                case 'brush':
+                    changes[ key ].push( [ 0, wid, 1 ] );
+                    changes[ key ].push( [ 1, hgt, 1 ] );
+                    changes[ key ].push( [ 2, wid, 1 ] );
+                    changes[ key ].push( [ 3, hgt, 1 ] );
+                    break;
+                case 'line':
+                    changes[ key ].push( [ 0, wid, 1 ] );
+                    changes[ key ].push( [ 1, hgt, 1 ] );
+                    changes[ key ].push( [ 2, wid, 1 ] );
+                    changes[ key ].push( [ 3, hgt, 1 ] );
+                    break;
+                case 'circle': case 'rectangle':
+                    changes[ key ].push( [ 0, wid, 1 ] );
+                    changes[ key ].push( [ 1, hgt, 1 ] );
+                    break;
+                case 'note': case 'text':
+                    changes[ key ].push( [ 1, wid, 1 ] );
+                    changes[ key ].push( [ 2, hgt, 1 ] );
+                    break;
+                }
+            } else if( strokeData[0] == 'resize' ) {
+                addr = strokeData[1];
+                wid = strokeData[2][0];
+                hgt = strokeData[2][1];
+                key = addr[0] + "," + addr[1];
+                if( !(key in changes) ) changes[key]=[];
+                tgt_tool = getToolType( addr[0] );
+                switch( tgt_tool ) {
+                case 'text': case 'note':
+                    changes[ key ].push( [ 4, wid, 0 ] );
+                    changes[ key ].push( [ 5, hgt, 0 ] );
+                }
+            }
+        }
+
+        function cloneDrawing(x) {
+            var i;
+            var o = [];
+            for( i=0; i<x.length; i++ ) {
+                if( isNaN(x[i]) || x[i] === '' ) {
+                    o.push(""+x[i]);
+                } else {
+                    o.push(parseFloat(x[i]));
+                }
+            }
+            return o;
+        }
+
+        function redrawCanvas() {
+            var i, j;
+            var tgt, strokes, lines, strokeData, key, k;
+            var addr, value;
+            var tooltype;
+            var k, g, y = 0, yi, xi;
+            var countwidth;
+            const re = /([^\w])/g;
+
+            ctx.clearRect(0, 0, myWidth, myHeight);
+
+            ctx.fillStyle = '#ffffff';
+            ctx.fillRect(0, 0, myWidth, myHeight);
+
+            if( current_canvas_changes === null ) {
+                getCanvasChanges();
+            }
+            tgt = current_canvas_changes;
+
+            for( i=0; i<=history.length; i++ ) {
+                if( i == history.length ) {
+                    if( !drawing ) break;
+                    strokes = drawing;
+                } else {
+                    strokes = history[i];
+                }
+                tooltype = getToolType(i);
+                if( i === displayedText && ( tooltype == 'text' || tooltype == 'note' ) ) continue;
+
+                for( j=0; j<strokes.length; j++ ) {
+                    strokeData = cloneDrawing(strokes[j]);
+
+                    key = i + "," + j;
+                    if( (key in tgt) || ( (i + ",-") in tgt) ) {
+                        if( !(key in tgt) ) key = i + ",-";
+                        var k;
+                        for( k=0; k<tgt[key].length; k++ ) {
+                            addr = tgt[key][k][0];
+                            value = tgt[key][k][1];
+                            if( isNaN(value) || value === '' || (tgt[key][k].length>2&&tgt[key][k][2] === 0) ) {
+                                strokeData[addr]=value;
+                            } else if( tooltype == 'brush' || tooltype == 'line' || (tgt[key][k].length>2&&tgt[key][k][2] === 1) ) {
+                                strokeData[addr]+=parseFloat(value);
+                            } else {
+                                strokeData[addr]=parseFloat(value);
+                            }
+                        }
+                    }
+                    if( strokeData.length == 6 ) { // Brush or text
+                        if( !isNaN(strokeData[0]) ) { // brush
+                            ctx.beginPath();
+                            ctx.strokeStyle = strokeData[4];
+                            ctx.lineWidth = strokeData[5];
+                            ctx.moveTo(strokeData[0], strokeData[1]);
+                            ctx.lineTo(strokeData[2], strokeData[3]);
+                            ctx.stroke();
+                        } else {
+                            switch( strokeData[0] ) {
+                            case 'text':
+                                ctx.fillStyle = '#ffffff';
+                                ctx.fillRect( strokeData[1], strokeData[2], strokeData[4], strokeData[5] );
+                                ctx.strokeStyle = '#000000';
+                                ctx.lineWidth = 1;
+                                ctx.strokeRect( strokeData[1], strokeData[2], strokeData[4], strokeData[5] );
+
+                                ctx.font = "18px Arial sans-serif";
+                                ctx.fillStyle = '#000000';
+                                ctx.textBaseline = 'hanging';
+                                lines = strokeData[3].split("\n");
+                                y = 0;
+                                for( k=0; k<lines.length; k++ ) {
+                                    var words = lines[k].split(re);
+                                    countwidth=0;
+                                    for( g=0; g<words.length; g++ ) {
+                                        xi = measureText( words[g] );
+                                        if( countwidth+xi.width >= strokeData[4] ) {
+                                            y += xi.height;
+                                            countwidth = 0;
+                                        }
+                                        ctx.fillText( words[g], strokeData[1]+6+countwidth, strokeData[2]+8+y );
+                                        countwidth += xi.width;
+                                    }
+                                    if( words.length == 0 )
+                                        y += measureText(" ").height;
+                                    else
+                                        y += xi.height;
+                                }
+                                break;
+                            case 'note':
+                                ctx.fillStyle = '#ffffcc';
+                                ctx.fillRect( strokeData[1], strokeData[2], strokeData[4], strokeData[5] );
+                                ctx.strokeStyle = '#c0c0c0';
+                                ctx.lineWidth = 1;
+                                ctx.strokeRect( strokeData[1], strokeData[2], strokeData[4], strokeData[5] );
+
+                                ctx.font = "18px Arial, sans-serif";
+                                ctx.fillStyle = '#000000';
+                                ctx.textBaseline = 'hanging';
+                                lines = strokeData[3].split("\n");
+                                lines = strokeData[3].split("\n");
+
+                                y = 0;
+                                for( k=0; k<lines.length; k++ ) {
+                                    var words = lines[k].split(re);
+                                    countwidth=0;
+                                    for( g=0; g<words.length; g++ ) {
+                                        xi = measureText( words[g] );
+                                        if( countwidth+xi.width >= strokeData[4] ) {
+                                            y += xi.height;
+                                            countwidth = 0;
+                                        }
+                                        ctx.fillText( words[g], strokeData[1]+6+countwidth, strokeData[2]+8+y );
+                                        countwidth += xi.width;
+                                    }
+                                    if( words.length == 0 )
+                                        y += measureText(" ").height;
+                                    else
+                                        y += xi.height;
+                                }
+                                break;
+                            }
+                        }
+                    } else if (strokeData.length == 7 ) { // Shape stroke
+                        ctx.strokeStyle =  strokeData[4];
+                        ctx.lineWidth = strokeData[5];
+                        switch( strokeData[6] ) {
+                        case 'line':
+                            ctx.beginPath();
+                            ctx.moveTo(strokeData[0], strokeData[1]);
+                            ctx.lineTo(strokeData[2], strokeData[3]);
+                            ctx.stroke();
+                            break;
+                        }
+                    } else if( strokeData.length == 8 ) { // Shape stroke with background details
+                        ctx.strokeStyle = strokeData[4];
+                        ctx.lineWidth = strokeData[5];
+                        ctx.fillStyle = strokeData[7];
+                        switch( strokeData[6] ) {
+                        case 'rectangle':
+                            if( strokeData[7] != '' ) {
+                                ctx.fillRect(strokeData[0], strokeData[1], strokeData[2], strokeData[3]);
+                            }
+                            ctx.strokeRect(strokeData[0], strokeData[1], strokeData[2], strokeData[3]);
+                            break;
+                        case 'circle':
+                            const radius = Math.sqrt(Math.pow(strokeData[2], 2) + Math.pow(strokeData[3], 2));
+                            if( strokeData[7] != '' ) {
+                                ctx.beginPath();
+                                ctx.arc(strokeData[0], strokeData[1], radius, 0, 2 * Math.PI);
+                                ctx.fill();
+                            }
+                            ctx.beginPath();
+                            ctx.arc(strokeData[0], strokeData[1], radius, 0, 2 * Math.PI);
+                            ctx.stroke();
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        function exportImage(event) {
+            var wid, hgt;
+
+            wid = prompt("Enter width:", canvas.width);
+            hgt = prompt("Enter height:", canvas.height);
+            var scalex = wid/canvas.width, scaley = hgt/canvas.height;
+
+            canvas.width = wid;
+            canvas.height = hgt;
+
+            ctx.scale(scalex,scaley); // set scale
+            redrawCanvas();
+
+            const dataURL = canvas.toDataURL();
+            const downloadLink = document.createElement("a");
+            downloadLink.href = dataURL;
+            downloadLink.download = "myArtwork.png"; // Set the desired filename
+            downloadLink.click();
+
+            ctx.setTransform(1, 0, 0, 1, 0, 0); // revert scale to normal
+
+            resizeCanvas();
+        }
+
+
+        function changeTextBox(event) {
+            displayedText = false;
+            let text = document.querySelector('textarea.text-box');
+            currentTool = '';
+            let i,j,key;
+            key = text.hook.split(",");
+            key[1] = '-';
+            [i,j] = key;
+            var k = history.length-1;
+            if( history[k][0][0] == 'change' &&
+                history[k][0][1][0] == i &&
+                history[k][0][1][1] == j &&
+                history[k][0][1][2] == 3 ) {
+                history[k][0][2] = '' + text.value;
+            } else {
+                history.push([['change',[i,j,3],''+text.value]]);
+            }
+
+            wid = parseFloat(parseFloat(text.style.width).toFixed(2)) + 10;
+            hgt = parseFloat(parseFloat(text.style.height).toFixed(2)) + 10; // the 10 is for padding
+            if( !isNaN(wid) && !isNaN(hgt) ) {
+                if( history[k][0][0] == 'resize' && history[k][0][1][0] == key[0] && history[k][0][1][1] == key[1] ) {
+                    if( history[k][0][2][0] != wid || history[k][0][2][1] != hgt ) {
+                        history[k][0][2] = [wid,hgt];
+                    }
+                } else {
+                    history.push( [['resize', key, [wid,hgt] ]] );
+                }
+            }
+            resetCanvasChanges();
+
+            var note = document.querySelector('div.sticky-note');
+
+            if( text ) text.remove();
+            if( note ) note.remove();
+            redrawCanvas();
+
+        }
+        function changeStickyNote(event) {
+            displayedText = false;
+            let note = document.querySelector('div.sticky-note');
+            currentTool = '';
+            let i,j,key=note.hook.split(",");
+            key[1] = '-';
+            [i,j] = key;
+            var k = history.length-1;
+            if( history[k][0][0] == 'change' &&
+                history[k][0][1][0] == i &&
+                history[k][0][1][1] == j &&
+                history[k][0][1][2] == 3 ) {
+                history[k][0][2] = '' + note.textContent;
+            } else {
+                history.push([['change',[i,j,3],''+note.textContent]]);
+            }
+
+            wid = parseFloat(parseFloat(note.style.width).toFixed(2)) + 10;
+            hgt = parseFloat(parseFloat(note.style.height).toFixed(2)) + 10; // the 10 is for padding
+            if( !isNaN(wid) && !isNaN(hgt) ) {
+                if( history[k][0][0] == 'resize' && history[k][0][1][0] == key[0] && history[k][0][1][1] == key[1] ) {
+                    if( history[k][0][2][0] != wid || history[k][0][2][1] != hgt ) {
+                        history[k][0][2] = [wid,hgt];
+                    }
+                } else {
+                    history.push( [['resize', key, [wid,hgt] ]] );
+                }
+            }                
+            resetCanvasChanges();
+
+
+            var text = document.querySelector('textarea.text-box');
+
+            if( text ) text.remove();
+            if( note ) note.remove();
+            redrawCanvas();
+        }
+
+        function addTextBox(x, y, value, wid, hgt) {
+            var text = document.querySelector('textarea.text-box');
+            var note = document.querySelector('div.sticky-note');
+
+            if( text ) text.remove();
+            if( note ) note.remove();
+            
+            text = document.createElement('textarea');
+            text.className = 'text-box';
+            text.style.left = x + 'px';
+            text.style.top = y + 'px';
+            text.style.width = (wid-12) + "px";
+            text.style.height = (hgt-12) + "px";
+            text.addEventListener('blur', changeTextBox);
+            text.innerHTML = value;
+            document.getElementById('canvas-container').appendChild(text);
+            setTimeout( () => text.focus(), 100 );
+            return text;
+        }
+        function addStickyNote(x, y, value, wid, hgt) {
+            var text = document.querySelector('textarea.text-box');
+            var note = document.querySelector('div.sticky-note');
+
+            if( text ) text.remove();
+            if( note ) note.remove();
+            
+            note = document.createElement('div');
+            note.className = 'sticky-note';
+            note.style.left = x + 'px';
+            note.style.top = y + 'px';
+            note.style.width = wid + "px";
+            note.style.height = hgt + "px";
+            note.contentEditable = true;
+            note.addEventListener('blur', changeStickyNote);
+            note.innerHTML = value;
+            document.getElementById('canvas-container').appendChild(note);
+            setTimeout( () => note.focus(), 100 );
+            return note;
+        }
+
+        function createStickyNote(x, y, value) {
+            if( typeof value == 'undefined' ) value = 'Edit me';
+
+            let note = addStickyNote( x, y, value, 200, 100 );
+            note.hook = history.length + ",-";
+            displayedText = history.length;
+            history.push([['note',x,y,value,200,100]]);
+            resetCanvasChanges();
+        }
+
+        function createTextBox(x, y, value) {
+            if( typeof value == 'undefined' ) value = 'Enter text here';
+
+            let text = addTextBox( x, y, value, 200, 40 );
+            text.hook = history.length + ",-";
+            displayedText = history.length;
+            history.push([['text',x,y,value,200,40]]);
+            resetCanvasChanges();
+        }
+
+        window.addEventListener('resize', resizeCanvas);
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Interactive Periodic Table</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        font-family: Arial, sans-serif;
+        background-color: #1a1a2e;
+        color: #ffffff;
+      }
+      h1 {
+        text-align: center;
+        color: #e94560;
+        margin-top: 20px;
+      }
+      #periodic-table {
+        display: grid;
+        grid-template-columns: repeat(18, 1fr);
+        gap: 2px;
+        max-width: 1400px;
+        margin: 20px auto;
+      }
+      .element {
+        aspect-ratio: 1;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        background-color: #16213e;
+        border: 1px solid #0f3460;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        padding: 5px;
+      }
+      .element:hover {
+        transform: scale(1.1);
+        box-shadow: 0 0 15px rgba(225, 225, 225, 0.5);
+        z-index: 10;
+      }
+      .element .symbol {
+        font-size: 1.2em;
+        font-weight: bold;
+        color: #e94560;
+      }
+      .element .atomic-number {
+        font-size: 0.8em;
+        color: #e94560;
+      }
+      #element-details {
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background-color: #16213e;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 0 20px rgba(225, 225, 225, 0.3);
+        display: none;
+        z-index: 1000;
+        max-width: 80%;
+        width: 600px;
+      }
+      #atom-model {
+        width: 300px;
+        height: 300px;
+        margin: 0 auto;
+      }
+      #close-details {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+        font-size: 1.5em;
+        color: #e94560;
+      }
+      #more-details {
+        margin-top: 10px;
+        padding: 10px 20px;
+        background-color: #e94560;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+        font-size: 1em;
+        transition: background-color 0.3s ease;
+      }
+      #more-details:hover {
+        background-color: #cf3a54;
+      }
+      #element-info {
+        margin-top: 20px;
+      }
+      .modal {
+        display: none;
+        position: fixed;
+        z-index: 2000;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        overflow: auto;
+        background-color: rgba(0, 0, 0, 0.4);
+        animation: fadeIn 0.3s;
+      }
+      .modal-content {
+        background-color: #16213e;
+        margin: 15% auto;
+        padding: 20px;
+        border: 1px solid #0f3460;
+        width: 60%;
+        max-width: 500px;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(225, 225, 225, 0.1);
+        animation: slideIn 0.3s;
+      }
+      .close-modal {
+        color: #e94560;
+        float: right;
+        font-size: 28px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+      .close-modal:hover {
+        color: #cf3a54;
+      }
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+        }
+        to {
+          opacity: 1;
+        }
+      }
+      @keyframes slideIn {
+        from {
+          transform: translateY(-50px);
+          opacity: 0;
+        }
+        to {
+          transform: translateY(0);
+          opacity: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Interactive Periodic Table</h1>
+    <div id="periodic-table"></div>
+    <div id="element-details">
+      <span id="close-details">&times;</span>
+      <h2 id="element-name"></h2>
+      <div id="atom-model"></div>
+      <div id="element-info"></div>
+      <button id="more-details">More Details</button>
+    </div>
+    <div id="modal" class="modal">
+      <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <h2 id="modal-element-name"></h2>
+        <p id="modal-applications"></p>
+      </div>
+    </div>
+
+    <script>
+      const API_URL = 'https://api.apiverve.com/v1/periodictable?list=all';
+      const API_KEY = 'fe2f6c5b-172e-4265-8b1b-594bb5a44cda';
+
+      let elements = [];
+      let selectedElement = null;
+      let scene,
+        camera,
+        renderer,
+        nucleus,
+        electrons = [],
+        orbits = [];
+      let animationFrameId = null;
+
+      // Fetch elements data
+      async function fetchElements() {
+        try {
+          const response = await fetch(API_URL, {
+            headers: { 'x-api-key': API_KEY },
+          });
+          elements = (await response.json()).data;
+          renderPeriodicTable();
+        } catch (error) {
+          console.error('Error fetching periodic table data:', error);
+        }
+      }
+
+      // Render periodic table
+      function renderPeriodicTable() {
+        const table = document.getElementById('periodic-table');
+        elements.forEach((element) => {
+          const elementDiv = document.createElement('div');
+          elementDiv.className = 'element';
+          elementDiv.innerHTML = `
+                    <span class="symbol">${element.symbol}</span>
+                    <span class="atomic-number">${element.number}</span>
+                `;
+          elementDiv.addEventListener('click', () => selectElement(element));
+          table.appendChild(elementDiv);
+        });
+      }
+
+      // Select an element
+      function selectElement(element) {
+        selectedElement = element;
+        document
+          .querySelectorAll('.element')
+          .forEach((el) => el.classList.remove('selected'));
+        document
+          .querySelector(`.element:nth-child(${element.number})`)
+          .classList.add('selected');
+        document.getElementById('element-name').textContent = element.name;
+        document.getElementById('element-info').style.display = 'none';
+        document.getElementById('more-details').textContent = 'More Details';
+        openModal(element);
+      }
+
+      // Toggle element details
+      document
+        .getElementById('more-details')
+        .addEventListener('click', function () {
+          const infoDiv = document.getElementById('element-info');
+          if (infoDiv.style.display === 'none') {
+            infoDiv.style.display = 'block';
+            this.textContent = 'Hide Details';
+            infoDiv.innerHTML = `
+                    <p><strong>Symbol:</strong> ${selectedElement.symbol}</p>
+                    <p><strong>Atomic Number:</strong> ${selectedElement.number}</p>
+                    <p><strong>Category:</strong> ${selectedElement.category}</p>
+                    <p><strong>Period:</strong> ${selectedElement.period}</p>
+                    <p><strong>Block:</strong> ${selectedElement.block}</p>
+                    <p><strong>Summary:</strong> ${selectedElement.summary}</p>
+                `;
+          } else {
+            infoDiv.style.display = 'none';
+            this.textContent = 'More Details';
+          }
+        });
+
+      function calculateElectronDistribution(electronCount) {
+        const distribution = [];
+        let remainingElectrons = electronCount;
+        let orbitNumber = 1;
+
+        while (remainingElectrons > 0) {
+          const maxElectronsInOrbit = 2 * orbitNumber * orbitNumber;
+          const electronsInOrbit = Math.min(
+            maxElectronsInOrbit,
+            remainingElectrons
+          );
+          distribution.push(electronsInOrbit);
+          remainingElectrons -= electronsInOrbit;
+          orbitNumber++;
+        }
+
+        return distribution;
+      }
+
+      function createAtomModel(element) {
+        const container = document.getElementById('atom-model');
+        container.innerHTML = '';
+
+        scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x000000);
+        camera = new THREE.PerspectiveCamera(
+          75,
+          container.clientWidth / container.clientHeight,
+          0.1,
+          1000
+        );
+        renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        container.appendChild(renderer.domElement);
+
+        // Create nucleus
+        const nucleusGeometry = new THREE.SphereGeometry(0.5, 32, 32);
+        const nucleusMaterial = new THREE.MeshPhongMaterial({
+          color: 0xff0000,
+          emissive: 0xff0000,
+          emissiveIntensity: 0.2,
+        });
+        nucleus = new THREE.Mesh(nucleusGeometry, nucleusMaterial);
+        scene.add(nucleus);
+
+        // Calculate electron distribution
+        const electronCount = element.number;
+        const electronDistribution =
+          calculateElectronDistribution(electronCount);
+
+        // Create orbits and electrons
+        electrons = [];
+        orbits = [];
+        electronDistribution.forEach((electronsInOrbit, orbitIndex) => {
+          const orbitRadius = (orbitIndex + 1) * 1.5;
+
+          // Create visible orbit
+          const orbitGeometry = new THREE.BufferGeometry().setFromPoints(
+            new THREE.Path()
+              .absarc(0, 0, orbitRadius, 0, Math.PI * 2, true)
+              .getPoints(64)
+          );
+          const orbitMaterial = new THREE.LineBasicMaterial({
+            color: 0x4488ff,
+            opacity: 0.5,
+            transparent: true,
+          });
+          const orbit = new THREE.Line(orbitGeometry, orbitMaterial);
+          scene.add(orbit);
+          orbits.push(orbit);
+
+          for (let i = 0; i < electronsInOrbit; i++) {
+            const electronGeometry = new THREE.SphereGeometry(0.1, 16, 16);
+            const electronMaterial = new THREE.MeshPhongMaterial({
+              color: 0x00ffff,
+              emissive: 0x00ffff,
+              emissiveIntensity: 0.5,
+            });
+            const electron = new THREE.Mesh(electronGeometry, electronMaterial);
+            const angle = (i / electronsInOrbit) * Math.PI * 2;
+            electron.position.set(
+              Math.cos(angle) * orbitRadius,
+              Math.sin(angle) * orbitRadius,
+              0
+            );
+            scene.add(electron);
+            electrons.push({ electron, orbitRadius, initialAngle: angle });
+          }
+        });
+
+        // Add lighting
+        const ambientLight = new THREE.AmbientLight(0x404040);
+        scene.add(ambientLight);
+        const pointLight = new THREE.PointLight(0xffffff, 1, 100);
+        pointLight.position.set(10, 10, 10);
+        scene.add(pointLight);
+
+        camera.position.z = 10;
+        animate();
+      }
+
+      function animate() {
+        animationFrameId = requestAnimationFrame(animate);
+
+        nucleus.rotation.x += 0.01;
+        nucleus.rotation.y += 0.01;
+
+        electrons.forEach((electronObj) => {
+          const { electron, orbitRadius, initialAngle } = electronObj;
+          const speed = 1 / orbitRadius;
+          const angle = initialAngle + Date.now() * 0.001 * speed;
+          electron.position.x = Math.cos(angle) * orbitRadius;
+          electron.position.y = Math.sin(angle) * orbitRadius;
+        });
+
+        orbits.forEach((orbit, index) => {
+          orbit.rotation.z += 0.001 * (orbits.length - index);
+        });
+
+        renderer.render(scene, camera);
+      }
+
+      // Modal functionality
+      const modal = document.getElementById('element-details');
+      const closeBtn = document.getElementById('close-details');
+
+      function openModal(element) {
+        modal.style.display = 'block';
+        createAtomModel(element);
+      }
+
+      function closeModal() {
+        modal.style.display = 'none';
+        if (animationFrameId) {
+          cancelAnimationFrame(animationFrameId);
+        }
+        if (renderer) {
+          renderer.dispose();
+        }
+      }
+
+      closeBtn.onclick = closeModal;
+
+      window.onclick = function (event) {
+        if (event.target == modal) {
+          closeModal();
+        }
+      };
+
+      // Initialize
+      fetchElements();
+    </script>
+  </body>
+</html>

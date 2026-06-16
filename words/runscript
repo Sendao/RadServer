@@ -1,0 +1,9 @@
+
+echo "Extracting Archived Records..."
+bunzip2 -k *bz2
+
+echo "Installing Support Environment..."
+npm install he
+echo "Parsing Lemma..."
+node parseLemma
+

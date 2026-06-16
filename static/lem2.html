@@ -1,0 +1,123 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Lem The Dragon</title>
+<link rel=stylesheet href='/css/styles.css'></link>
+<style>
+#yourtoast {
+    visibility: hidden;
+    min-width: 250px;
+    background-color: #000;
+    color: #ddd;
+    text-align: center;
+    border-radius: 2px;
+    padding: 16px;
+    position: absolute;
+    z-index: 100;
+    left: 50%;
+    bottom: 30px;
+    font-size: 17px;
+    transform: translateX(-50%);
+}
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+@keyframes fadeOut {
+    from {opacity: 1;}
+    to {opacity: 0;}
+}
+</style>
+<script async src="https://unpkg.com/es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+<script type="importmap">
+  {
+    "imports": {
+      "three": "https://unpkg.com/three@0.156.1/build/three.module.js",
+      "three/addons/": "https://unpkg.com/three@0.156.1/examples/jsm/"
+    }
+  }
+</script>
+<script type="module">
+import ProWay from './js/proway.js';
+window.pw = new ProWay();
+</script>
+</head>
+<body style='background: black; color: tan'>
+<div xSect=main id=mainscroll class="margin-small">
+</div>
+<div id="yourtoast"></div>
+</body>
+<script language=javascript>
+
+window.addEventListener('DOMContentLoaded', function(){
+    let config = [{
+        start_health: 1, max_health: 600, life_per_sec: 0.003,
+        damage: 30, healing_constant: 0.01, healing_factor: 0.05, damage_entropy: 1.11,
+        antidamage: 0,
+        rules: [{
+            cond: { above: 300000 },
+            min_birth: 7, max_birth: 8,
+            min_death: 6, max_death: 9,
+            min_lifer: 7, max_lifer: 8
+        }, {
+            cond: { above: 4000 },
+            min_birth: 9, max_birth: 10,
+            min_death: 8, max_death: 13,
+            min_lifer: 5, max_lifer: 10
+        }, {
+            min_birth: 7, max_birth: 7,
+            min_death: 5, max_death: 12,
+            min_lifer: 5, max_lifer: 9
+        }]
+}];
+
+    document.addEventListener('keydown', window.pw.inKeys.bind(window.pw) );
+    window.pw.setConfig(config);
+    window.pw.setup();
+    window.pw.clearBoard();
+    window.pw.loadScript('first_visitor_saved');
+    window.addEventListener('resize', window.pw.resizeScreen.bind(window.pw) );
+});
+/* Saved rules:
+
+
+
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 3000 },
+        min_birth: 9, max_birth: 10,
+        min_death: 8, max_death: 13,
+        min_lifer: 5, max_lifer: 10
+    }, {
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }],
+
+
+
+    [{
+        cond: { above: 300000 },
+        min_birth: 7, max_birth: 8,
+        min_death: 6, max_death: 9,
+        min_lifer: 7, max_lifer: 8
+    }, {
+        cond: { above: 3000 },
+        min_birth: 9, max_birth: 9,
+        min_death: 8, max_death: 8,
+        min_lifer: 5, max_lifer: 10
+    }, {
+        min_birth: 7, max_birth: 7,
+        min_death: 5, max_death: 12,
+        min_lifer: 5, max_lifer: 9
+    }],
+
+
+
+*/
+</script>
+</html>

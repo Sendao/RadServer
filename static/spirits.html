@@ -1,0 +1,430 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+
+<head splash>
+  <title>Radiant Cast</title>
+  <link rel=stylesheet href='/css/styles.css'>
+  </link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+
+<!--
+<body style="background-image: url('dragontribe.jpg'); background-color: black; color: tan">
+ -->
+
+<body class=bg5 style='color: tan; margin: 0px'>
+
+  <div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+    <div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+      <div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+        Loading
+      </div>
+    </div>
+  </div>
+
+  <div xWatch=menu_reset>
+    <div xPostdraw='console.info'></div>
+    <menu></menu>
+  </div>
+  <main style='margin-top: 16px; font-size: 14pt'></main>
+  <loadwheel></loadwheel>
+
+  <!--  setup -->
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+#include tpl/socket.html
+#include tpl/mauth.html
+
+  <templates>
+<div xTemplate='home'>
+  Simple homepage
+</div>
+<div xTemplate='topics'>
+  <fl>Topics:</fl>
+  <cl></cl>
+  <div xWatch=spirits.topics>
+  <div xLoop='spirits.topics' xInd=k xVal=v>
+    <div xTest='console.log("index #k") || "#v._id" != "-1"'>
+      <fl style='width: 180px' xCmd='editTopic("#v._id")'>#v.title</fl>
+      <btn xCmd='deleteTopic("#v._id")'>Delete</btn>
+      <cl></cl>
+    </div>
+  </div>
+  </div>
+  <cl></cl>
+  <btn xCmd='editTopic(-1)'>Create</btn>
+  <cl></cl>
+  <fl>&nbsp;</fl>
+  <cl></cl>
+  <div style='margin-top: 8px' id='topic_ed_tgt'></div>
+  <cl></cl>
+</div>
+<div xTemplate='topic_ed'>
+  <div xWatch=spirits.topics.#topicid>
+  <fl>Edit topic #[spirits.topics.#[topicid].title]:</fl>
+  <cl></cl>
+  <form xForm='spirits.topics.#[topicid]' method=post action='/spirits/topics'>
+    <input type=hidden name=_id>
+    <field #name=title #title=Title></field>
+    <cl></cl>
+    <formbtn>Send</formbtn>
+    <cl></cl>
+  </form>
+  <cl></cl>
+  <fl>&nbsp;</fl>
+  <cl></cl>
+  <fl>#[spirits.topics.#[topicid].title] Searchers:</fl>
+  <cl></cl>
+  <div xLoop=spirits.topics.#[topicid].searchers xKey=k xVal=v>
+    <div xTest='"#v" != "-1" && "#v" in radVar("spirits.searchers")'>
+    <div xCast='searcher' xRoot=spirits.searchers.#v>
+    </div>
+    </div>
+  </div>
+  <btn xCmd='addSearcher("#[topicid]")'>Create search</btn>
+  <cl></cl>
+  <fl>&nbsp;</fl>
+  <cl></cl>
+  <fl id='searcher_ed_tgt'>
+  </fl>
+  </div>
+</div>
+
+<div xTemplate='searcher'>
+  <fl xCmd='editSearcher("#._id")' xHtml='#.title (edit)'></fl> <fl xCmd='deleteSearcher("#._id")'>(delete)</fl>
+  <cl></cl>
+</div>
+
+<div xTemplate='searcher_ed'>
+  <fl>Edit searcher:</fl>
+  <cl></cl>
+  <form xForm='spirits.searchers.#[searcherid]' method=post action='/spirits/searchers'>
+    <input type=hidden name=_id>
+    <input type=hidden name=topic>
+    <field #name=title #title=Title></field>
+    <field #name=terms #title=Terms></field>
+    <cl></cl>
+    <formbtn>Send</formbtn>
+    <cl></cl>
+  </form>
+</div>
+
+<div xTemplate='blacklists'>
+  <fl>Blacklists:</fl>
+  <cl></cl>
+  <div xWatch=spirits.blacklists xLoop='spirits.blacklists' xKey=k xVal=v>
+    <fl style='width: 180px' xCmd='editBlacklist(#v._id)'>#v.title</fl>
+    <btn xCmd='deleteBlacklist(#v._id)'>Delete</btn>
+    <cl></cl>
+  </div>
+  <cl></cl>
+  <btn xCmd='editBlacklist(-1)'>Create</btn>
+  <cl>&nbsp;</cl>
+  <div id='blacklist_ed_tgt'></div>
+  <cl></cl>
+</div>
+<div xTemplate='blacklist_ed'>
+  <fl>Edit blacklist:</fl>
+  <cl></cl>
+  <form xForm='spirits.blacklists.#[blacklistid]' method=post action='/spirits/blacklists'>
+    <input type=hidden name=_id>
+    <field #name=word #title=Word></field>
+    <cl></cl>
+    <formbtn>Send</formbtn>
+    <cl></cl>
+  </form>
+</div>
+
+  </templates>
+
+  <dataforms>
+
+  </dataforms>
+
+</body>
+<script language=javascript>
+function editTopic(topicid)
+{
+  if( topicid == -1 )
+    radStore("spirits.topics.-1", { '_id': -1 });
+  console.log("editTopic("+topicid+")");
+  radStore("topicid", topicid);
+  blitzTemplate(gE("topic_ed_tgt"), 'topic_ed');
+}
+function deleteTopic(topicid)
+{
+  if( confirm("Are you sure you want to delete this whole topic (id " + topicid + ")?") ) {
+	   RadPost('/spirits/topics_del', {'_id': topicid} );
+  }
+}
+
+function addSearcher(topicid)
+{
+  radStore("spirits.searchers.-1.topic", topicid);
+  editSearcher(-1);
+}
+function editSearcher(searcherid)
+{
+  if( searcherid == -1 )
+    radStore("spirits.searchers.-1", { '_id': -1 });
+  console.log("editSearcher("+searcherid+")");
+  radStore("searcherid", searcherid);
+  blitzTemplate(gE("searcher_ed_tgt"), 'searcher_ed');
+}
+function deleteSearcher(topicid)
+{
+  if( confirm("Are you sure you want to delete this searcher (id " + searcherid + ")?") ) {
+	   RadPost('/spirits/searchers_del', {'_id': searcherid} );
+  }
+}
+
+function editBlacklist(blacklistid)
+{
+  if( blacklistid == -1 )
+    radStore("spirits.blacklists.-1", { _id: -1 } );
+  radStore("blacklistid", blacklistid);
+  blitzTemplate(gE("blacklist_ed_tgt"), 'blacklist_ed');
+}
+function deleteBlacklist(blacklistid)
+{
+  if( confirm("Are you sure you want to delete this blacklist (id " + blacklistid + ")?") ) {
+	   RadPost('/spirits/blacklists_del', {'_id': blacklistid} );
+  }
+}
+</script>
+
+<script language=javascript>
+var basicMenu = [];
+
+function castSpell() {
+  var f = document.forms['caster'];
+  var e = gE("zenbox");
+  e.innerHTML = eval(f.spell.value);
+  return false;
+}
+
+function initSkeleton() {
+  // Initialize any variables here radStore("x", 42);
+  console.log("Setup()");
+  basicMenu = [{
+      'title': 'User',
+      'children': [{
+          'title': 'Profile',
+          'cast': 'userprofile'
+        },
+        {
+          'title': 'Signup',
+          'cast': 'signup'
+        },
+        {
+          'title': 'Signin',
+          'cast': 'signin'
+        },
+        {
+          'title': 'Logout',
+          'cast': 'logout'
+        }
+      ]
+    },
+    {
+      'title': 'Settings',
+      'children': [{
+          'title': 'Topics',
+          'cast': 'topics'
+        },
+        {
+          'title': 'Blacklist',
+          'cast': 'blacklist'
+        }
+      ]
+    },
+    {
+      'title': 'Page',
+      'children': [{
+        'title': 'Background',
+        'act': 'cycleBodyStyles'
+      }]
+    }
+  ];
+
+  var host = {
+    'hostname': window.location.hostname,
+    'procs': {},
+    'config': {}
+  };
+  radStore("hostname", host.hostname);
+  radStore("hosts." + host.hostname, host);
+
+  structMenu(basicMenu);
+  onAuthenticate(spiritLoggedIn);
+  socketRegister('registered', spiritSockedIn);
+
+
+  var usertables = ['topics', 'blacklist', 'searchers'];
+  var i;
+  for( i=0; i<usertables.length; ++i ) {
+    socketRegister( usertables[i] + '_update', updateSocket );
+    socketRegister( usertables[i] + '_append', updateSocket );
+    socketRegister( usertables[i] + '_remove', updateSocket );
+  }
+
+  radLoad();
+  cycleBodyStyles();
+  useMongoSocket();
+  openSocket(window.location.host, chatSocket);
+
+  renderHomePage();
+}
+
+function spiritLoggedIn() {
+  console.log("spirit.LoggedIn.go");
+  RadRequest("/spirits/user", {}, gotSpiritData);
+}
+function spiritSockedIn() {
+  var userid = radVar("sess.userid");
+  if( userid == null || userid == -1 ) {
+    console.log("spirit.SockedIn.go");
+  } else {
+    radStore("user", radVar("sess.user"));
+    spiritLoggedIn();
+  }
+}
+
+function gotSpiritData(details) {
+  var o = JSON.parse(details),
+    cu = o.data;
+  if (cu && typeof cu != 'undefined') {
+    console.log("gotSpiritData");
+  } else {
+    console.log("Not logged in yet");
+    clearUserMenu();
+    return;
+  }
+
+  console.log("Details ", cu);
+  radStore("spirits", cu);
+
+  renderHomePage();
+}
+function updTopic(topic)
+{
+  var oldtopic = radVar("spirits.topics." + topic._id);
+  if( oldtopic != null )
+    topic.searchers = oldtopic.searchers;
+  return topic;
+}
+function updSearcher(searcher)
+{
+  var topic = searcher.topic;
+  var oldtopic = radVar("spirits.topics." + topic);
+  if( !oldtopic.searchers || oldtopic.searchers.indexOf(searcher._id) == -1 ) {
+    if( !oldtopic.searchers ) oldtopic.searchers = [];
+    oldtopic.searchers.push(searcher._id);
+    radChange("spirits.topics." + topic);
+  }
+  return searcher;
+}
+var userhandlers = {
+  'topics': updTopic,
+  'searchers': updSearcher,
+  'blacklists': false
+};
+
+function updateSocket(ev,code,data,msg)
+{
+  var usertables = ['topics', 'searchers', 'blacklists'];
+  console.log(arguments);
+  var obj = msg.data;
+	var codes = code.split("_");
+  var cu = radVar("spirits");
+  if( usertables.indexOf(codes[0]) == -1 ) {
+    console.warn("Out of date or .. something");
+    return;
+  }
+  var handler = userhandlers[codes[0]];
+	switch( codes[1] ) {
+    case 'append':
+      console.log("append(", msg, ")");
+      if( handler ) obj = handler(obj);
+      cu[ codes[0] ][ obj._id ] = obj;
+      //radStore( "spirits." + codes[0], cu[codes[0]]);
+      radChange( "spirits." + codes[0] );
+      break;
+		case 'update':
+			console.log("update(", msg, ")");
+      if( handler ) obj = handler(obj);
+      cu[ codes[0] ][ obj._id ] = obj;
+      //radStore( "spirits." + codes[0], cu[codes[0]]);
+      radChange( "spirits." + codes[0] );
+      break;
+    case 'remove':
+      console.log("remove(", obj, ")");
+      for( i=0; i<obj.length; ++i ) {
+        delete cu[codes[0]][ obj[i]._id ];
+      }
+      //radStore( "spirits." + codes[0], cu[codes[0]]);
+      radChange( "spirits." + codes[0] );
+      break;
+	}
+}
+
+
+function renderHomePage() {
+  blitzTemplate(gE("mainscroll"), "home");
+}
+
+function cycleBodyStyles() {
+  var e = document.body;
+  if (typeof e.bgstate == 'undefined')
+    e.bgstate = 5;
+  e.bgstate = (e.bgstate + 1) % 9;
+  switch (e.bgstate) {
+    case 1:
+      e.className = 'bg0';
+      e.style.color = 'silver';
+      break;
+    case 2:
+      e.className = 'bg1';
+      e.style.color = 'white';
+      break;
+    case 3:
+      e.className = 'bg2';
+      e.style.color = 'black';
+      break;
+    case 4:
+      e.className = 'bg3';
+      e.style.color = 'tan';
+      break;
+    case 5:
+      e.className = 'bgsunrise';
+      e.style.color = 'white';
+      break;
+    case 6:
+      e.className = 'bgmoonrise';
+      e.style.color = 'silver';
+      break;
+    case 7:
+      e.className = 'bgmoonset';
+      e.style.color = 'silver';
+      break;
+    case 8:
+      e.className = 'bgsunset';
+      e.style.color = 'black';
+      break;
+  }
+}
+
+function chatSocket(event) {
+  console.log("Socket event: ", event);
+}
+
+registerStartup(initSkeleton);
+
+</script>

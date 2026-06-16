@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>3rd person game</title>
+    <style>
+        body {
+            margin: 0;
+        }
+
+        #HUD {
+            position: absolute;
+            top: 5%;
+            left: 5%;
+            color: white;
+            font-family: 'Arial', sans-serif;
+            font-size: 24px;
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+
+
+        #game-controls {
+            position: absolute;
+            top: 5%;
+            right: 5%;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 10px 20px;
+            border-radius: 8px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            font-family: 'Arial', sans-serif;
+            font-size: 20px;
+        }
+
+        #game-controls input,
+        #game-controls button {
+            font-size: 16px;
+            padding: 8px;
+            margin: 5px 0;
+        }
+
+        #game-controls button {
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        #game-controls button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="game-controls">
+        <input id="object-input" type="text" placeholder="x, y, z" />
+        <button id="add-object-btn">Add Object</button>
+        <div id="time-display">Time Left: 60s</div>
+    </div>
+    <div id="cursor"></div>
+    <div id="HUD"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
+        let lastLockTime = 0;
+        const minDelta = 2000;
+
+        function activatePointerLock() {
+            const now = Date.now();
+            const delta = now - lastLockTime;
+            if (delta < minDelta) return;
+            document.body.requestPointerLock();
+        }
+
+        function handlePointerLockChange() {
+            const now = Date.now();
+            lastLockTime = now;
+        }
+        document.addEventListener('pointerlockchange', handlePointerLockChange);
+    </script>
+
+
+    <!-- Game setup -->
+    <script>
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0x87CEEB); // Sky blue color (hex value for light blue)
+        const camera = new THREE.PerspectiveCamera(
+            75,
+            window.innerWidth / window.innerHeight,
+            0.1,
+            1000
+        );
+        camera.rotation.order = 'YXZ';
+        const renderer = new THREE.WebGLRenderer({ antialias: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }, false);
+    </script>
+
+    <!-- Game controls -->
+    <script>
+        document.addEventListener('keydown', onKeyDown);
+        document.addEventListener('keyup', onKeyUp);
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('click', onMouseDown, false);
+        let moveForward = false, moveBackward = false, moveLeft = false, moveRight = false;
+        let sit = false, jump = false;
+        let speedY = 0
+        let playerHeight = 1.5
+        const standHeight = 1.5, sitHeight = 0.75, gravity = 0.01, jumpSpeed = 0.15, sitSpeed = 0.05, standSpeed = 0.1
+        const bulletSpeed = 2
+        function onKeyDown(event) {
+            activatePointerLock()
+            switch (event.code) {
+                case 'KeyW': moveForward = true; break;
+                case 'KeyS': moveBackward = true; break;
+                case 'KeyA': moveLeft = true; break;
+                case 'KeyD': moveRight = true; break;
+                case 'Space': jump = true; break;
+                case 'ShiftLeft':
+                    sit = true;
+                    body.geometry = new THREE.CylinderGeometry(0.25, 0.25, 0.25, 32).translate(0, -.375, 0)
+                    playerHeight = sitHeight
+                    break;
+            }
+        }
+        function onKeyUp(event) {
+            switch (event.code) {
+                case 'KeyW': moveForward = false; break;
+                case 'KeyS': moveBackward = false; break;
+                case 'KeyA': moveLeft = false; break;
+                case 'KeyD': moveRight = false; break;
+                case 'ShiftLeft': sit = false; break;
+                case 'Space': jump = false; break;
+            }
+        }
+
+        function move() {
+            let direction = new THREE.Vector3();
+            if (moveForward) direction.z -= 1;
+            if (moveBackward) direction.z += 1;
+            if (moveLeft) direction.x -= 1;
+            if (moveRight) direction.x += 1;
+            if (direction.length() == 0) return
+            direction.applyQuaternion(player.quaternion);
+            direction.y = 0
+            direction.normalize()
+            const forward = new THREE.Raycaster(player.position, direction, 0, 0.2).intersectObjects(scene.children, true);
+            if (forward.length === 0) {
+                let speed = playerHeight == standHeight ? standSpeed : sitSpeed
+                player.position.add(direction.multiplyScalar(speed))
+                let down = new THREE.Raycaster(player.position, new THREE.Vector3(0, -1, 0), 0, playerHeight).intersectObjects(scene.children, true)
+                down = down.filter(e => e.object.name != 'player')
+                if (down.length && down[0].distance >= playerHeight - 0.15) {
+                    player.position.y += playerHeight - down[0].distance
+                }
+                else if (down.length) {
+                    player.position.sub(direction)
+                }
+            }
+        }
+        function stand() { //Stand
+            if (!(sit == false && playerHeight == sitHeight)) return
+            playerHeight = standHeight
+            body.geometry = standGeom
+            let intersects = new THREE.Raycaster(player.position, new THREE.Vector3(0, -1, 0), 0, playerHeight).intersectObjects(scene.children, true)
+            intersects = intersects.filter(e => e.object.name != 'player')
+            if (intersects.length) {
+                player.position.y += playerHeight - intersects[0].distance;
+
+                let intersects2 = new THREE.Raycaster(player.position, new THREE.Vector3(0, -1, 0), 0, playerHeight).intersectObjects(scene.children, true)
+                intersects2 = intersects2.filter(e => e.object.name != 'player')
+                if (intersects2.length && intersects2[0].distance < playerHeight - 0.15) {
+                    player.position.y -= playerHeight - intersects[0].distance;
+                    playerHeight = sitHeight
+                    body.geometry = sitGeom
+                }
+            }
+        }
+        function fly() {
+            if (speedY > 0) {
+                let intersects = new THREE.Raycaster(player.position, new THREE.Vector3(0, 1, 0), 0, speedY).intersectObjects(scene.children, true)
+
+                if (intersects.length) {
+
+                    player.position.y += intersects[0].distance - 0.1
+                    speedY = 0
+                }
+                else {
+                    player.position.y += speedY
+                }
+            }
+            else {
+                let intersects = new THREE.Raycaster(player.position, new THREE.Vector3(0, -1, 0), 0, playerHeight - speedY).intersectObjects(scene.children, true)
+                intersects = intersects.filter((e) => e.object.name != 'player')
+                if (intersects.length) {
+                    player.position.y -= intersects[0].distance - playerHeight
+                    speedY = 0
+                    if (jump) {
+                        speedY = jumpSpeed
+                    }
+                }
+                else {
+                    player.position.y += speedY
+                }
+            }
+            speedY -= gravity
+        }
+
+        function onMouseMove(event) {
+            if (document.pointerLockElement != document.body) {
+                return;
+            }
+
+            const movementX = event.movementX || 0;
+            const movementY = event.movementY || 0;
+            player.rotation.y -= movementX * 0.002;
+            head.rotation.x -= movementY * 0.002;
+            head.rotation.x = Math.max(
+                -Math.PI / 2,
+                Math.min(Math.PI / 2, head.rotation.x)
+            );
+        }
+
+        function onMouseDown(event) {
+            // console.log("mouse down");
+            activatePointerLock()
+        }
+
+    </script>
+
+    <!-- Game Scene -->
+    <script>
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(50, 50).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ color: 0x228B22, side: THREE.DoubleSide }));
+        ground.name = 'ground'
+        camera.position.set(0, playerHeight, 2)
+        scene.add(ground);
+
+        const player = new THREE.Group()
+        const mat = new THREE.MeshBasicMaterial({ color: 0x000090 })
+        const standGeom = new THREE.CylinderGeometry(0.25, 0.25, 1, 32).translate(0, -0.75, 0)
+        const sitGeom = new THREE.CylinderGeometry(0.25, 0.25, 0.25, 32).translate(0, -0.375, 0)
+        const head = new THREE.Mesh(new THREE.SphereGeometry(0.25, 16, 16), mat)
+        const body = new THREE.Mesh(standGeom, mat)
+        player.add(body)
+        player.add(head)
+        player.position.set(0, playerHeight, 0)
+        player.traverse((child) => {
+            child.name = 'player'
+            child.rotation.order = 'YXZ'
+        })
+        scene.add(player)
+
+
+        function updateCamera() {
+            camera.quaternion.set(0, 0, 0, 1);
+            camera.applyQuaternion(head.getWorldQuaternion(new THREE.Quaternion(), 'YXZ'))
+            camera.position.copy(head.getWorldPosition(new THREE.Vector3()))
+            camera.translateZ(2)
+            camera.translateY(1)
+        }
+        const maxObjects = 3;
+        let objectsPlaced = 0;
+        let gameTime = 60;
+        let gameWon = false;
+        const coin = new THREE.Mesh(
+            new THREE.SphereGeometry(0.2, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xFFD700 })
+        );
+        coin.position.set(0, 7, 0); // Coin placed high on Y axis
+        scene.add(coin);
+        document.getElementById('HUD').innerText = 'The coin position is at (0, 7, 0)'
+        const objectInput = document.getElementById('object-input');
+        const addObjectBtn = document.getElementById('add-object-btn');
+        const timeDisplay = document.getElementById('time-display');
+
+        objectInput.addEventListener('click', (e) => {
+            e.stopPropagation()
+        }, true)
+        objectInput.addEventListener('keydown', (e) => {
+            e.stopPropagation()
+        }, true)
+        // Timer logic
+        const timerInterval = setInterval(() => {
+            if (gameWon || gameOver) {
+                clearInterval(timerInterval);
+                return;
+            }
+            gameTime--;
+            timeDisplay.innerHTML = `Time Left: ${gameTime}s`;
+            if (gameTime <= 0) {
+                gameOver = true;
+                document.getElementById('HUD').innerHTML = 'Game Over! Try Again.';
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        }, 1000);
+
+        // Check if the player reaches the coin
+        function checkWin() {
+            let playerBoundingBox = new THREE.Box3().setFromObject(player);
+            let coinBoundingBox = new THREE.Box3().setFromObject(coin);
+
+            if (playerBoundingBox.intersectsBox(coinBoundingBox)) {
+                gameWon = true;
+                document.getElementById('HUD').innerHTML = 'You Win!';
+                setTimeout(() => window.location.reload(), 2000);
+            }
+        }
+
+        // Add object logic
+        addObjectBtn.addEventListener('click', (event) => {
+            // console.log("button click");
+            event.stopPropagation();
+            if (objectsPlaced >= maxObjects || gameOver || gameWon) {
+                alert('You can\'t add more objects');
+                return;
+            }
+            const input = objectInput.value.trim();
+            const coords = input.split(',').map(Number);
+            if (coords.length !== 3 || coords.some(isNaN)) {
+                alert('Please enter valid X, Y, Z coordinates');
+                return;
+            }
+            const [x, y, z] = coords;
+
+            // Create a box (object) and place it in the scene
+            const object = new THREE.Mesh(
+                new THREE.BoxGeometry(1, 0.5, 1),
+                new THREE.MeshBasicMaterial({ color: 0x808080 })
+            );
+            object.position.set(x, y, z);
+            scene.add(object);
+            objectsPlaced++;
+        }, true);
+    </script>
+
+    <!-- Game loop -->
+    <script>
+        let lastTime = 0
+        let gameOver = false
+        function animate(time) {
+            if (gameOver) return
+            if (time - lastTime >= 16) {
+                lastTime = time
+                move()
+                stand()
+                fly()
+                updateCamera()
+                checkWin()
+                renderer.render(scene, camera);
+            }
+            requestAnimationFrame(animate);
+        }
+        requestAnimationFrame(animate);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boilerplate Templates</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style type="text/tailwindcss">
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+    @apply flex flex-col min-h-screen bg-gray-100 transition-all duration-300;
+}
+
+.dark-mode {
+    @apply bg-gray-900 text-white;
+}
+
+.container {
+    @apply flex flex-auto w-full;
+    flex-direction: row;
+    display: inline-flex;
+}
+
+.menu {
+    @apply w-1/4 bg-blue-50 p-4 border-r border-gray-300 overflow-auto;
+    padding-right: 10px;
+}
+
+.dark-mode .menu {
+    @apply bg-gray-800 border-gray-700;
+}
+
+.content {
+    @apply w-3/4 p-4 overflow-auto;
+}
+
+.button {
+    @apply bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700;
+}
+
+.dark-mode .button {
+    @apply bg-blue-700 hover:bg-blue-800;
+}
+
+.boilerplate {
+    @apply bg-white p-4 rounded-lg shadow mb-4 border border-gray-300;
+}
+
+.dark-mode .boilerplate {
+    @apply bg-gray-700 border-gray-600 text-gray-200;
+}
+
+
+a {
+    @apply text-blue-700 hover:text-blue-900 cursor-pointer;
+}
+
+.dark-mode a {
+    @apply text-blue-400 hover:text-blue-300;
+}
+
+h2 {
+    @apply text-lg font-semibold mb-2;
+}
+
+label {
+    @apply block mb-1 text-sm font-medium text-gray-700;
+}
+
+.dark-mode label {
+    @apply text-gray-300;
+}
+
+.hidden {
+    display: none;
+}
+
+.theme-toggle {
+    @apply fixed bottom-4 right-4 z-50 p-2 rounded-full shadow-lg cursor-pointer;
+    background-color: #f0f4f8;
+}
+
+.dark-mode .theme-toggle {
+    background-color: #374151;
+}
+
+.theme-toggle::before {
+    content: "🌙";
+}
+
+.dark-mode .theme-toggle::before {
+    content: "☀️";
+}
+
+#boilerplateHolder {
+    max-width: 100%;
+}
+
+.copy-to-clipboard {
+    @apply cursor-pointer ml-2;
+}
+body.dark-mode> input{
+    @apply bg-gray-100 border-gray-600 text-gray-200;
+    background: #222222;
+    color: black;
+}
+
+textarea {
+    @apply h-48;
+}
+input, textarea {
+    @apply bg-gray-500 p-2 border border-gray-300 rounded mb-2;
+    color: black;
+}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="menu">
+            <ul id="boilerplateList"></ul>
+            <button id="addNewBoilerplate" class="button add-boilerplate">Add New Boilerplate</button>
+        </div>
+        <div class="content">
+            <div id="creator" class="hidden w-full">
+                <h2 class="mb-4">Create New Boilerplate</h2>
+                <input id="newBoilerplateTitle" class="w-full" placeholder="Title">
+                <textarea id="newBoilerplateTemplate" class="w-full" placeholder="Enter your template here. Use {varname} for variables."></textarea>
+                <button id="saveNewBoilerplate" class="button">Save</button>
+                <button id="cancelNewBoilerplate" class="button ml-2">Cancel</button>
+            </div>
+            <div id="editor" class="hidden w-full">
+                <h2 class="mb-4">Edit Boilerplate</h2>
+                <input id="editBoilerplateTitle" class="w-full" placeholder="Title">
+                <textarea id="editBoilerplateTemplate" class="w-full" placeholder="Enter your template here. Use {varname} for variables."></textarea>
+                <button id="saveEditBoilerplate" class="button">Save</button>
+            </div>
+            <div id="boilerplateDisplay"></div>
+        </div>
+    </div>
+    <div class="theme-toggle" id="themeToggle"></div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const contentArea = document.querySelector('.content');
+            const creator = document.getElementById('creator');
+            const editor = document.getElementById('editor');
+            const boilerplateDisplay = document.getElementById('boilerplateDisplay');
+            const boilerplateList = document.getElementById('boilerplateList');
+            let boilerplateHolder = null;
+            let editing_title = null;
+
+            let boilerplates = [];
+            // Dark Mode Toggle
+            const themeToggle = document.getElementById('themeToggle');
+            themeToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                localStorage.setItem('darkMode', document.body.classList.contains('dark-mode'));
+            });
+
+            if (localStorage.getItem('darkMode') === 'true') {
+                document.body.classList.add('dark-mode');
+            }
+
+            // Function to add boilerplates to the menu
+            function updateBoilerplateList() {
+                boilerplateList.innerHTML = '';
+                var i;
+
+                for( i=0; i<boilerplates.length; i++ ) {
+                    title = boilerplates[i].title;
+                    let li = document.createElement('li');
+                    let a = document.createElement('a');
+                    a.href = '#';
+                    a.textContent = title;
+                    a.onclick = function(title) {
+                        showBoilerplate(title);
+                    }.bind(null,title);
+                    li.appendChild(a);
+                    boilerplateList.appendChild(li);
+                }
+            }
+
+            // Show selected boilerplate
+            function showBoilerplate(title) {
+                editor.classList.add('hidden');
+                boilerplateDisplay.classList.remove('hidden');
+                boilerplateDisplay.innerHTML = '';
+
+                const template = document.createElement('div');
+                template.className = 'boilerplate';
+                const titleEl = document.createElement('h2');
+                const titleElBtn = document.createElement('button');
+                titleElBtn.textContent = title;
+                titleEl.appendChild(titleElBtn);
+                template.appendChild(titleEl);
+                titleElBtn.onclick = function(title) {
+                    editBoilerplate(title);
+                }.bind(null,title);
+
+                let templateText = "";
+                var i;
+                for( i=0; i<boilerplates.length; i++ ) {
+                    if( boilerplates[i].title == title ) {
+                        templateText = boilerplates[i].template;
+                    }
+                }
+                const variables = templateText.match(/\{([^\{\}]+)\}/g) || [];
+                const uniqueVariables = [...new Set(variables.map(v => v.slice(1, -1)))];
+
+                uniqueVariables.forEach(varName => {
+                    const label = document.createElement('label');
+                    label.className = "w-full";
+                    label.textContent = varName;
+                    const textarea = document.createElement('textarea');
+                    textarea.className = 'w-full';
+                    textarea.name = varName;
+                    label.appendChild(textarea);
+                    template.appendChild(label);
+                });
+
+                const generateButton = document.createElement('button');
+                generateButton.textContent = 'Generate';
+                generateButton.className = 'button';
+                generateButton.onclick = function() {
+                    let result = templateText;
+                    uniqueVariables.forEach(varName => {
+                        const value = template.querySelector(`textarea[name="${varName}"]`).value;
+                        result = result.replace(new RegExp(`\\{${varName}\\}`, 'g'), value);
+                    });
+                    layout = document.createElement("pre");
+                    layout.style.whiteSpace = 'pre-wrap';
+                    layout.innerText = result;
+                    boilerplateHolder.innerHTML = '';
+                    
+                    // Add copy to clipboard functionality
+                    const copyIcon = document.createElement('span');
+                    copyIcon.className = 'copy-to-clipboard';
+                    copyIcon.textContent = '📋';
+                    copyIcon.onclick = () => {
+                        navigator.clipboard.writeText(result).then(() => {
+                            alert('Copied to clipboard!');
+                        }).catch(err => {
+                            console.error('Failed to copy: ', err);
+                        });
+                    };
+
+                    boilerplateHolder.appendChild(copyIcon);
+                    boilerplateHolder.appendChild(layout);
+                };
+                template.appendChild(generateButton);
+                let holder = document.createElement("div");
+                holder.id = "boilerplateHolder";
+                boilerplateHolder = holder;
+                boilerplateDisplay.appendChild(template);
+                boilerplateDisplay.appendChild(boilerplateHolder);
+            }
+
+            // Add new boilerplate
+            document.getElementById('addNewBoilerplate').addEventListener('click', () => {
+                creator.classList.remove('hidden');
+                editor.classList.add('hidden');
+                boilerplateDisplay.classList.add('hidden');
+            });
+
+            function editBoilerplate(title)
+            {
+                editing_title = title;
+                creator.classList.add('hidden');
+                editor.classList.remove('hidden');
+                boilerplateDisplay.classList.add('hidden');
+                var i, template = "";
+                for( i=0; i<boilerplates.length; i++ ) {
+                    if( boilerplates[i].title == title ) {
+                        template = boilerplates[i].template;
+                        break;
+                    }
+                }
+                document.getElementById('editBoilerplateTitle').value = title;
+                document.getElementById('editBoilerplateTemplate').value = template;
+            }
+
+            document.getElementById('saveNewBoilerplate').addEventListener('click', () => {
+                const title = document.getElementById('newBoilerplateTitle').value.trim();
+                const template = document.getElementById('newBoilerplateTemplate').value.trim();
+
+                if (title && template) {
+                    boilerplates.push({title, template});
+                    localStorage['boilers'] = JSON.stringify(boilerplates);
+                    updateBoilerplateList();
+                    editor.classList.add('hidden');
+                    creator.classList.add('hidden');
+                    boilerplateDisplay.classList.remove('hidden');
+                    showBoilerplate(title);
+                }
+            });
+
+            document.getElementById('saveEditBoilerplate').addEventListener('click', () => {
+                const title = document.getElementById('editBoilerplateTitle').value.trim();
+                const template = document.getElementById('editBoilerplateTemplate').value.trim();
+
+                if (title && template) {
+                    let found = false;
+                    var i;
+                    for( i=0; i<boilerplates.length; i++ ) {
+                        if( boilerplates[i].title == editing_title ) {
+                            boilerplates[i].title = title;
+                            boilerplates[i].template = template;
+                            found = true;
+                            break;
+                        }
+                    }
+                    if( !found )
+                        boilerplates.push({title, template});
+                    localStorage['boilers'] = JSON.stringify(boilerplates);
+                    updateBoilerplateList();
+                    editor.classList.add('hidden');
+                    boilerplateDisplay.classList.remove('hidden');
+                    showBoilerplate(title);
+                }
+            });
+
+            document.getElementById('cancelNewBoilerplate').addEventListener('click', () => {
+                editor.classList.add('hidden');
+                boilerplateDisplay.classList.remove('hidden');
+            });
+
+            // Add some initial boilerplates
+            if( 'boilers' in localStorage ) {
+                boilerplates = JSON.parse(localStorage['boilers']);
+            } else {
+                boilerplates = [];
+            }
+            updateBoilerplateList();
+        });
+    </script>
+</body>
+</html>

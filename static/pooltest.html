@@ -1,0 +1,241 @@
+<html>
+<head></head>
+
+<body>
+
+    <div onclick="runPool()">Run Pool Test</div>
+    <div onclick="runUnpool()">Run Unpool Test</div>
+
+    <div id="results"></div>
+</body>
+<script language="javascript">
+let pools = {};
+let types = {};
+
+class SomeObject {
+    constructor(a, b, c)
+    {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+    }
+
+    static alloc(params) {
+        if( !params || Object.keys(params).length == 0 )
+            return new SomeObject(0,0,0);
+        return new SomeObject(params.a,params.b,params.c);
+    }
+    static mold(v, params) {
+        if( !params || Object.keys(params).length == 0 )
+            return v;
+        for( let i in params ) {
+            v[i] = params[i];
+        }
+        return v;
+    }
+}
+
+class TypedObj {
+    //var name;
+    constructor(name, fields=[]) {
+        this.name = name;
+        this.fields = fields;
+        types[name] = this;
+        pools[name] = new Pool( 202, name, this.alloc.bind(this), this.mold.bind(this) );
+    }
+
+    alloc(params) {
+        let i, obj = {};
+        if( !params || Object.keys(params).length == 0 ) {
+            /*
+            for( i in this.fields ) {
+                obj[i] = 0;
+            }
+            */
+        } else {
+            for( i in params ) {
+                obj[i] = params[i];
+            }
+        }
+        return obj;
+    }
+
+    mold(v, params) {
+        let i;
+        if( !params || Object.keys(params).length == 0 ) {
+            /*
+            for( i in this.fields ) {
+                v[i] = 0;
+            }
+            */
+        } else {
+            for( i in params ) {
+                v[i] = params[i];
+            }
+        }
+        return v;
+    }
+}
+class Pool {
+
+    constructor(size, objname, builder, molder) {
+        this.name = objname;
+        //console.log("create " + objname + "*" + size + ": use ", builder);
+        //this.pool = new Array(size).fill(0).map( () => (builder()) );
+        //this.alloced = size;
+        this.used = 0;
+        this.freed = [];
+        this.maxfreed = 0;
+        this.alloc = builder;
+        this.mold = molder;
+    }
+
+    release(ptr) {
+        //this.mold(ptr);
+        this.freed.push(ptr);
+        //if( this.freed.length > this.maxfreed ) this.maxfreed = this.freed.length;
+    }
+
+    get(params) {
+        if( this.freed.length > 0 )
+            return this.mold(this.freed.shift(), params);
+        return this.alloc(params);/*
+
+        if( this.used >= this.alloced ) { // alloc more, then
+            let sz = Math.max(parseInt(this.alloced*0.2),1);
+            console.log("Allocate " + sz + " more.");
+            this.pool = this.pool.concat( new Array(sz).fill(0).map( () => ( this.alloc() ) ) );
+            this.alloced += sz;
+        }
+        if( typeof params != 'undefined' ) {
+            v = this.mold(this.pool[this.used], params);
+        } else {
+            v = this.pool[this.used];
+        }
+        this.used++;
+        return v;*/
+    }
+
+    report() {
+        return this.name + ": " + this.alloced + " allocated, " + this.used + " used, " + this.maxfreed + " max in recycling.";
+    }
+}
+const target = 50000;
+const max_cycle = 2000;
+
+function runPool()
+{
+    let cycle1, cycle2, cycle3;
+    let loops = 20;
+    let i, j, t1, t2, t3;
+    let tStart, tEnd;
+
+    new TypedObj('test1', ['a', 'b', 'c']);
+    new TypedObj('test2', ['g', 'h', 'i']);
+    const P1 = pools['test1'];
+    const P2 = pools['test2'];
+    const P3 = pools['some'] = new Pool( 202, 'some', SomeObject.alloc, SomeObject.mold );
+    let buf = "Pool test:<BR>";
+
+    while( loops > 0 ) {
+        loops--;
+        cycle1 = [];
+        cycle2 = [];
+        cycle3 = [];
+        tStart = new Date();
+        for( i=0; i<target; i++ ) {
+            t1 = P1.get(); t1.a = Math.random(); t1.b = i; t1.c = new Date(); //{ a: Math.random(), b: i, c: new Date() } );
+            t2 = P2.get(); t2.g = Math.random(); t2.h = i; t2.i = 0; // { g: Math.random(), h: i, i: 0 } );
+            t3 = P3.get(); t3.a = 1; t3.b = 2; t3.c = 3; // { a: 1, b: 2, c: 3 });
+    
+            for( j=0; j<cycle1.length; j++ ) {
+                t2.i += cycle1[j].a % 10;
+            }
+
+            while( cycle1.length >= max_cycle ) {
+                P1.release(cycle1.shift());
+            }
+            while( cycle2.length >= max_cycle ) {
+                P2.release(cycle2.shift());
+            }
+            while( cycle3.length >= max_cycle ) {
+                P3.release(cycle3.shift());
+            }
+
+            cycle1.push(t1);
+            cycle2.push(t2);
+            cycle3.push(t3);
+        }
+        while( cycle1.length > 0 ) P1.release(cycle1.shift());
+        while( cycle2.length > 0 ) P2.release(cycle2.shift());
+        while( cycle3.length > 0 ) P3.release(cycle3.shift());
+        tEnd = new Date();
+        buf += "Loop " + (19-loops) + ": " + (parseFloat( tEnd - tStart ) / 1000) + " seconds.<BR>";
+        document.getElementById('results').innerHTML = buf;
+    }
+    buf += pools['test1'].report() + "<BR>";
+    buf += pools['test2'].report() + "<BR>";
+    buf += pools['some'].report() + "<BR>";
+    document.getElementById('results').innerHTML = buf;
+}
+
+
+function runUnpool()
+{
+    var loops=20;
+    var cycle1, cycle2, cycle3;
+    var i, j, t1, t2, t3;
+    var tStart, tEnd;
+    let buf = "Unpool test:<BR>";
+
+    function createObj(params)
+    {
+        var v = {};
+        for( var i in params ) {
+            v[i] = params[i];
+        }
+        return v;
+    }
+
+    cycle1 = [];
+    cycle2 = [];
+    cycle3 = [];
+    while( loops > 0 ) {
+        loops--;
+        tStart = new Date();
+        for( i=0; i<target; i++ ) {
+            t1 = createObj(); t1.a = Math.random(); t1.b = i; t1.c = new Date(); // {'a': Math.random(), 'b': i, 'c': new Date() });
+            t2 = createObj(); t2.g = Math.random(); t2.h = i; t2.i = 0; // {'g': Math.random(), 'h': i, 'i': 0 });
+            t3 = SomeObject.alloc(); t3.a = 1; t3.b = 2; t3.c = 3; //{'a': 1, 'b': 2, 'c': 3});
+
+            for( j=0; j<cycle1.length; j++ ) {
+                t2.i += cycle1[j].a % 10;
+            }
+
+            while( cycle1.length >= max_cycle ) {
+                cycle1.shift();
+            }
+            while( cycle2.length >= max_cycle ) {
+                cycle2.shift();
+            }
+            while( cycle3.length >= max_cycle ) {
+                cycle3.shift();
+            }
+
+            cycle1.push(t1);
+            cycle2.push(t2);
+            cycle3.push(t3);
+        }
+        while( cycle1.length > 0 ) cycle1.shift();
+        while( cycle2.length > 0 ) cycle2.shift();
+        while( cycle3.length > 0 ) cycle3.shift();
+        tEnd = new Date();
+        buf += "Loop " + (19-loops) + ": " + (parseFloat( tEnd - tStart ) / 1000) + " seconds.<BR>";
+        document.getElementById('results').innerHTML = buf;
+    }
+}
+
+
+
+</script>
+</html>

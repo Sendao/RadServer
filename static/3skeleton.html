@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Circuitism Shrine</title>
+    <style>
+        body { margin: 0; overflow: hidden; background: #111; }
+        canvas { display: block; }
+        #introModal { 
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.9); color: #fff; padding: 20px; text-align: center;
+            font-family: Arial, sans-serif; display: none; 
+        }
+        .toast { position: fixed; bottom: 20px; right: 20px; background: #333; color: #fff; padding: 10px; display: none; }
+    </style>
+</head>
+<body>
+    <div id="toast" class="toast"></div>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.173.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.173.0/examples/jsm/"
+            }
+        }
+    </script>
+    <script type="module">
+        import * as THREE from 'three';
+        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+        import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+        import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+        import { ShaderPass } from 'three/addons/postprocessing/ShaderPass.js';
+        import { CopyShader } from 'three/addons/shaders/CopyShader.js';
+        window.THREE = THREE;
+        window.EffectComposer = EffectComposer;
+        window.OrbitControls = OrbitControls;
+        window.RenderPass = RenderPass;
+        window.ShaderPass = ShaderPass;
+        window.CopyShader = CopyShader;
+        window.threeReady = true;
+    </script>
+    <script language=javascript>
+        let scene, camera, renderer, controls;
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.style.display = 'block';
+            setTimeout(() => toast.style.display = 'none', 2000);
+        }
+        function init()
+        {
+            if( !window.threeReady ) {
+                setTimeout(init,100);
+                return;
+            }
+            setupThree();
+            // finish setting up visuals here. please keep visuals inside of functions so they can easily be changed!
+            animate();
+        }
+
+        function setupThree(targetElement) {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+
+            renderer = new THREE.WebGLRenderer();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            
+            if( targetElement ) {
+                targetElement.innerHTML = ``;
+                targetElement.appendChild(renderer.domElement);
+            } else {
+                var oldCanvas = document.getElementById(renderer.domElement.id);
+                if( oldCanvas !== null ) oldCanvas.remove();
+
+                document.body.appendChild(renderer.domElement);
+            }
+
+            controls = new window.OrbitControls(camera, renderer.domElement); // we should update to a custom controller.
+            camera.position.set(0, 5, 20);
+            controls.update();
+
+            composer = new EffectComposer(renderer); // add more effect layers here:
+            composer.addPass(new RenderPass(scene, camera));
+            composer.addPass(new ShaderPass(CopyShader));
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            //renderer.render(scene,camera); if removing composer please revert to default rendering
+            composer.render();
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>

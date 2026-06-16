@@ -1,0 +1,306 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+
+<head splash>
+  <title>Radiant Demo</title>
+  <link rel=stylesheet href='/css/styles.css'>
+  </link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body class=bg5 style='color: tan; margin: 0px'>
+
+  <div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+    <div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+      <div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+        Welcome to Radiance Engine
+      </div>
+    </div>
+  </div>
+
+  <div xWatch=menu_reset>
+    <menu></menu>
+  </div>
+  <main style='margin-top: 16px; font-size: 14pt'>
+  </main>
+  <loadwheel></loadwheel>
+
+  #include tpl/radlib.html
+  #include tpl/backend.html
+  #include tpl/struct.html
+  #include tpl/socket.html
+  #include tpl/auth.html
+
+
+  <dataforms>
+
+  </dataforms>
+
+
+  <templates>
+
+    #include controls/seaplan.html
+    #include controls/seaevents.html
+    #include controls/seaideas.html
+
+    <div xTemplate=main_start>
+
+      I'm on a boat.
+
+    </div>
+
+  </templates>
+
+</body>
+
+<script language=javascript>
+  var basicMenu = [];
+
+  function initSkeleton() {
+    basicMenu = [{
+        'title': 'User',
+        'children': [{
+            'title': 'Profile',
+            'cast': 'userprofile'
+          },
+          {
+            'title': 'Signup',
+            'cast': 'signup'
+          },
+          {
+            'title': 'Signin',
+            'cast': 'signin'
+          },
+          {
+            'title': 'Logout',
+            'cast': 'logout'
+          },
+          {
+            'title': 'List',
+            'cast': 'userlist'
+          }
+        ]
+      },
+      {
+        'title': 'Plans',
+        'cast': 'sea_plans'
+      },
+      {
+        'title': 'Ideas',
+        'cast': 'sea_ideas'
+      },
+      {
+        'title': 'Events',
+        'cast': 'sea_events'
+      },
+      {
+        title: 'Groups',
+        cast: 'sea_groups'
+      },
+      {
+        'title': 'Page',
+        'children': [{
+          'title': 'Background',
+          'act': 'cycleBodyStyles'
+        }]
+      }
+    ];
+
+    structMenu(basicMenu);
+
+    onAuthenticate(LoggedIn);
+    socketRegister('registered', SockedIn);
+
+
+    var tables = ['plans', 'events'];
+
+    var i;
+    for (i = 0; i < tables.length; ++i) {
+      socketRegister(tables[i] + '_update', updateSocket);
+      socketRegister(tables[i] + '_append', updateSocket);
+      socketRegister(tables[i] + '_remove', updateSocket);
+    }
+
+    radStore("planid", "-1");
+    radStore("eventid", "-1");
+    radStore( "sea", {
+      plans: { '-1': { id: -1 } },
+      events: { '-1': { id: -1 } },
+      tags: {}
+    });
+    radLoad();
+    cycleBodyStyles();
+
+    openSocket(window.location.host, chatSocket);
+
+    blitzTemplate(gE("mainscroll"), "main_start");
+  }
+
+  registerStartup(initSkeleton)
+
+  function LoggedIn() {
+    console.log("LoggedIn.go");
+    RadRequest("/seaplane/user", {}, gotUserData);
+  }
+
+  function SockedIn() {
+    var userid = radVar("sess.userid");
+    if (userid == null || userid == -1) {
+      console.log("SockedIn.go");
+      clearUserMenu();
+    } else {
+      radStore("user", radVar("sess.user"));
+      LoggedIn();
+    }
+  }
+
+
+  function updateSocket(ev, code, data, msg) {
+    var mainobj = "sea";
+    var tables = ['plans', 'events'];
+    var handlers = { 'plans': parsePlan, 'events': parseEvent };
+    console.log(arguments);
+    var obj = msg.data;
+    var codes = code.split("_");
+    var cu = radVar(mainobj);
+    if (tables.indexOf(codes[0]) == -1) {
+      console.warn("Out of date or .. something");
+      return;
+    }
+    var handler = handlers[codes[0]];
+    switch (codes[1]) {
+      case 'append':
+        console.log("append(", msg, ")");
+        if( handler ) obj = handler(obj);
+        cu[codes[0]][obj.id] = obj;
+        radChange(mainobj + "." + codes[0]);
+        break;
+      case 'update':
+        console.log("update(", msg, ")");
+        if( handler ) obj = handler(obj);
+        cu[codes[0]][obj.id] = obj;
+        radChange(mainobj + "." + codes[0]);
+        break;
+      case 'remove':
+        console.log("remove(", obj, ")");
+        for (i = 0; i < obj.length; ++i) {
+          delete cu[codes[0]][obj[i].id];
+        }
+        radChange(mainobj + "." + codes[0]);
+        break;
+    }
+  }
+
+  function chatSocket() {
+
+  };
+
+  function parsePlan(p)
+  {
+    if( !isNaN( parseInt( p.dt ) ) )
+      p.date = dateFormat( parseInt( p.dt ) );
+    tagsFor(p,'plans');
+    return p;
+  }
+
+  function parseEvent(p)
+  {
+    if( !isNaN( parseInt( p.dt ) ) )
+      p.date = dateFormat( parseInt( p.dt ) );
+    tagsFor(p,'events');
+    return p;
+  }
+
+  function rebuildTags()
+  {
+    var sea = radVar("sea");
+    for( i in sea.plans ) {
+      tagsFor( sea.plans[i], 'plans' );
+    }
+    for( i in sea.plans ) {
+      tagsFor( sea.events[i], 'events' );
+    }
+  }
+
+  function tagsFor( p, tab )
+  {
+    if( !p.tags )
+      p.tags = ['new'];
+    var gtags = radVar("sea.tags");
+    for( var i=0; i<p.tags.length; ++i ) {
+      if( !(p.tags[i] in gtags) ) gtags[ p.tags[i] ] = { 'name': p.tags[i], 'plans': [], 'events': [] };
+      if( gtags[ p.tags[i] ][tab].indexOf(p.id) == -1 )
+        gtags[ p.tags[i] ][tab].push( p.id );
+    }
+  }
+
+
+  function gotUserData(data) {
+    var obj = JSON.parse(data).data;
+    var i, sea = radVar("sea");
+    console.log("gotUserData(", obj, ")")
+    for( i in obj ) {
+      sea[i] = obj[i];
+    }
+    for( i in sea.plans ) {
+      parsePlan(sea.plans[i]);
+    }
+    for( i in sea.events ) {
+      parseEvent(sea.events[i]);
+    }
+    sea.plans[-1] = { 'id': -1 };
+    sea.events[-1] = { 'id': -1 };
+  }
+
+
+  function renderHomePage() {
+    blitzTemplate(gE("mainscroll"), "main_start");
+  }
+
+  function cycleBodyStyles() {
+    var e = document.body;
+    if (typeof e.bgstate == 'undefined')
+      e.bgstate = 5;
+    e.bgstate = (e.bgstate + 1) % 9;
+    switch (e.bgstate) {
+      case 1:
+        e.className = 'bg0';
+        e.style.color = 'silver';
+        break;
+      case 2:
+        e.className = 'bg1';
+        e.style.color = 'white';
+        break;
+      case 3:
+        e.className = 'bg2';
+        e.style.color = 'black';
+        break;
+      case 4:
+        e.className = 'bg3';
+        e.style.color = 'tan';
+        break;
+      case 5:
+        e.className = 'bgsunrise';
+        e.style.color = 'white';
+        break;
+      case 6:
+        e.className = 'bgmoonrise';
+        e.style.color = 'silver';
+        break;
+      case 7:
+        e.className = 'bgmoonset';
+        e.style.color = 'silver';
+        break;
+      case 8:
+        e.className = 'bgsunset';
+        e.style.color = 'black';
+        break;
+    }
+  }
+</script>
+
+</html>

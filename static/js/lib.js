@@ -2,6 +2,83 @@
 // Please feel free to modify and use this code for your own purposes.
 
 
+class TrieNode {
+    constructor() {
+        this.children = {};
+        this.values = [];
+    }
+}
+
+class StringTrie {
+    constructor() {
+        this.root = new TrieNode();
+    }
+
+    insert(key, value) {
+        let node = this.root;
+        for (const char of key) {
+            if (!node.children[char]) {
+                node.children[char] = new TrieNode();
+            }
+            node = node.children[char];
+        }
+        node.values.push(value); // Store the object/value
+    }
+
+    _collectAll(node, results) {
+        results.push(...node.values);
+        for (const child in node.children) {
+            this._collectAll(node.children[child], results);
+        }
+    }
+
+    has(prefix) {
+        let node = this.root;
+        for (const char of prefix) {
+            if (!node.children[char]) return false;
+            node = node.children[char];
+        }
+        return true;
+    }
+
+    scan(prefix) {
+        let node = this.root;
+        for (const char of prefix) {
+            if (!node.children[char]) return [];
+            node = node.children[char];
+        }
+        const results = [];
+        this._collectAll(node, results);
+        return results;
+    }
+}
+
+
+let libfilecounter = 0;
+function downloadFile( jsonString, downloadName )
+{
+    const blob = new Blob( [jsonString], { type: 'application/json' } );
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    
+    a.href = url;
+    if( typeof downloadName == 'undefined' ) {
+        if( libfilecounter === null ) libfilecounter = 0;
+        else libfilecounter++;
+
+        downloadName = 'schema' + libfilecounter + '.json';
+    }
+
+    a.download = downloadName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+
+// the restt of this file is shit btw
+
 var rxCmd={};
 function logCommandHandler( reqid, handler, data )
 {
@@ -31,7 +108,7 @@ function reportLog(reqid, loglines)
         }
     }
     if( !store_log ) return;
-    
+
     cl = radVar("cmdlog");
     if( cl == null ) {
         radStore("cmdlog",[]);
@@ -75,7 +152,7 @@ function handle(cmd,handler,params)
 
 var cmd_handlers={};
 function execute(s,cmd,params,handler)
-{    
+{
     var rid = digi_rand(7);
     var obj = params;
     obj['r']=rid;
@@ -93,14 +170,14 @@ function response(rcode,scode,msg,fun)
         fmsg = "<font color=red>" + msg + "</font>";
     else
         fmsg = msg;
-    
+
     fmsg = linkify(fmsg);
 
     if( cmd_handlers[rcode] ) {
         cmd = cmd_handlers[rcode][3];
         act = cmd_handlers[rcode][2];
     }
-    
+
     var obj = { 'code': scode, 'msg': msg, 'text': fmsg, 'qry': rcode, 'act': act, 'cmd': cmd };
     cmd_log.unshift( obj );
     radStore("cmd_log", cmd_log);
@@ -239,18 +316,33 @@ function createCookie(name,value,days) {
         var expires = "; expires="+date.toGMTString();
     }
     else var expires = "";
-    document.cookie = name+"="+value+expires+"; path=/";
+    document.cookie = /* document.cookie + ";" + */ name+"="+value+expires+"; SameSite=strict; path=/";
 }
 
+function _readCookie(name) {
+  var nameEQ = name + "=";
+  var ca = document.cookie.split(";");//cooks[1].split(',');
+  for(var i=0;i < ca.length;i++) {
+      var c = ca[i];
+      while (c.charAt(0)==' ') c = c.substring(1,c.length);
+      if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+  }
+  return null;
+}
 function readCookie(name) {
-    var nameEQ = name + "=";
-    var ca = document.cookie.split(';');
-    for(var i=0;i < ca.length;i++) {
-        var c = ca[i];
-        while (c.charAt(0)==' ') c = c.substring(1,c.length);
-        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length,c.length);
+  var j = _readCookie("cookies");
+  if( j == null ) {
+    return _readCookie(name);
+  }
+  var cookies = j.split(",");
+  for( var i=0; i<cookies.length; i++ ) {
+    var cook = cookies[i].split("=");
+    if( cook[0] == name ) {
+      createCookie( name, cook[1] );
+      return cook[1];
     }
-    return null;
+  }
+  return null;
 }
 
 function fixMarkup(xhack)
@@ -268,6 +360,8 @@ function clearNodeFast(v)
 function clearNode(v)
 {
     var xv=[], xr=[];
+    if( v == null || typeof v.childNodes == 'undefined' ) return;
+
     for(var i=0;i<v.childNodes.length;i++){
         xv.push(v.childNodes[i]);
     }
@@ -298,13 +392,14 @@ function kamiNode(v)
     v.parentNode.removeChild(v);
 }
 function isWhite(s) {
-    var c,i;
-    for(i=0;i<s.length;i++){
-        c=s.substr(i,1);
+    return isSpace(s);
+}
+function isSpace(s) {
+    for( c of s ) {
         if(c==' '||c=='\t'||c=='\n'||c=='\r')continue;
         return false;
     }
-    return true; 
+    return true;
 }
 if( typeof isValid == 'undefined' || !isValid ) {
 function isValid(v)
@@ -339,12 +434,32 @@ function isAlpha(s) {
 function isNumber(n) {
   return !isNaN(parseFloat(n)) && isFinite(n);
 }
+function isFloat(str) {
+    return ( typeof str == 'string' && str.indexOf(".") >= 0 );
+}
+
+function cleanString(str) {
+    let safebuffer = '';
+    let kb = `~!@#$%^&*()_+{}|:"<>?/.,';\][=-` + '`\n';
+
+    for( var i of str ) {
+        if( isAlpha(i) || isNumber(i) || kb.indexOf(i) != -1 || isSpace(i) ) {
+            safebuffer += i;
+        }
+    }
+
+    return safebuffer;
+}
+
 function ctype_alnum(x)
 {
     return ( isAlpha(x) || isNumber(x) );
 }
 String.prototype.capitalize = function() {
     return this.charAt(0).toUpperCase() + this.slice(1);
+}
+function capitalize(str) {
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 function cCL()
 {
@@ -388,6 +503,7 @@ function cFLT(txt) { return cFlText(txt); }
 function cText(text) { return document.createTextNode(text); }
 function getAttribute(dv, e) {
 	var i, eL = e.toLowerCase();
+    if( !dv.attributes ) return null;
 	for( i = dv.attributes.length-1; i>=0; --i ) {
 		if( dv.attributes[i].name.toLowerCase() == eL ) {
 			return dv.attributes[i].value;
@@ -660,7 +776,7 @@ function autoSZ(mm,topage,xcenter,ycenter,xscale,xreduce,yscale,yreduce)
             mm.style.left = (ww-tw)/2 + "px";
         else
             mm.style.marginLeft = (ww-tw)/2 + "px";
-    
+
     if( th !== false ) {
         if( mm.nodeName == 'IMG' ) {
             mm.height = th;
@@ -674,7 +790,7 @@ function autoSZ(mm,topage,xcenter,ycenter,xscale,xreduce,yscale,yreduce)
             mm.style.top = (hh-th)/2 + "px";
         else
             mm.style.marginTop = (hh-th)/2 + "px";
-    
+
 }
 
 var mdivs=[];
@@ -866,7 +982,7 @@ function autoOMV2(divid)
                         adj[1] -= parseInt( locs[i].substr(2) );
                     }
                 }
-                break;                    
+                break;
         }
     }
     var qr;
@@ -1073,7 +1189,7 @@ function autoSize2(divid)
         if( scaledivs[i].id == divid )
             break;
     }
-    if( i >= scaledivs.length ) { 
+    if( i >= scaledivs.length ) {
         dbg("autoSize2: can't locate " + divid); throw "Can't find div"; return;
     }
 
@@ -1093,7 +1209,7 @@ function autoSize2(divid)
         mm.clientWidth = (ww * xs);
     }
     if( yp != 0 ) {
-        mm.style.marginBottom = mm.style.marginTop = hh*yp + "px";      
+        mm.style.marginBottom = mm.style.marginTop = hh*yp + "px";
         hh -= hh*(yp*2);
     }
     if( ys != 0 ) {
@@ -1139,7 +1255,6 @@ function classSets(div,srch,repl)
         div.className = repl;
     }
 }
-/*
 function cloneObject(source) {
     for (i in source) {
         if (typeof source[i] == 'source')
@@ -1148,7 +1263,6 @@ function cloneObject(source) {
             this[i] = source[i];
     }
 }
-*/
 
 function getSize(e)
 {
@@ -1176,7 +1290,7 @@ function getInnerSize(e)
     }
     return br;
 }
-    
+
 function getPos(e)
 {
     var cl = 0, ct=0;
@@ -1220,10 +1334,9 @@ function getPosB(e)
     var cl = 0, ct=0;
     do
     {
-        if( typeof e.clientLeft == 'undefined' ) break;
+        if( typeof e.clientLeft == 'undefined' ) continue;
         cl += e.clientLeft - e.scrollLeft;
         ct += e.clientTop - e.scrollTop;
-//      console.log(e.clientTop + " - " + e.scrollTop);
     } while ( e=e.parentNode );
     return [cl,ct];
 }
@@ -1635,7 +1748,7 @@ function xMenuAdjust()
         xobj.style.top = (winH-(xobj.clientHeight+10)) + "px";
     }
 
-    pop_menu=false; 
+    pop_menu=false;
 }
 
 function xDropMenu(obj,ev)
@@ -1689,6 +1802,13 @@ function formsend(fx)
     var o=fx;
     var x = "";
 
+    for( o = fx; o; o = o.parentNode ) {
+      if( o.nodeName == 'FORM' ) {
+        break;
+      }
+    }
+    if( !o ) return;
+
     shellMessage("formsend()");
 
     if( ( typeof o['cMethod'] != 'undefined' && isValid(x=o['cMethod']) && x != "" ) ||
@@ -1702,13 +1822,17 @@ function formsend(fx)
         if( x.indexOf("this") >= 0 )
             x = x.replace(/this/g,'o');
 
-        if( x.indexOf("frm") >= 0 )
-            x = x.replace(/this/g,'o');
-        
-        if( x.indexOf("return") >= 0 )
-            x = "function __quick_eval() {" + x + "}; __quick_eval();";
+        if( x.indexOf("form") >= 0 )
+            x = x.replace(/form/g,'o');
+
         console.info("Running onsend == ", x);
-        return eval(x);
+        var rv;
+
+        if( x.indexOf("return") >= 0 )
+            eval("function __quick_eval() {" + x + "}; rv = __quick_eval();");
+        else
+            eval("rv = " + x);
+        return rv;
     } else if( o.hasAttribute('action') && isValid(x=o.getAttribute('action')) ) {
         console.info("Running onsend()");
         o.submit();
@@ -1759,7 +1883,7 @@ function fsend(eve)
         }
     }
     if( !found ) { form_sent=false; return false; }
-    
+
     shellMessage("fsend()");
     return formsend(o);
 }
@@ -1772,12 +1896,12 @@ function gfocus(ev)
     if( !gfocusing )
         gfocusing=true;
     if( gftx != -1 ) clearTimeout(gftx);
-    gftx=setTimeout('gblurok()',100);
+    gftx=setTimeout('gblurok()',90000);
     fcel=ev;
     gformi=ev.form;
     var x;
-    if( isValid(x = ev.xOldFocus) ) {
-        eval(radTranslateFrom(ev,x.replace('this','ev')));
+    if( ev.hasAttribute('xOldFocus') ) {
+        eval(radTranslateFrom(ev,ev.getAttribute('xOldFocus').replace('this','ev')));
     }
 }
 function gblur(ev)
@@ -1785,9 +1909,10 @@ function gblur(ev)
     if( gfocusing ) return;
     gformi=false;
     unregKeyboard(xgenkb);
+    gblurok();
     var x;
-    if( isValid(x = ev.xOldBlur) ) {
-        eval(radTranslateFrom(ev,x.replace('this','ev')));
+    if( ev.hasAttribute('xOldBlur') ) {
+        eval(radTranslateFrom(ev,ev.getAttribute('xOldBlur').replace('this','ev')));
     }
 }
 function gblurok()
@@ -1795,7 +1920,7 @@ function gblurok()
     gftx=-1;
     gfocusing=false;
     //!verify focus (doesn't work)
-    fcel.focus();
+    //fcel.focus();
 }
 /*
 function fgenform(frm)

@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Advanced Diagram Library Demo</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f5f5f5;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #controls {
+            margin: 20px;
+            padding: 15px;
+            background: white;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        button {
+            padding: 8px 15px;
+            margin: 0 5px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        button:hover {
+            background: #0056b3;
+        }
+    </style>
+</head>
+<body>
+    <div id="controls">
+        <button onclick="addRandomShape()">Add Random Shape</button>
+        <button onclick="toggleLayout()">Toggle Layout</button>
+        <button onclick="clearDiagram()">Clear</button>
+    </div>
+    <canvas id="myCanvas"></canvas>
+
+    <script src="js/diagram2.js"></script>
+    <script>
+        // Initialize diagram with larger canvas and spring layout
+        const diagram = new Diagram('myCanvas', 1000, 800, 'spring');
+        
+        // Configuration for styling
+        diagram.setStyle({
+            font: '16px Arial',
+            textColor: '#333',
+            connectorColor: '#666',
+            defaultFill: '#e6f3ff',
+            hoverFill: '#cce5ff',
+            strokeWidth: 2
+        });
+
+        // Initial shapes with varied properties
+        const initialShapes = [
+            { type: 'circle', text: 'Process Start', props: { fill: '#ff9999' } },
+            { type: 'rectangle', text: 'Data Processing Unit', props: { width: 150, height: 80, rounded: 10 } },
+            { type: 'square', text: 'Decision Point', props: { fill: '#99ff99', rounded: 5 } },
+            { type: 'pentagon', text: 'Output Module', props: { fill: '#ffff99' } },
+            { type: 'square', text: 'Storage System', props: { fill: '#cc99ff',  rounded: 5 } }
+        ];
+
+        // Add initial shapes
+        initialShapes.forEach(shape => diagram.addShape(shape.type, shape.text, shape.props));
+
+        // Add connectors with different styles
+        diagram.addConnector(0, 1, { isCurved: true, curveRatio: 0.5, label: 'Input' });
+        diagram.addConnector(1, 2, { arrowEnd: true });
+        diagram.addConnector(2, 3, { isCurved: true, curveRatio: 0.7, label: 'Yes' });
+        diagram.addConnector(2, 4, { dashed: true, label: 'No' });
+
+        // Interactive functions
+        function addRandomShape() {
+            const shapes = ['circle', 'triangle', 'square', 'pentagon'];
+            const colors = ['#ff9999', '#99ff99', '#9999ff', '#ffff99', '#ffcc99'];
+            const texts = [
+                'New Node', 'Random Task', 'Extra Step', 'Bonus Feature', 'Quick Action'
+            ];
+            
+            const type = shapes[Math.floor(Math.random() * shapes.length)];
+            const fill = colors[Math.floor(Math.random() * colors.length)];
+            const text = texts[Math.floor(Math.random() * texts.length)];
+            
+            diagram.addShape(type, text, { fill: fill, size: Math.random() * 50 + 50 });
+            diagram.render();
+        }
+
+        let isSpring = true;
+        function toggleLayout() {
+            isSpring = !isSpring;
+            diagram.setLayout(isSpring ? 'spring' : 'grid');
+            diagram.render();
+        }
+
+        function clearDiagram() {
+            //diagram.clear();
+            diagram.shapes = [];
+            diagram.connectors = [];
+            diagram.render();
+        }
+
+        // Initial render
+        diagram.render();
+
+        // Add basic interactivity
+        diagram.canvas.addEventListener('mousemove', (e) => {
+            const rect = diagram.canvas.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+            
+            let needsRender = false;
+            diagram.shapes.forEach(shape => {
+                const isHover = diagram.isPointInShape(mouseX, mouseY, shape);
+                if (isHover && !shape.isHovered) {
+                    shape.isHovered = true;
+                    needsRender = true;
+                } else if (!isHover && shape.isHovered) {
+                    shape.isHovered = false;
+                    needsRender = true;
+                }
+            });
+            if (needsRender) diagram.render();
+        });
+    </script>
+</body>
+</html>

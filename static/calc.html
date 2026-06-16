@@ -1,0 +1,726 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+
+<head splash>
+	<title>Radiant Demo</title>
+	<link rel=stylesheet href='/css/styles.css'>
+	</link>
+</head>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<body style='background: black; color: tan'>
+
+	<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+		<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+			<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+				Loading
+			</div>
+		</div>
+	</div>
+
+	<!--  main view screen on -->
+	<div xSect=main id=mainscroll class="margin-small">
+<div style='width: 400px'>
+<form xForm=calcin xMethod=evaluate()>
+<field name=expr title=Expression valuewidth=300></field>
+<cl></cl>
+<formbtn>Run</formbtn>
+</form>
+<cl></cl>
+<div id=value xWatch=calcout>#calcout.value</div>
+</div>
+	</div>
+
+#include tpl/radlib.html
+#include tpl/backend.html
+#include tpl/struct.html
+</body>
+</html>
+<script language=javascript>
+
+function BigNumber()
+{
+  this.vx = [];
+  this.vn = 0;
+  this.negative = false;
+  this.vq = false;
+
+  this.copyFrom = function(g)
+  {
+    this.vx = g.vx.slice(0,g.vn);
+    this.vn = g.vn;
+    this.negative = g.negative;
+    if( g.vq === false ) {
+			this.vq = false;
+		} else {
+			this.vq = new BigNumber();
+      this.vq.copyFrom(g.vq);
+		}
+  };
+
+  this.setString = function(s)
+  {
+		if( s[0] == '-' ) {
+			this.negative = true;
+			s = s.substr(1);
+		}
+    var digitPt = s.indexOf(".");
+    var i, hasDigits=(digitPt!=-1);
+    if( hasDigits ) {
+      this.vq = new BigNumber();
+      this.vq.setString( s.substr(digitPt+1) );
+      this.vn = s.length - ( s.length-digitPt );
+    } else {
+			this.vq = false;
+			this.vn = s.length;
+		}
+    this.vx = [];
+    for( i=this.vn-1; i>=0; --i ) {
+      if( s[i] == '.' )
+        break;
+      this.vx.push( 1*s[i] );
+    }
+  };
+
+  this.printValue = function()
+  {
+    var s="";
+    var i;
+    if( this.negative ) s = "-";
+    for( i=this.vn-1; i>=0; --i ) {
+      s += this.vx[i];
+    }
+    if( this.vq ) {
+      s += ".";
+      s += this.vq.printValue();
+    }
+    return s;
+  };
+
+	this.compare = function(y)
+	{
+		if( this.vn > y.vn )
+			return 1;
+		else if( y.vn > this.vn )
+			return -1;
+		var i;
+		for( i=this.vn-1; i>=0; i-- ) {
+			if( this.vx[i] > y.vx[i] ) return 1;
+			else if( y.vx[i] > this.vx[i] ) return -1;
+		}
+		if( this.vq && y.vq ) {
+			var prec = this.vq.vn;
+			var off1, off2;
+			if( y.vq.vn < prec ) {
+				prec = y.vq.vn;
+				off1 = this.vq.vn-y.vq.vn;
+				off2 = 0;
+			} else {
+				off1 = 0;
+				off2 = y.vq.vn-this.vq.vn;
+			}
+
+			for( i=prec-1; i>=0; --i ) {
+				if( this.vq.vx[off1+i] > y.vq.vx[off2+i] ) return 1;
+				else if( y.vq.vx[off2+i] > this.vq.vx[off1+i] ) return -1;
+			}
+			if( off1 > off2 ) {
+				for( ; i>=-off1; --i ) {
+					if( this.vq.vx[off1+i] != 0 ) return 1;
+				}
+				return 0;
+			} else if( off2 > off1 ) {
+				for( ; i>=-off2; --i ) {
+					if( y.vq.vx[off2+i] != 0 ) return -1;
+				}
+				return 0;
+			}
+		} else {
+			if( this.vq ) {
+				for( i=this.vq.vn-1; i>=0; --i ) {
+					if( this.vq.vx[i] != 0 ) return 1;
+				}
+				return 0;
+			} else if( y.vq ) {
+				for( i=y.vq.vn-1; i>=0; --i ) {
+					if( y.vq.vx[i] != 0 ) return -1;
+				}
+				return -1;
+			}
+		}
+		return 0;
+	};
+
+	this.isZero = function()
+	{
+		var i;
+		for( i=this.vn-1; i>=0; i-- ) {
+			if( this.vx[i] != 0 ) return false;
+		}
+		return true;
+	};
+
+	this.greaterThan = function(y)
+	{
+		var n = this.compare(y);
+		if( n > 0 ) return true;
+		return false;
+	};
+
+  this.subtract = function(y)
+  {
+		var q;
+
+		if( this.negative ) {
+			q = new BigNumber();
+			q.copyFrom(this);
+			q.negative = false;
+			q = q.add(y);
+			q.negative = true;
+			return q;
+		}
+
+		if( y.greaterThan(this) ) {
+			q = y.subtract(this);
+			q.negative = true;
+			return q;
+		}
+
+		q = new BigNumber();
+		var i,c,r=0;
+
+		for( i=0; i<this.vn; ++i ) {
+			if( i >= y.vn ) {
+				c = this.vx[i] + r;
+			} else {
+				c = (this.vx[i] - y.vx[i]) + r;
+			}
+			if( c < 0 ) {
+				r = -1;
+				c += 10;
+			} else {
+				r = 0;
+			}
+			q.vx.push(c);
+			q.vn++;
+		}
+
+		return q;
+  };
+
+  this.add = function(y)
+  {
+    var i, max, jx, jy;
+    var r = 0, s, q2;
+    var a,b,c;
+
+
+		if( this.negative ) {
+			a = new BigNumber();
+			a.copyFrom(this);
+			a.negative = false;
+			a = y.subtract(a);
+			return a;
+		}
+		if( y.negative ) {
+			a = new BigNumber();
+			a.copyFrom(y);
+			a.negative = false;
+			a = this.subtract(a);
+			return a;
+		}
+
+    max = this.vn;
+    if( y.vn > max ) max = y.vn;
+
+    var q = new BigNumber();
+    q.vn = max;
+    q.vx = [];
+
+    for( i=0; i<max; ++i ) {
+      if( i >= this.vn )
+        a = 0;
+      else
+        a = this.vx[i];
+
+      if( i >= y.vn )
+        b = 0;
+      else
+        b = y.vx[i];
+
+      c = a + b + r;
+      if( c >= 10 ) {
+        c -= 10;
+        r = 1;
+			} else {
+        r = 0;
+      }
+      q.vx.push(c);
+    }
+    if( r == 1 ) {
+			q.vx.push(r);
+    	q.vn++;
+    }
+
+    if( typeof y.vq != 'boolean' && typeof this.vq != 'boolean' ) {
+			a = new BigNumber();
+			b = new BigNumber();
+			a.copyFrom(y.vq);
+			b.copyFrom(this.vq);
+
+			if( a.vn > b.vn ) {
+				c = a.vn;
+				b.shiftLeft(a.vn-b.vn);
+			} else if( b.vn > a.vn ) {
+				c = b.vn;
+				a.shiftLeft(b.vn-a.vn);
+			} else {
+				c = a.vn;
+			}
+      var s = a.add( b );
+			s.shiftRight(s.vn - (s.vn-c));
+			q = q.add(s);
+    } else if( typeof y.vq != 'boolean' ) {
+      q.vq = y.vq;
+    } else if( typeof this.vq != 'boolean' ) {
+      q.vq = this.vq;
+    }
+
+    return q;
+  };
+
+	this.shiftLeft = function(n)
+	{
+		var i;
+		for( i=0; i<n; i++ ) {
+			if( this.vq !== false ) {
+				this.vx.unshift( this.vq.vx[ this.vq.vn-1 ] );
+				this.vq.vx.splice(this.vq.vn-1,1);
+				this.vq.vn--;
+				if( this.vq.vn <= 0 )
+					this.vq = false;
+			} else {
+				this.vx.unshift(0);
+			}
+			this.vn++;
+		}
+	};
+	this.shiftRight = function(n)
+	{
+		var i;
+		if( this.vq === false )
+			this.vq = new BigNumber();
+		for( i=0; i<n; ++i ) {
+			if( this.vn == 0 ) {
+				this.vq.vx.push( 0 );
+			} else {
+				this.vq.vx.push( this.vx[ 0 ] );
+				this.vx.splice( 0, 1 );
+				this.vn--;
+			}
+			this.vq.vn++;
+		}
+	};
+	this.countZeroes = function()
+	{
+		var i = this.vn-1, count=0;
+
+		while( this.vx[i] == 0 ) {
+			count++;
+		}
+
+		return count;
+	};
+
+  this.multiply = function(y)
+  {
+    var nums = [];
+    var i, j, n;
+    var s,q,r,z;
+    var scale=0;
+
+
+    for( i=0; i<y.vn; i++ ) {
+      for( j=0; j<this.vn; j++ ) {
+        s = y.vx[i] * this.vx[j];
+        q = new BigNumber();
+        q.setString(s.toString());
+				q.shiftLeft(scale+j);
+        nums.push(q);
+      }
+      scale++;
+    }
+
+    var r = new BigNumber();
+
+    for( i=0; i<nums.length; ++i ) {
+      r = r.add( nums[i] );
+    }
+
+    if( y.vq !== false ) {
+      var g = new BigNumber();
+      g.copyFrom(this);
+      g.vq = false;
+      s = y.vq.multiply(g);
+			s.shiftRight(this.vq.vn);
+      r = r.add( s );
+    }
+    if( this.vq !== false ) {
+      var g = new BigNumber();
+      g.copyFrom(y);
+      g.vq = false;
+      s = this.vq.multiply(g);
+			s.shiftRight(this.vq.vn);
+			r = r.add( s );
+    }
+
+    if( this.vq !== false && y.vq !== false ) {
+      s = this.vq.multiply( y.vq );
+
+			s.shiftRight(2+this.vq.countZeroes()+y.vq.countZeroes());
+      r = r.add( s );
+    }
+
+		if( this.negative && y.negative ) {
+
+		} else if( this.negative || y.negative ) {
+			r.negative = true;
+		}
+
+    return r;
+  };
+
+	this.factors = function()
+	{
+		var i, j, m, n = parseInt( this.printValue() );
+		var z, g;
+		var fx = [], subpairs;
+		var q = new BigNumber(), qx = new BigNumber();
+		q.setString( Number.MAX_SAFE_INTEGER.toString() );
+		qx.setString("1");
+		const search_max = 1000;
+
+		for( i=2; i<search_max; ++i ) {
+			g = new BigNumber();
+			g.setString( i.toString() );
+			z = this.divide(g);
+			if( z.compare(qx) <= 0 ) {
+				console.log(this.printValue() + "/" + g.printValue() + "=" + z.printValue());
+				if( z.compare(qx) == 0 ) {
+					console.log("push");
+					fx.push(i);
+				}
+				break;
+			}
+			if( z.vq === false || z.vq.vn == 0 ) {
+				fx.push(i);
+
+				subpairs = z.factors();
+				if( subpairs === false || subpairs.length == 0 ) {
+					if( z.compare(q) >= 0 ) {
+						alert("Could not factor " + this.printValue());
+						return false;
+					}
+					m = parseInt( z.printValue() );
+					fx.push(m);
+				} else {
+					for( j=0; j<subpairs.length; j++ ) {
+						fx.push(subpairs[j]);
+					}
+				}
+				return fx;
+			}
+		}
+		return fx;
+	};
+
+	this.exponent = function(y)
+	{
+		var s;
+		var i, j;
+		var n, g, gq;
+		var x = new BigNumber();
+		x.copyFrom(y);
+		x.vq = false;
+		var facts = x.factors();
+		console.log("factors: ", facts);
+		if( facts === false || facts.length == 0 ) {
+			return;
+		}
+
+		gq = new BigNumber();
+		gq.copyFrom(this);
+		for( i=0; i < facts.length; ++i ) {
+			n = facts[i];
+			g = new BigNumber();
+			g.setString( "1" );
+			for( j=0; j < n; ++j ) {
+				g = g.multiply(gq);
+			}
+			gq.copyFrom(g);
+		}
+		g.copyFrom(gq);
+
+		if( y.vq !== false && y.vq.vn != 0 ) {
+			var q = new BigNumber();
+			q.setString("0");
+			q.vq = new BigNumber();
+			q.vq.copyFrom(y.vq);
+			f = parseFloat(q.printValue());
+			q = new BigNumber();
+			s = Math.pow(parseFloat(this.printValue()), f);
+			console.log(this.printValue() + "^" + f + "=" + s);
+			q.setString( s.toString() );
+			if( n == 0 ) {
+				g.copyFrom(q);
+			} else {
+				alert("Invalid result - cannot exponent fractions above 1.0");
+				g = g.add(q);
+			}
+		}
+
+		return g;
+	}
+
+  this.divide = function(y)
+  {
+		var runningPlace;
+		var d = parseFloat(y.printValue());
+		var e,f,nextPart;
+		var i, s="", s0, q, g, j;
+		var nums=[];
+
+		q = new BigNumber();
+		q.copyFrom(this);
+		q.negative = false;
+		s0 = q.printValue();
+
+		for( i=this.vn-1; i>=0; --i ) {
+			s = s + this.vx[i];
+			g = new BigNumber();
+			g.setString(s);
+			if( y.compare(g) <= 0 ) {
+				e = parseFloat(g.printValue());
+				f = Math.floor(e / d);
+				g = new BigNumber();
+				g.setString(f.toString());
+				g.shiftLeft(i);
+				nums.push(g);
+				nextPart = f * d;
+				diff = e - nextPart;
+				s = diff.toString();
+				j = s.indexOf(".");
+				if( j != -1 ) {
+					s = s.substr(0,j-1);
+				}
+			}
+		}
+		i=0;
+		if( this.vq !== false ) {
+			for( i=0; i<this.vq.vn; ++i ) {
+				s = s + this.vq.vx[i];
+				g = new BigNumber();
+				g.setString(s);
+
+				if( y.compare(g) <= 0 ) {
+					e = parseFloat(g.printValue());
+					f = Math.floor(e / d);
+					g = new BigNumber();
+					g.setString(f.toString());
+					g.shiftRight(i+1);
+					nums.push(g);
+					nextPart = f * d;
+					diff = e - nextPart;
+					s = diff.toString();
+					j = s.indexOf(".");
+					if( j != -1 ) {
+						s = s.substr(0,j-1);
+					}
+				}
+			}
+		}
+		e = parseFloat(s);
+		f = e / d;
+		g = new BigNumber();
+		g.setString(f.toString());
+		g.shiftRight(i);
+		nums.push(g);
+
+		g = new BigNumber();
+		g.setString("0");
+		for( i = 0; i < nums.length; i++ ) {
+			g = g.add( nums[i] );
+		}
+
+		if( this.negative && y.negative ) {
+
+		} else if( this.negative || y.negative ) {
+			g.negative=true;
+		}
+
+    return g;
+  };
+
+};
+
+function sortExpression(parsed)
+{
+  var i;
+  var r = [];
+  var r0 = [r], rP = r0;
+  var rStack=[];
+  var q;
+
+  for( i=0; i<parsed.length; ++i ) {
+    if( parsed[i] == '(' ) {
+      q=[];
+      r.push(q);
+      rStack.push(r);
+      r = q;
+    } else if( parsed[i] == ')' ) {
+      q = rStack.pop();
+
+      r = q;
+    } else {
+      r.push(parsed[i]);
+    }
+  }
+
+  return r0;
+}
+
+function parseExpression(expr)
+{
+  var p = [];
+  var i = 0;
+  var w = '';
+  var z;
+  var separators = [ ' ', '\t', '\n' ];
+  var operators = [ '(', ')', '*', '+', '-', '/', '^' ];
+
+  for( i=0; i<expr.length; ++i ) {
+    if( separators.indexOf(expr[i]) != -1 ) {
+      if( w != '' ) {
+				if( w == '-' ) {
+					p.push(w);
+					w = '';
+				} else {
+        	z = new BigNumber();
+        	z.setString(w);
+        	p.push(z);
+				}
+        w = '';
+      }
+      continue;
+    } else if( operators.indexOf(expr[i]) != -1 ) {
+      if( w != '' ) {
+        z = new BigNumber();
+        z.setString(w);
+        p.push(z);
+        w = '';
+				p.push(expr[i]);
+      } else if( expr[i] == '-' ) {
+				w = "-";
+			} else {
+      	p.push(expr[i]);
+			}
+      continue;
+    }
+    w += expr[i];
+  }
+  if( w != '' ) {
+    z = new BigNumber();
+    z.setString(w);
+    p.push(z);
+  }
+
+  return p;
+}
+
+function evalExpr(e)
+{
+  var i;
+  var a,b,c;
+
+  console.log("evalExpr",e);
+  for( i=0; i<e.length; i++ ) {
+    if( typeof e[i] == 'object' && !(e[i] instanceof BigNumber) ) {
+      c = evalExpr(e[i]);
+      e[i] = c;
+    }
+  }
+
+  for( i=0; i+1<e.length; ) {
+    if( e[i+1] === '^' ) {
+      a = e[i];
+      b = e[i+2];
+      c = a.exponent(b);
+      e.splice(i,3,c);
+    } else {
+      i += 2;
+    }
+  }
+
+  for( i=0; i+1<e.length; ) {
+    if( e[i+1] === '*' || e[i+1] === '/' ) {
+      a = e[i];
+      b = e[i+2];
+      if( e[i+1] === '*' )
+        c = a.multiply(b);
+      else
+        c = a.divide(b);
+      e.splice(i,3,c);
+    } else {
+      i += 2;
+    }
+  }
+
+  for( i=0; i+1<e.length; ) {
+    if( e[i+1] === '+' || e[i+1] === '-' ) {
+      a = e[i];
+      b = e[i+2];
+      if( e[i+1] === '+' )
+        c = a.add(b);
+      else
+        c = a.subtract(b);
+      e.splice(i,3,c);
+    } else {
+      console.log("Unknown operator " + e[i]);
+      return false;
+    }
+  }
+
+  return e[0];
+}
+
+function evaluate()
+{
+  var expr = radVar("calcin.expr");
+
+  var parsed = parseExpression(expr);
+  var sorted = sortExpression(parsed);
+
+  console.log("Parsed: ", parsed);
+  console.log("Sorted: ", sorted);
+
+  var n = evalExpr(sorted);
+  var value = typeof n == 'boolean' ? n : n.printValue();
+
+  console.log("Final value: ", value);
+
+  radStore("calcout.value", value);
+}
+
+
+
+function startup()
+{
+    radLoad();
+}
+registerStartup(startup);
+
+</script>

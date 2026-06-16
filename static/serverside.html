@@ -1,0 +1,56 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html>
+<head splash>
+<title>Castle Storage</title>
+</head>
+<body>
+
+<script src='/js/lib.js' type='text/javascript'></script>
+<script src='/js/libtoo.js' type='text/javascript'></script>
+<script src='/js/vst.js' type='text/javascript'></script>
+<script src='/js/rad.js' type='text/javascript'></script>
+
+<div id=splashpage style='min-height: 100%; min-width: 100%; padding: 0px; margin: 0px; background: white; z-index: 200; position: fixed; left: 0px; top: 0px;'>
+<div id=splashpage2 style='margin: 0px auto; height: 100px; width: 200px; padding: 10px; margin-top: 100px; background: black; color: green; font-size: 18pt'>
+<div id=splashlabel style='margin: 0px auto; padding: 5px; max-width: 150px; text-align: center; border: 1px solid green; background: black; color: tan'>
+Loading
+</div>
+</div>
+</div>
+
+#include tpl/radlib.html
+#include tpl/backend.html
+</body>
+
+<script language=javascript>
+'server'; async function leftPad(inputString, targetLength, padWith) {
+    let result=0;
+	let str = padWith;
+	let n = targetLength-inputString.length;
+    count=2;
+    while (n >= count) {
+        if (n % count == 0) {
+            result += count;
+            n /= count;
+			str += str;
+        } else {
+            count++;
+			str += padWith;
+        }
+    }
+    return str + inputString;
+}
+
+async function test()
+{
+	let testString = 'test';
+	let testLength = 10;
+	let testPad = '0';
+	let testOutput = await leftPad(testString, testLength, testPad);
+	console.log(testOutput);
+}
+
+test();
+
+</script>
+</html>
