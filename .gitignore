@@ -1,6 +1,4 @@
 node_modules/
 logs/
-db/
-php/
 servers.cfg
 .ssl/

@@ -4,7 +4,6 @@
   "description": "demo server for radiantjs",
   "author": "Scott A. Powell",
   "license": "UNLICENSED",
-  "type": "module",
   "dependencies": {
     "async": "^2.6.4",
     "bson": "^7.2.0",
