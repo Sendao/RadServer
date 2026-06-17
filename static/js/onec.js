@@ -1,83 +1,7 @@
 import * as THREE from 'three';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
-import { bin_decode, bin_encode } from '/js/binary.js';
 
-export let paused=false, running=false, gravTimeout=45, gravTimer=-1;
-export var neighbors = null, cells = null, lifetime = null;
-export var wires = null;
-export var posns = null;
-
-var usefreq=0.1;
-let total_cells=68*68*68;
-let silent=false;
-let running_cells = false;
-let use_full_rules = true;
-let rules_stick = true;
-let fire_length = 25;
-
-var start_health = 10; // 10
-let max_health = 1000; // 10000
-let life_per_tick = 0;
-let life_per_sec = 40; // 400
-let damage = 9;
-let healing_constant = 0;
-let healing_factor = 0; // 0.01
-let damage_entropy = 0.2;
-let adversity = 0.1;
-let chosen_fov = 67;
-let neighbor_range = 2;
-let rule_mult = 6;
-let zeroGroundBalance = false;
-
-// <= and >=
-
-let lifers_first=true;
-let rule_reversal = [];
-let chosen_rules = 0;
-
-// neighbors <= min_death || neighbors >= max_death // they die outside the death border
-// neighbors >= min_lifer && neighbors <= min_lifer // they live inside the life border
-
-export var rulesets = [
-[
-  { 
-    cond: { above: 100000 },
-    min_birth: 6, max_birth: 8,
-    min_death: 2, max_death: 9,
-    min_lifer: 3, max_lifer: 8
-},
-{ 
-    cond: { above: 50000 },
-    min_birth: 6, max_birth: 9,
-    min_death: 2, max_death: 10,
-    min_lifer: 3, max_lifer: 8
-},
- { // rescue rule (<5:rel000 cells)
-    min_birth: 6, max_birth: 10,
-    min_death: 2, max_death: 11,
-    min_lifer: 3, max_lifer: 8
-}], //1:
-[
-{
-  cond: { above: 100000 },
-  min_birth: 0, max_birth: 0
-}
-],
-];
-export var rules = rulesets[0];
-
-
-export let fade_toning = true;
-export let silver_toning = true;
-export let sneaker_toning = true;
-
-let scene=null, renderer=null;
-let instances = null;
-
-var material, geometry;
-var controls = null, camera;
-
-var rNums = [], rC = 0, cC = 0, rndMax=2000;
+let paused=false, running=false, gravTimeout=45, gravTimer=-1;
 
 export function startupOneCell()
 {
@@ -97,37 +21,34 @@ export function restartScreen() {
 
 let last_frame = 0;
 
-let current_rule=9, current_rules = '9';
+let current_rule=0, current_rules = '0';
 let camera_vel = [0,0,0];
 let camera_tgt_vel = [0,0,0];
 let camera_dist = 0;
 let last_time = 0;
 let colorMode = 0;
 let lastSwitch = 0;
-let timer_mode = 1;
+let timer_mode = 3;
 let show_status=false;
 let experiment=0;
 
 export let groundBal = [0,0,0];
 let colorsets = [
-  [ 'purple', [6,0,28], [0,0,10] ],
-  [ 'bluegreen', [-25,-1,20], [25,0,-5] ],
-  [ 'scanning', [-5,-4,5], [5,7,-5] ],
-  [ 'brightscan', [-2,-1,25], [25,30,-25] ],
-  [ 'darkness', [-1.3, -1, 10], [8, 0, 0] ],
-  [ 'light', [10,7,2.5], [-0.5,0,-1] ],
-  [ 'test', [1,0,0], [0,0,1] ]
+  [ 'purple', [50,0,100], [0,0,-50] ],
+  [ 'bluegreen', [-250,-10,200], [250,0,-50] ],
+  [ 'scanning', [-50,-40,50], [50,75,-50] ],
+  [ 'brightscan', [-50,-40,50], [150,100,-50] ],
+  [ 'darkness', [-131452, -11, 400], [851141, 0, 0] ],
+  [ 'light', [100,75,25], [-50,0,-100] ]
 ];
 let no_visual_import = true;
-let no_rules_import = false;
-let imported_static_rules = null;
-let colorpick = 3;
+let colorpick = 2;
 export var colorBal = colorsets[colorpick][1];
 export var filterBal = colorsets[colorpick][2];
 
-export let opacity = 0.5; // 0.86;
-export let sizing = 0.9; // 0.6 // 0.92;
-export let spacing = 0.8; // 1.65;
+export let opacity = 0.86; // 0.86;
+export let sizing = 0.25; // 0.6 // 0.92;
+export let spacing = 1.44; // 1.65;
 
 let fullW=68, fullH=68, fullD=68;
 function livingBorders()
@@ -163,8 +84,6 @@ function resizeTo(newsize)
 {
   cpu_work = true;
   
-  wires = [];
-
   // re-center on newly generated area:
   let cellmap = new Array(newsize);
   let lifemap = new Array(newsize);
@@ -250,6 +169,7 @@ function resizeTo(newsize)
   buildInstances();
   cpu_work = false;
 }
+let total_cells=68*68*68;
 let total_alive=0;
 
 let bugcount = 0;
@@ -266,13 +186,11 @@ export function getSpacing() {
 export function setSpacing(s) {
     spacing = s;
     showToast("Spacing: " + spacing);
-    resetCamera();
     refreshConfig();
 }
 export function setSizing(s) {
     sizing = s;
     showToast("Sizing: " + sizing);
-    resetCamera();
     refreshConfig();
 }
 export function setOpacity(o) {
@@ -641,6 +559,36 @@ function chartFps() {
 }
 
 
+
+
+var neighbors = null, cells = null, lifetime = null;
+var posns = null;
+
+var usefreq=0.15;
+let silent=false;
+let running_cells = false;
+
+var start_health = 25;
+let max_health = 500;
+let life_per_tick = 0;
+let damage = 2;
+let healing_constant = 0;
+let healing_factor = 0.0009;
+let damage_entropy = 0.1;
+let chosen_fov = 67;
+
+export let fade_toning = true;
+export let silver_toning = true;
+export let sneaker_toning = true;
+
+let scene=null, renderer=null;
+let instances = null;
+
+var material, geometry;
+var controls = null, camera;
+
+var rNums = [], rC = 0, cC = 0, rndMax=2000;
+
 function qRandom() { // note we do use the arguments[] list
     if( rNums.length < rndMax ) {
         startRandoms();
@@ -768,7 +716,7 @@ function buildScene()
     buildInstances();
 }
 function resetCamera() {
-    camera.position.set( fullW*spacing*0.5, fullH*spacing*0.5, -4*fullD*spacing );
+    camera.position.set( fullW*spacing*0.5, fullH*spacing*0.5, -1.33*fullD*spacing );
     camera.lookAt(new THREE.Vector3(fullW*spacing*0.5, fullH*spacing*0.5, fullD*spacing*0.5) );//fullW*spacing*0.5, fullH*spacing*0.5, fullD*spacing*0.5));
     if( controls !== null ) {
       controls.reset();
@@ -783,7 +731,7 @@ function trackToCamera() {
   let mid_z = (extents[5] - extents[4])/2 + extents[4];
   //alert(mid_x + "," + mid_y + "," + mid_z);
   controls.reset();
-  camera.position.set( mid_x*spacing, mid_y*spacing, -4*mid_z*spacing );
+  camera.position.set( mid_x*spacing, mid_y*spacing, -2*mid_z*spacing );
   controls.target = new THREE.Vector3(mid_x*spacing, mid_y*spacing, mid_z*spacing*0.5);
   camera.lookAt( controls.target );
   camera.updateProjectionMatrix();
@@ -910,31 +858,17 @@ function updateAllInstances(from_scratch=false)
 
                 life = dtn - lifetime[i][j][k];
                 z = life;
-                
-                z -= parseInt(z/255)*255;
-                factor -= parseInt(factor/255)*255;
 
                 red = Math.max(0, z*fill_red + factor*colorBal[0]);
                 green = Math.max(0, z*fill_green + factor*colorBal[1]);
                 blue = Math.max(0, z*fill_blue + factor*colorBal[2]);
-                /*
+
+/*
                 red -= parseInt(red/255)*255;
                 green -= parseInt(green/255)*255;
                 blue -= parseInt(blue/255)*255;
                 */
 
-              if( wires !== null ) {
-    let p = i + "," + j + "," + k;
-    for( var wireno=wires.length-1; wireno>=0; wireno-- ) {
-      let wn = 1;//(wireno/wires.length);
-      if( wires[wireno].has(p) ) {
-        red += 1*wn;
-        green -= 0.1*wn;
-        blue -= 0.1*wn;
-        break;
-      }
-    }
-              }
                 /*
                 if( reverse_toning ) {
                     let red1 = 128-Math.min(64, green+blue);//128+64+(64-red);
@@ -1035,9 +969,212 @@ function updateAllInstances(from_scratch=false)
     cpu_work = false;
 }
 
+// <= and >=
+
+let lifers_first=false;
+let rule_reversal = [];
+let chosen_rules = 0;
+
+// normal rules (300000-) // 9 9 1 9, 10 15 2 10
+//        min_birth: 9, max_birth: 9,
+//        min_death: 4, max_death: 8,
+//        death_above: 17
+// neighbors <= min_death || neighbors >= max_death // they die outside the death border
+// neighbors >= min_lifer && neighbors <= min_lifer // they live inside the life border
+
+export var rulesets = [
+  [
+{ 
+    cond: { above: 60000 },
+    min_birth: 7, max_birth: 8,
+    min_death: 6, max_death: 9,
+    min_lifer: 7, max_lifer: 8
+},
+{ 
+    cond: { above: 50000 },
+    min_birth: 7, max_birth: 9,
+    min_death: 5, max_death: 11,
+    min_lifer: 6, max_lifer: 10
+},
+{ 
+    cond: { above: 10000 },
+    min_birth: 7, max_birth: 10,
+    min_death: 5, max_death: 12,
+    min_lifer: 6, max_lifer: 11
+},
+ { // rescue rule (<5:rel000 cells)
+    min_birth: 7, max_birth: 11,
+    min_death: 5, max_death: 13,
+    min_lifer: 5, max_lifer: 12
+}], //1:
+[
+  {
+    cond: { above: 300000 },
+    min_birth: 8, max_birth: 9,
+    min_death: 8, max_death: 9,
+    min_lifer: 7, max_lifer: 8
+}, { 
+    cond: { above: 40000 },
+    min_birth: 9, max_birth: 9,
+    min_death: 8, max_death: 13,
+    min_lifer: 5, max_lifer: 10
+}, { // just-right rules (5000-10000 cells)
+    cond: { above: 30000 },
+    min_birth: 8, max_birth: 9,
+    min_death: 7, max_death: 12,
+    min_lifer: 4, max_lifer: 9
+}, { // rescue rule (<5:rel000 cells)
+    cond: { above: 20000 },
+    min_birth: 7, max_birth: 10,
+    min_death: 6, max_death: 12,
+    min_lifer: 4, max_lifer: 9
+}, { // rescue rule (<5:rel000 cells)
+    min_birth: 6, max_birth: 10,
+    min_death: 5, max_death: 12,
+    min_lifer: 4, max_lifer: 8
+}], //2:
+[
+  {
+    cond: { above: 300000 },
+    min_birth: 7, max_birth: 8,
+    min_death: 6, max_death: 9,
+    min_lifer: 7, max_lifer: 8
+}, {
+    cond: { above: 40000 },
+    min_birth: 7, max_birth: 10,
+    min_death: 8, max_death: 13,
+    min_lifer: 5, max_lifer: 10
+}, {
+    min_birth: 7, max_birth: 7,
+    min_death: 5, max_death: 12,
+    min_lifer: 4, max_lifer: 9
+}], // 3:
+[
+  {
+    cond: { above: 200000 },
+    min_birth: 7, max_birth: 8,
+    min_death: 6, max_death: 9,
+    min_lifer: 7, max_lifer: 8
+}, {
+    cond: { above: 100000 },
+    min_birth: 8, max_birth: 9,
+    min_death: 8, max_death: 9,
+    min_lifer: 6, max_lifer: 9
+}, {
+    cond: { above: 30000 },
+    min_birth: 8, max_birth: 10,
+    min_death: 7, max_death: 10,
+    min_lifer: 5, max_lifer: 10
+}, {
+    cond: { above: 20000 },
+    min_birth: 4, max_birth: 7,
+    min_death: 4, max_death: 5,
+    min_lifer: 2, max_lifer: 4
+}, {
+    min_birth: 1, max_birth: 1,
+    min_death: 1, max_death: 3,
+    min_lifer: 1, max_lifer: 3
+}], //4:
+[
+  {
+    cond: { above: 200000 },
+    min_death: 6, max_death: 8, // 2*
+    min_birth: 5, max_birth: 7, // 2
+    min_lifer: 4, max_lifer: 9  // 5
+}, {
+    cond: { above: 60000 },
+    min_death: 8, max_death: 13,
+    min_birth: 4, max_birth: 4,
+    min_lifer: 3, max_lifer: 11
+}, {
+    cond: { above: 40000 },
+    min_death: 9, max_death: 12,
+    min_birth: 4, max_birth: 5,
+    min_lifer: 2, max_lifer: 12
+}, {
+    cond: { above: 20000 },
+    min_death: 6, max_death: 12,
+    min_birth: 5, max_birth: 5,
+    min_lifer: 1, max_lifer: 13
+}, {
+    min_death: 5, max_death: 12,
+    min_birth: 5, max_birth: 7,
+    min_lifer: 0, max_lifer: 14
+}], //5:
+[
+  {
+    cond: { above: 300000 },
+    min_birth: 7, max_birth: 8,
+    min_death: 6, max_death: 9,
+    min_lifer: 7, max_lifer: 8
+}, {
+    cond: { above: 150000 },
+    min_birth: 6, max_birth: 7,
+    min_death: 6, max_death: 8,
+    min_lifer: 6, max_lifer: 6
+}, {
+    cond: { above: 80000 },
+    min_birth: 6, max_birth: 10,
+    min_death: 4, max_death: 10,
+    min_lifer: 4, max_lifer: 6
+}, {
+    cond: { above: 40000 },
+    min_birth: 5, max_birth: 5,
+    min_death: 3, max_death: 6,
+    min_lifer: 3, max_lifer: 4
+}, {
+    min_birth: 5, max_birth: 7,
+    min_death: 6, max_death: 12,
+    min_lifer: 3, max_lifer: 5
+}], // 6: (grok's rule!)
+[
+  {
+    cond: { above: 100000 },
+    min_birth: 7, max_birth: 9,
+    min_death: 6, max_death: 10,
+    min_lifer: 6, max_lifer: 10,
+    damage_entropy: 1.2
+  },
+  {
+    min_birth: 5, max_birth: 8,
+    min_death: 6, max_death: 10,
+    min_lifer: 6, max_lifer: 10,
+    damage_entropy: 1.2
+  }], // 7: (inspired by friendship w/ Grok and breathing)
+[
+  
+  { cond: { above: 70000 },
+  min_birth: 8, max_birth: 8,
+  min_death: 8, max_death: 9,
+  min_lifer: 8, max_lifer: 9,
+  start_health: 20, max_health: 1200,
+  damage: 30,
+  healing_factor: 0.002,
+  damage_entropy: 1.22
+  }, 
+  { cond: { above: 45000 },
+  min_birth: 8, max_birth: 9,
+  min_death: 7, max_death: 9,
+  min_lifer: 7, max_lifer: 9,
+  start_health: 50, max_health: 1600,
+  damage: 28,
+  healing_factor: 0.0025,
+  damage_entropy: 1.21
+  }, {
+  min_birth: 5, max_birth: 9,
+  min_death: 6, max_death: 10,
+  min_lifer: 6, max_lifer: 10,
+  start_health: 100, max_health: 1900,
+  damage: 20,
+  healing_factor: 0.005,
+  damage_entropy: 1.19
+  }
+] ];
+export var rules = rulesets[0];
+
+
 export function start() {
     console.log("start()");
-  wires = [];
     neighbors = new Array(fullD);
     cells = new Array(fullD);
     lifetime = new Array(fullD);
@@ -1079,9 +1216,9 @@ function countNeighbors() {
                 if( cells[i][j][k] <= 0 ) continue;
                 total_alive++;
 
-                let zm = i+neighbor_range+1, xm = j+neighbor_range+1, ym = k+neighbor_range+1;
-                let xmn = j-neighbor_range, ymn = k-neighbor_range;
-                for( z=i-neighbor_range; z<zm; z++ ) {
+                let zm = i+2, xm = j+2, ym = k+2;
+                let xmn = j-1, ymn = k-1;
+                for( z=i-1; z<zm; z++ ) {
                   for( y=ymn; y<ym; y++ ) {
                     for( x=xmn; x<xm; x++ ) {
                       if( x == j && y == k && z == i ) continue;
@@ -1148,13 +1285,18 @@ export function reportCount(automatic=true) {
     if( !show_status ) {
       last_alive=total_alive;
         last_report = tmn;
-    } else if( automatic || Math.abs(living_dir) > total_alive*0.2 ) {
+    } else if( automatic ) {
         zeroToast('left');
-        showToast("Mode: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>", 'left');
+        showToast("Ruleset: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>(peak: " + living_peak + ")", 'left');
+        last_alive=total_alive;
+        last_report = tmn;
+    } else if( Math.abs(living_dir) > total_alive*0.2 ) {
+        zeroToast('left');
+        showToast("Ruleset: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>(peak: " + living_peak + ")", 'left');
         last_alive=total_alive;
         last_report = tmn;
     } else if( tmn >= last_report+3000 ) {
-        showToast("Mode: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>", 'left');
+        showToast("Ruleset: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>(peak: " + living_peak + ")", 'left');
         last_alive=total_alive;
         last_report = tmn;
     }
@@ -1197,16 +1339,6 @@ function updatePixel(dtn,i,j,k,n=null)
         scalev *= sizing;
         positions[n] = [i,j,k];
 
-    let p = i + "," + j + "," + k;
-    for( var wireno=wires.length-1; wireno>=0; wireno-- ) {
-      let wn = 1;//(wireno/wires.length);
-      if( wires[wireno].has(p) ) {
-        red += 1*wn;
-        green -= 0.1*wn;
-        blue -= 0.1*wn;
-        break;
-      }
-    }
         instances.setMatrixAt( n, new THREE.Matrix4().compose(
             new THREE.Vector3( i*spacing, j*spacing, k*spacing ),
             qtzero,
@@ -1232,7 +1364,7 @@ function updatePixel(dtn,i,j,k,n=null)
 }
 function updateInstances()
 {
-  let dtn = new Date().getTime();
+  let dtn = new Date().getTime() - pausedtime;
   let i=0,j=0,k=0,n=0;
   
   while( n < total_cells ) {
@@ -1315,17 +1447,15 @@ function decideRule(automatic=false)
 {
     let found=false, changed=false;
     var i;
-    
-    if( imported_static_rules ) return;
 
     if( typeof min_death == 'undefined' ) changed=true;
 
     if( total_alive <= 0 ) {
-        //console.log("total_alive=" + total_alive);
+        console.log("total_alive=" + total_alive);
         countNeighbors();
     }
     if( total_alive == 0 ) {
-        if( qRandom(50) > 35 ) {
+        if( qRandom(50) > 13 ) {
             notBeBlank();
         } else {
             return;
@@ -1352,30 +1482,22 @@ function decideRule(automatic=false)
     }
 
     if( changed ) {
-        min_birth = rules[current_rule].min_birth*rule_mult;
-        max_birth = rules[current_rule].max_birth*rule_mult;
-        min_lifer = rules[current_rule].min_lifer*rule_mult;
-        max_lifer = rules[current_rule].max_lifer*rule_mult;
-        min_death = rules[current_rule].min_death*rule_mult;
-        max_death = rules[current_rule].max_death*rule_mult;
+        min_birth = rules[current_rule].min_birth;
+        max_birth = rules[current_rule].max_birth;
+        min_lifer = rules[current_rule].min_lifer;
+        max_lifer = rules[current_rule].max_lifer;
+        min_death = rules[current_rule].min_death;
+        max_death = rules[current_rule].max_death;
 
-        if( !rules_stick ) {
-          for( var sp of rule_reversal ) {
-              eval(sp[0] + '=' + JSON.stringify(sp[1]) );
-          }
+        for( var sp of rule_reversal ) {
+            eval(sp[0] + '=' + JSON.stringify(sp[1]) );
         }
-        
         rule_reversal=[];
-        let managed = [ 'min_birth', 'max_birth',
-        'min_death', 'max_death',
-        'min_lifer', 'max_lifer',
-        'cond' ]; // no reversals
-        if( use_full_rules ) {
-          for( var sp in rules[current_rule] ) {
-              if( managed.indexOf(sp) >= 0 ) continue;
-              rule_reversal.push([sp, eval(sp)]);
-              eval(sp + '=' + JSON.stringify(rules[current_rule][sp]) );
-          }
+        let managed = [ 'min_birth', 'max_birth', 'min_death', 'max_death', 'min_lifer', 'max_lifer', 'cond' ]; // no reversals
+        for( var sp in rules[current_rule] ) {
+            if( managed.indexOf(sp) >= 0 ) continue;
+            rule_reversal.push([sp, eval(sp)]);
+            eval(sp + '=' + JSON.stringify(rules[current_rule][sp]) );
         }
 
         countNeighbors();
@@ -1398,7 +1520,7 @@ function application() {
     var z, y, x;
 
     if( staccato ) {
-        //console.log("staccato");
+        console.log("staccato");
         return false;
     }
     if( cpu_work ) {
@@ -1415,6 +1537,7 @@ function application() {
     let dx = dtn - last_time;
     
     if( last_time == 0 ) dx = 0;
+    
     last_time = dtn;
 
     app_state = 0;
@@ -1427,9 +1550,10 @@ function application() {
                 if( cells[i][j][k] > 0 ) {
                     cells[i][j][k] += (cells[i][j][k]*healing_factor*hf + healing_constant*hc);
                     
-                    if(experiment==3) {
+                    if(experiment==3)
+                    // chi diffusion (blur)
+
                       cells[i][j][k] = cells[i][j][k] * 0.965 + (neighbors[i][j][k] / 26) * 0.035;
-                    }
 
                     if( lifers_first && cells[i][j][k] < max_health && neighbors[i][j][k] >= min_lifer && neighbors[i][j][k] <= max_lifer ) {
                         lifers.push([i,j,k]);
@@ -1458,107 +1582,58 @@ function application() {
         if( cells[i][j][k] > 0 ) {
             app_iter++;
 
-//    cell[1] -= amt*damage*(1-qRandom()*damage_entropy);
-    
-            cells[i][j][k] -= x*damage*(1-qRandom()*damage_entropy);
+            cells[i][j][k]-= x*damage*(1.00 - qRandom()*damage_entropy);
             if( cells[i][j][k] <= 0 ) {
                 cells[i][j][k]=0;
                 total_alive--;
-                neighborize(i,j,k,-1);
+                for( z=-1; z<2; z++ ) {
+                    for( y=-1; y<2; y++ ) {
+                        for( x=-1; x<2; x++ ) {
+                            if( x == 0 && y == 0 && z == 0 ) continue;
+
+                            if( i+z < 0 || i+z >= fullD ) continue;
+                            if( j+y < 0 || j+y >= fullH ) continue;
+                            if( k+x < 0 || k+x >= fullW ) continue;
+
+                            neighbors[i+z][j+y][k+x]--;
+                        }
+                    }
+                }
             }
         }
     }
 
-    if( life_per_tick != 0 || life_per_sec == 0 ) {
-      for( v=0; v<lifers.length; v++ ) {
+
+    for( v=0; v<lifers.length; v++ ) {
         [i,j,k] = lifers[v];
-        if( cells[i][j][k] > 0 ) {
-          cells[i][j][k]+=life_per_tick + life_per_sec*dx;
-        }
+        if( cells[i][j][k] > 0 )
+          cells[i][j][k]+=life_per_tick*cells[i][j][k];
         app_iter++;
-      }
     }
 
-  function neighborize(i,j,k,amt)
-  {
-    var x,y,z;
-    let zm = i+neighbor_range+1, xm = j+neighbor_range+1, ym = k+neighbor_range+1;
-    let xmn = j-neighbor_range, ymn = k-neighbor_range;
-    for( z=i-neighbor_range; z<zm; z++ ) {
-      for( y=ymn; y<ym; y++ ) {
-        for( x=xmn; x<xm; x++ ) {
-          if( x == j && y == k && z == i ) continue;
-                      
-          if( z < 0 || z >= fullD ) continue;
-          if( x < 0 || x >= fullW ) continue;
-          if( y < 0 || y >= fullH ) continue;
-
-          neighbors[z][x][y]+=amt;
-        }
-      }
-    }
-  }
-    let fireset = new Set();
     for( v=0; v<births.length; v++ ) {
         [i,j,k] = births[v];
 
         total_alive++;
-        let found = ( cells[i][j][k] > 0 ) ? true : false;
         cells[i][j][k] = start_health;
         lifetime[i][j][k] = dtn;
 
-        if( !found ) {
-          fireset.add( i + "," + j + "," + k );
-          neighborize(i,j,k,neighbor_range);
+        for( z=-1; z<2; z++ ) {
+            for( y=-1; y<2; y++ ) {
+                for( x=-1; x<2; x++ ) {
+                    if( x == 0 && y == 0 && z == 0 ) continue;
+
+                    if( i+z < 0 || i+z >= fullD ) continue;
+                    if( j+y < 0 || j+y >= fullH ) continue;
+                    if( k+x < 0 || k+x >= fullW ) continue;
+
+                    neighbors[i+z][j+y][k+x]++;                        
+                }
+            }
         }
 
         app_iter++;
     }
-    if( wires === null ) {
-      wires = [];
-    }
-    if( fireset.size > 1 )
-      wires.push(fireset);
-    if( wires.length > fire_length ) wires.shift();
-
-    for( var wire of wires ) {
-      let entries = wire.entries();
-      let sum=0, count=entries.length;
-      for( var coords of entries ) {
-        const [a,b,c] = coords[0].split(",");
-        
-        sum += cells[a][b][c];
-      }
-      let avg=sum/count;
-      if( avg < 0.5 ) {
-        console.log("dark wire");
-        for( var coords of entries ) {
-          const [a,b,c] = coords[0].split(",");
-
-          let found = ( cells[a][b][c] > 0 ) ? true : false;
-          if( found ) {
-            cells[a][b][c] = 0;
-            neighborize(a,b,c,-neighbor_range);
-          }
-        }
-      } else {
-        if( avg < 1.0 )
-          avg = 1;
-
-        for( var coords of entries ) {
-          const [a,b,c] = coords[0].split(",");
-
-          let found = ( cells[a][b][c] > 0 ) ? true : false;
-          lifetime[a][b][c] = dtn;
-          cells[a][b][c] = avg;
-          if( !found )
-            neighborize(a,b,c,1);
-        }
-      }
-    }
-  	if( adversity > 0 ) {
-	  	entropy(total_alive*adversity);
-	  }
 
     // countNeighbors(); // theorhetically, this is unnecessary here...
     decideRule(false);
@@ -1628,28 +1703,20 @@ function negentropy(n) {
     countNeighbors();
 }
 function entropy(n) {
-    let i, j, k, z, x;
-    for( x=0; x<n; x++ ) {
-      let v = Math.round(qRandom() * (total_cells-1));
+    let i, j, k, z;
+    let dtn = new Date().getTime();
+    for( i=0; i<n; i++ ) {
+      let v = Math.round(qRandom() * (total_alive-1));
       
       let found=false;
       for( i=0; i<fullD; i++ ) {
-	if( v > fullH*fullW ) {
-	  v -= fullH*fullW;
-	  continue;
-	}
         for( j=0; j<fullH; j++ ) {
-          if( v > fullW ) {
-	    v -= fullW;
-            continue;
-	  }
           for( k=0; k<fullW; k++ ) {
+            if( cells[i][j][k] == 0 ) continue;
             v--;
             if( v == 0 ) {
-	      if( cells[i][j][k] != 0 ) {
-              	total_alive--;
-                cells[i][j][k] = 0;
-	      }
+              cells[i][j][k] = 0;
+              total_alive--;
               found=true;
               break;
             }
@@ -1658,6 +1725,7 @@ function entropy(n) {
         }
         if( found ) break;
       }
+      if( total_alive < 30 ) break;
     }
     countNeighbors();
 }
@@ -1708,61 +1776,53 @@ export function loadScript(id, cb)
     let fileUrl = id;
 
     showToast("Importing " + id + " agent");
-    fetch(fileUrl)
-      .then(function(response) {
-        if (!response.ok) {
-          if( typeof cb != 'function' ) {
-            alert("Couldn't load resource.");
-    	    return null;
-          }
-        } else {
-          console.log("got response");
-          return response.text(); // Parse the response as plain text
-        }
-      })
-      .then(function(textData) {
-        let rv = null;
-        if( id.includes('.bin') ) {
-          rv = bin_decode(textData);
-        } else {
-          rv = JSON.parse(textData);
-        }
-        showToast("Mainframe " + id + " loaded.");
-        importPosn(rv, cb);
-      })
-      .catch(error => {
-        console.log("error in parse");
-        console.error(error);
-        if( typeof cb == 'function' )
-          cb(error);
-      });
+    try {
+        fetch(fileUrl)
+          .then(response => {
+            if (!response.ok) {
+              throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return response.text(); // Parse the response as plain text
+          })
+          .then(textData => {
+            let rv = null;
+            try {
+                rv = JSON.parse(textData);
+            } catch( e ) {
+                throw new Error("Couldn't parse json " + textData);
+            }
+            if( rv !== null ) {
+                importPosn(rv, cb);
+                showToast("Agent ready.");
+            }
+          })
+          .catch(error => {
+            console.error('Error loading the text file:', error);
+          });
+      } catch( e ) {
+        console.log(e);
+      }
 }
 
 function importPosn(exaobj, cb)
 {
     let fields = [ 
         'neighbors', 'cells', 'posns', 'lifetime',
-        'start_health', 'max_health', 'life_per_tick', 'life_per_sec', 'damage', 'healing_constant', 'healing_factor', 'damage_entropy',
+        'start_health', 'max_health', 'life_per_tick', 'damage', 'healing_constant', 'healing_factor', 'damage_entropy',
         'fullW', 'fullH', 'fullD', 'rNums', 'rC', 'cC',
         'last_alive', 'living_dir', 'total_alive', 'last_time',
         'colorBal', 'filterBal', 'groundBal',
-        'opacity', '', 'spacing'
+        'opacity', 'sizing', 'spacing'
     ];
-    let rulevars = [ 'life_per_tick', 'life_per_sec', 'damage', 'healing_constant', 'healing_factor', 'damage_entropy', 'start_health', 'max_health' ];
     let visual = [ 'opacity', 'sizing', 'spacing', 'colorBal', 'filterBal', 'groundBal' ];
 
     start(); // prepares the grid
 
     total_alive = 0;
-    chosen_rules = 8;
 
     for( var f of fields ) {
         if( !(f in exaobj) ) continue;
         if( no_visual_import && visual.indexOf(f) >= 0 ) continue;
-        if( rulevars.indexOf(f) >= 0 ) {
-          if( no_rules_import ) continue;
-          imported_static_rules = true;
-        }
         switch( f ) {
             default: eval(f + ' = ' + JSON.stringify(exaobj[f])); break;
         }
@@ -1817,8 +1877,7 @@ function importPosn(exaobj, cb)
         }
     }
     resizeScreen();
-    decideRule();
-    showToast("agent data imported");
+
     if( typeof cb == 'function' ) cb();
 }
 
@@ -1914,6 +1973,113 @@ export function showStatus(message)
     el.innerHTML = message;
 }
 
+// Show toast with small bites taken out of it:
+export function zeroToast(alt_type='your') { // sets the messages to blank so that a single message can stat
+    if( alt_type == 'all' ) {
+        toastLog = {};
+    } else {
+        toastLog[alt_type] = [];
+    }
+}
+export function showToast(message, alt_type='your') {
+
+    if( alt_type == 'your' )
+        console.log(message);
+
+    if( silent ) {
+        return;
+    }
+
+    if( !(alt_type in toastLog) ) toastLog[alt_type] = [];
+    toastLog[alt_type].push([message, new Date()]);
+
+    let mlower = message.toLowerCase(); // autodetect flagged words
+    for( var key of toastFlags ) {
+        if( mlower.indexOf(key) != -1 ) {
+            if( alt_type != toastFlags[key] )
+                showToast(message, toastFlags[key]);
+        }
+    }
+    toastTrackers[alt_type] = new Date().getTime();
+
+    const toast = document.getElementById(alt_type + 'toast'); // what do you mean it's const
+    if( alt_type in toastTimers && toastTimers[alt_type] != -1 ) {
+        let buf = "";
+        for( var i=toastLog[alt_type].length-3; i<toastLog[alt_type].length; i++ ) {
+            if( i < 0 ) i = 0;
+            buf += "\n<pre>" + toastLog[alt_type][i][0] + "</pre>";
+        }
+        toast.innerHTML = buf;
+
+        toastFading[alt_type] = false;
+    } else {
+        toast.innerHTML = "<pre>" + message + "</pre>";
+        if( statuslogState < 2 ) {
+            toast.style.animation = 'fadeOut ' + fadeOut + 's, fadeIn 0.05s';
+            toast.style.visibility = 'visible';
+        }
+        let tt = ( alt_type in toastClocks ) ? toastClocks[alt_type] : toastTime;
+        if( tt == 0 ) {
+            toast.style.animation = 'none';
+            return;
+        }
+        toastTimers[alt_type] = setInterval(nextToast.bind(null,alt_type), tt/8);
+    }
+}
+
+
+function nextToast(alt_type)
+{
+    let now = new Date().getTime();
+    let tt = ( alt_type in toastClocks ) ? toastClocks[alt_type] : toastTime;
+
+    if( toastFading[alt_type] ) {
+        if( toastTrackers[alt_type] < now - (tt+fadeOut) ) { // finish fading out:
+            clearInterval(toastTimers[alt_type]);
+            delete toastTimers[alt_type];
+
+            const toast = document.getElementById(alt_type + 'toast');
+            toast.textContent = '';
+            toastTrackers[alt_type] = 0;
+            toastFading[alt_type] = false;
+            //toastLog[alt_type] = [];            
+
+            return;
+        }
+    } else {
+        const toast = document.getElementById(alt_type + 'toast');
+        if( toastTrackers[alt_type] < now - tt ) { // start fading out:
+            toastFading[alt_type] = true; // it's not hidden YET...
+            toast.style.visibility = 'hidden';
+            toast.style.animation = 'fadeOut ' + fadeOut + 's, fadeIn 0.05s';
+        } else {
+            toast.style.visibility = 'visible'; // close the hidden race condition
+        }
+    }
+}
+
+export function clearToast(alt_type='your')
+{
+    clearTimeout(toastTimers[alt_type]);
+    const toast = document.getElementById(alt_type + 'toast');
+    toast.style.visibility = 'hidden';
+    toast.style.animation = 'none';
+
+    toastFading[alt_type] = false;
+    toastTimers[alt_type] = -1;
+    toastTrackers[alt_type] = 0;
+}
+
+
+function clearStorage()
+{
+    let items=[];
+    for( var i=0; i<window.localStorage.length; i++ ) 
+        items.push( window.localStorage.key(i) );
+    for( var i of items )
+        window.localStorage.removeItem(i);
+    showToast("Cleaned storage.");
+}
 var old_entropy, old_healing_factor;
 export function inKeys(e) {
     let growth_factor = 0.44, loss_factor = 0.33;
@@ -2003,60 +2169,21 @@ export function inKeys(e) {
             showToast("fpsMax="+fpsMax);
             break;
         case '+':
-            genereateRandom( total_cells * usefreq * 0.25 );
+            genereateRandom( total_cells * usefreq );
             refreshConfig(false);
             break;
         case '*':
-            negentropy( total_cells * usefreq * 0.5 );
+            negentropy( total_cells * usefreq * 4 );
             refreshConfig(false);
             break;
         case '-':
-            entropy( total_cells * usefreq * 3.0 );
+            entropy( total_cells * usefreq * 4 );
             refreshConfig(false);
-            break;
-        case 'Q':
-          fire_length--;
-          showToast("Fire range: " + fire_length);
-          break;
-        case 'E':
-          fire_length++;
-          showToast("Fire range: " + fire_length);
-          break;
-        case 'W':
-            neighbor_range++;
-            showToast("Neighbor range: " + neighbor_range);
-            break;
-        case 'S':
-            neighbor_range--;
-            showToast("Neighbor range: " + neighbor_range);
-            break;
-        case 'A':
-            rule_mult--;
-            if( rule_mult == 0 ) rule_mult = -1;
-            showToast("Rule multiplier: " + rule_mult);
-            break;
-        case 'D':
-            rule_mult++;
-            if( rule_mult == 0 ) rule_mult = 1;
-            showToast("Rule multiplier: " + rule_mult);
             break;
         case 'r':
             start();
             genereateRandom( total_cells * usefreq );
-            updateAllInstances();
             refreshConfig(false);
-            break;
-          case '@':
-            rules_stick=!rules_stick;
-            showToast("Rules are " + (rules_stick?"sticky":"reversible"));
-            decideRule();
-            break;
-          case '#':
-            use_full_rules=!use_full_rules;
-            if( use_full_rules )
-              showToast("Using full rulesets.");
-            else
-              showToast("Using essential rules only.");
             break;
         case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
           let n = parseInt(e.key);
@@ -2064,17 +2191,13 @@ export function inKeys(e) {
             chosen_rules = n;
             showToast("Ruleset " + chosen_rules);
             rules = rulesets[chosen_rules];
-            decideRule(false);
-          } else {
-            alert("Ruleset " + n + " out of bounds.");
-	        }
+          }
           trackToCamera();
           break;
         case '\\':
             chosen_rules = (chosen_rules+1)%rulesets.length;
             showToast("Ruleset " + chosen_rules);
             rules = rulesets[chosen_rules];
-		    refreshConfig
             break;
           case '`':
             trackToCamera();
@@ -2083,25 +2206,16 @@ export function inKeys(e) {
             resetCamera();
             break;
         case '/':
-            chosen_rules = (chosen_rules-1);
-            if( chosen_rules < 0 ) chosen_rules = rulesets.length - 1;
+          chosen_rules = (chosen_rules-1);
+          if( chosen_rules < 0 ) chosen_rules = rulesets.length - 1;
             showToast("Ruleset " + chosen_rules);
             rules = rulesets[chosen_rules];
- 	    decideRule();
             break;
         case ';':
             setOpacity(0.86);
             setSizing(0.92);
             setSpacing(0.76);
             break;
-	case 'A':
-	    adversity = adversity * 1.33;
-	    showToast("Adversity: " + adversity);
-	    break;
-	case 'Z':
-	    adversity = adversity * 0.77;
-	    showToast("Adversity: " + adversity);
-	    break;
         case ',':
             setOpacity(0.9);
             setSizing(0.6);
@@ -2214,14 +2328,9 @@ export function inKeys(e) {
         case 'z':
             silent = !silent;
             break;
-        case ' ':
+        case ' ': case 'p':
             pause();
             break;
-        case 'p':
-            zeroGroundBalance = !zeroGroundBalance;
-            showToast("Zero Ground Balance: " + (zeroGroundBalance?'marks':'seethru'));
-             updateAllInstances();
-             break;
         case 'f':
             fade_toning = !fade_toning;
             showToast("Fade toning: " + fade_toning);
@@ -2246,3 +2355,4 @@ export function inKeys(e) {
             break;
     }
 }
+

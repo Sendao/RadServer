@@ -1,0 +1,12 @@
+proway -> construct
+
+.: cellular markovian analysis
+ - state variables: neighbors
+ - coherent systems become 'fonts'
+
+.: font flowering
+ - distance from font might limit lifetime
+
+.: paint with chaos in an ordered environment
+ - walls that end movement
+ - walls that cycle space

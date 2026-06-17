@@ -2,30 +2,23 @@ import * as THREE from 'three';
 import { TrackballControls } from 'three/addons/controls/TrackballControls.js';
 import { bin_decode, bin_encode } from '/js/binary.js';
 
-export let paused=false, running=false, gravTimeout=45, gravTimer=-1;
-export var neighbors = null, cells = null, lifetime = null;
-export var wires = null;
-export var posns = null;
+let paused=false, running=false, gravTimeout=45, gravTimer=-1;
+var neighbors = null, cells = null, lifetime = null;
+var posns = null;
 
-var usefreq=0.1;
-let fire_length = 25;
-let total_cells=68*68*68;
+var usefreq=0.15;
 let silent=false;
 let running_cells = false;
-let use_full_rules = true;
-let rules_stick = true;
 
 var start_health = 10; // 10
-let max_health = 1000; // 10000
+let max_health = 10000; // 10000
 let life_per_tick = 0;
 let life_per_sec = 40; // 400
-let damage = 9;
+let damage = 90;
 let healing_constant = 0;
 let healing_factor = 0; // 0.01
 let damage_entropy = 0.2;
-let adversity = 0.1;
 let chosen_fov = 67;
-let zeroGroundBalance = false;
 
 // <= and >=
 
@@ -37,8 +30,8 @@ let chosen_rules = 0;
 // neighbors >= min_lifer && neighbors <= min_lifer // they live inside the life border
 
 export var rulesets = [
-[
-  { 
+  [
+{ 
     cond: { above: 100000 },
     min_birth: 7, max_birth: 7,
     min_death: 6, max_death: 9,
@@ -46,12 +39,12 @@ export var rulesets = [
 },
 { 
     cond: { above: 50000 },
-    min_birth: 7, max_birth: 9,
+    min_birth: 9, max_birth: 9,
     min_death: 7, max_death: 13,
     min_lifer: 6, max_lifer: 11
 },
  { // rescue rule (<5:rel000 cells)
-    min_birth: 6, max_birth: 9,
+    min_birth: 7, max_birth: 9,
     min_death: 5, max_death: 12,
     min_lifer: 7, max_lifer: 9
 }], //1:
@@ -62,14 +55,14 @@ export var rulesets = [
     min_death: 8, max_death: 9,
     min_lifer: 7, max_lifer: 8,
     damage_entropy: 1.5,
-    damage: 10
+    damage: 100
 }, { 
     cond: { above: 300000 },
     min_birth: 9, max_birth: 9,
     min_death: 9, max_death: 11,
     min_lifer: 5, max_lifer: 10,
     damage_entropy: 0.5,
-    damage: 10
+    damage: 100
 }, { // just-right rules (5000-10000 cells)
     cond: { above: 13000 },
     min_birth: 10, max_birth: 10,
@@ -77,35 +70,32 @@ export var rulesets = [
     min_lifer: 7, max_lifer: 7,
     damage_entropy: 0.5,
     start_health: 1,
-    damage: 50,
+    damage: 500,
     life_per_sec: 1
-}, { // rescue rule (<:rel000 cells)
+}, { // rescue rule (<5:rel000 cells)
     cond: { above: 2000 },
     min_birth: 6, max_birth: 8,
     min_death: 6, max_death: 11,
     min_lifer: 8, max_lifer: 9,
     damage_entropy: 0.5,
     start_health: 10,
-    damage: 40
+    damage: 400
 }], //2:
 [
   {
     cond: { above: 300000 },
     min_birth: 7, max_birth: 8,
     min_death: 6, max_death: 9,
-    min_lifer: 7, max_lifer: 8,
-	  adversity: 1.8
+    min_lifer: 7, max_lifer: 8
 }, {
     cond: { above: 40000 },
     min_birth: 7, max_birth: 10,
     min_death: 8, max_death: 13,
-    min_lifer: 5, max_lifer: 10,
-	  adversity: 1.8
+    min_lifer: 5, max_lifer: 10
 }, {
     min_birth: 7, max_birth: 7,
     min_death: 5, max_death: 12,
-    min_lifer: 4, max_lifer: 9,
-	  adversity: 1.8
+    min_lifer: 4, max_lifer: 9
 }], // 3:
 [
   {
@@ -163,42 +153,27 @@ export var rulesets = [
   {
     cond: { above: 300000 },
     min_birth: 7, max_birth: 8,
-    min_death: 5, max_death: 8,
-    min_lifer: 6, max_lifer: 8,
-	damage: 60,
-  damage_entropy: 2.0,
-	adversity: 0.01
+    min_death: 6, max_death: 9,
+    min_lifer: 7, max_lifer: 8
 }, {
     cond: { above: 150000 },
-    min_birth: 5, max_birth: 7,
-    min_death: 4, max_death: 8,
-    min_lifer: 4, max_lifer: 6,
-	damage: 100,
-	damage_entropy: 1.0,
-	adversity: 0.01
+    min_birth: 6, max_birth: 7,
+    min_death: 6, max_death: 8,
+    min_lifer: 6, max_lifer: 6
 }, {
     cond: { above: 80000 },
-    min_birth: 5, max_birth: 7,
-    min_death: 4, max_death: 8,
-    min_lifer: 4, max_lifer: 6,
-	damage: 150,
-	damage_entropy: 1.2,
-	adversity: 0.01
+    min_birth: 6, max_birth: 10,
+    min_death: 4, max_death: 10,
+    min_lifer: 4, max_lifer: 6
 }, {
     cond: { above: 40000 },
-    min_birth: 5, max_birth: 6,
-    min_death: 4, max_death: 9,
-    min_lifer: 3, max_lifer: 6,
-	damage: 110,
-	damage_entropy: 1.5,
-	adversity: 0.01
+    min_birth: 5, max_birth: 5,
+    min_death: 3, max_death: 6,
+    min_lifer: 3, max_lifer: 4
 }, {
     min_birth: 5, max_birth: 7,
-    min_death: 5, max_death: 12,
-    min_lifer: 3, max_lifer: 9,
-	damage: 40,
-	damage_entropy: 1.0,
-	adversity: 0.01
+    min_death: 6, max_death: 12,
+    min_lifer: 3, max_lifer: 5
 }], // 6: (grok's rule!)
 [
   {
@@ -221,7 +196,7 @@ export var rulesets = [
   min_death: 8, max_death: 9,
   min_lifer: 8, max_lifer: 9,
   start_health: 20, max_health: 1200,
-  damage: 3,
+  damage: 30,
   healing_factor: 0.002,
   damage_entropy: 1.22
   }, 
@@ -230,7 +205,7 @@ export var rulesets = [
   min_death: 7, max_death: 9,
   min_lifer: 7, max_lifer: 9,
   start_health: 50, max_health: 1600,
-  damage: 2.8,
+  damage: 28,
   healing_factor: 0.0025,
   damage_entropy: 1.21
   }, {
@@ -238,69 +213,12 @@ export var rulesets = [
   min_death: 6, max_death: 10,
   min_lifer: 6, max_lifer: 10,
   start_health: 100, max_health: 1900,
-  damage: 2.0,
+  damage: 20,
   healing_factor: 0.005,
   damage_entropy: 1.19
   }
-],
-[ // 8: lem-copy
-{
-	cond: { above: 7000 },
-    min_birth: 7, max_birth: 8,
-    min_death: 6, max_death: 9,
-    min_lifer: 7, max_lifer: 8,
-	start_health: 1, max_health: 600,
-	life_per_sec: 0.003, damage: 3.0,
-	healing_constant: 0.01, healing_factor: 0.05,
-	damage_entropy: 1.11
-}, {
-    cond: { above: 4000 },
-    min_birth: 9, max_birth: 10,
-    min_death: 8, max_death: 13,
-    min_lifer: 5, max_lifer: 10,
-	start_health: 1, max_health: 1800,
-	life_per_sec: 0.003, damage: 3.0,
-	healing_constant: 0.001, healing_factor: 0.005,
-	damage_entropy: 1.18
-}, {
-    min_birth: 7, max_birth: 7,
-    min_death: 5, max_death: 12,
-    min_lifer: 4, max_lifer: 9,
-	start_health: 1, max_health: 600,
-	life_per_sec: 0.003, damage: 3.0,
-	healing_constant: 0.01, healing_factor: 0.05,
-	damage_entropy: 1.11
-} ],
-[ // 9: lem+experiment
-{
-	cond: { above: 20000 },
-    min_birth: 7, max_birth: 8,
-    min_death: 6, max_death: 9,
-    min_lifer: 7, max_lifer: 8,
-	start_health: 1, max_health: 24,
-	life_per_sec: 0, damage: 6.0,
-	healing_constant: 0.001, healing_factor: 0.005,
-	damage_entropy: 1.01
-}, {
-    cond: { above: 12000 },
-    min_birth: 7, max_birth: 8,
-    min_death: 6, max_death: 9,
-    min_lifer: 7, max_lifer: 8,
-	start_health: 1, max_health: 1800,
-	life_per_sec: 1, damage: 3.0,
-	healing_constant: 0.001, healing_factor: 0.005,
-	damage_entropy: 1.18
-}, {
-    min_birth: 7, max_birth: 8,
-    min_death: 5, max_death: 12,
-    min_lifer: 4, max_lifer: 9,
-	start_health: 1, max_health: 1200,
-	life_per_sec: 0, damage: 6.0,
-	healing_constant: 0.03, healing_factor: 0.10,
-	damage_entropy: 0.12
-} ]
-];
-export var rules = rulesets[8];
+] ];
+export var rules = rulesets[0];
 
 
 export let fade_toning = true;
@@ -333,14 +251,14 @@ export function restartScreen() {
 
 let last_frame = 0;
 
-let current_rule=9, current_rules = '9';
+let current_rule=0, current_rules = '0';
 let camera_vel = [0,0,0];
 let camera_tgt_vel = [0,0,0];
 let camera_dist = 0;
 let last_time = 0;
 let colorMode = 0;
 let lastSwitch = 0;
-let timer_mode = 1;
+let timer_mode = 0;
 let show_status=false;
 let experiment=0;
 
@@ -404,8 +322,6 @@ function resizeTo(newsize)
   let lifemap = new Array(newsize);
   let neighbormap = new Array(newsize);
   let posnsmap = new Array(newsize);
-
-  wires = [];
   
   var z,x,y,x0,y0,z0;
   
@@ -486,6 +402,7 @@ function resizeTo(newsize)
   buildInstances();
   cpu_work = false;
 }
+let total_cells=68*68*68;
 let total_alive=0;
 
 let bugcount = 0;
@@ -1135,7 +1052,6 @@ function updateAllInstances(from_scratch=false)
                     } else {
                         [red,green,blue] = groundBal;
                     }
-                    
                     instances.setColorAt( i*oneframe + j*fullW + k, new THREE.Color( red/255, green/255, blue/255 ) );
                     instances.setMatrixAt( i*oneframe + j*fullW + k, new THREE.Matrix4().makeTranslation( 0, 0, -10000 ) );
                     continue;
@@ -1167,17 +1083,6 @@ function updateAllInstances(from_scratch=false)
                     let blue1 = 128-Math.min(64, green+red);//128+64+(64-blue);
                 }
                 */
-                    let p = i + "," + j + "," + k;
-                    let found=false;
-                    for( var wireno=0; wireno<wires.length; wireno++ ) {
-                      let wn = 1;//(wireno/wires.length);
-                      if( wires[wireno].has(p) ) {
-                        red += 1*wn;
-                        green -= 0.1*wn;
-                        blue -= 0.1*wn;
-                        found=true;
-                      }
-                    }
 
                 if( red > 225 && green > 225 && blue> 225 && sneaker_toning ) {
                     // apply high fade toning:
@@ -1273,7 +1178,6 @@ function updateAllInstances(from_scratch=false)
 
 export function start() {
     console.log("start()");
-    wires = [];
     neighbors = new Array(fullD);
     cells = new Array(fullD);
     lifetime = new Array(fullD);
@@ -1384,13 +1288,18 @@ export function reportCount(automatic=true) {
     if( !show_status ) {
       last_alive=total_alive;
         last_report = tmn;
-    } else if( automatic || Math.abs(living_dir) > total_alive*0.2 ) {
+    } else if( automatic ) {
         zeroToast('left');
-        showToast("Mode: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>", 'left');
+        showToast("Ruleset: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>(peak: " + living_peak + ")", 'left');
+        last_alive=total_alive;
+        last_report = tmn;
+    } else if( Math.abs(living_dir) > total_alive*0.2 ) {
+        zeroToast('left');
+        showToast("Ruleset: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>(peak: " + living_peak + ")", 'left');
         last_alive=total_alive;
         last_report = tmn;
     } else if( tmn >= last_report+3000 ) {
-        showToast("Mode: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>", 'left');
+        showToast("Ruleset: " + current_rules + "<BR>pop: " + total_alive + "<BR>" + living_dir + "<BR>(peak: " + living_peak + ")", 'left');
         last_alive=total_alive;
         last_report = tmn;
     }
@@ -1433,17 +1342,6 @@ function updatePixel(dtn,i,j,k,n=null)
         scalev *= sizing;
         positions[n] = [i,j,k];
 
-    let p = i + "," + j + "," + k;
-    let found=false;
-    for( var wireno=0; wireno<wires.length; wireno++ ) {
-      let wn = 1;//(wireno/wires.length);
-      if( wires[wireno].has(p) ) {
-        red += 1*wn;
-        green -= 0.1*wn;
-        blue -= 0.1*wn;
-        found=true;
-      }
-    }
         instances.setMatrixAt( n, new THREE.Matrix4().compose(
             new THREE.Vector3( i*spacing, j*spacing, k*spacing ),
             qtzero,
@@ -1469,7 +1367,7 @@ function updatePixel(dtn,i,j,k,n=null)
 }
 function updateInstances()
 {
-  let dtn = new Date().getTime();
+  let dtn = new Date().getTime() - pausedtime;
   let i=0,j=0,k=0,n=0;
   
   while( n < total_cells ) {
@@ -1562,7 +1460,7 @@ function decideRule(automatic=false)
         countNeighbors();
     }
     if( total_alive == 0 ) {
-        if( qRandom(50) > 35 ) {
+        if( qRandom(50) > 13 ) {
             notBeBlank();
         } else {
             return;
@@ -1596,23 +1494,15 @@ function decideRule(automatic=false)
         min_death = rules[current_rule].min_death;
         max_death = rules[current_rule].max_death;
 
-        if( !rules_stick ) {
-          for( var sp of rule_reversal ) {
-              eval(sp[0] + '=' + JSON.stringify(sp[1]) );
-          }
+        for( var sp of rule_reversal ) {
+            eval(sp[0] + '=' + JSON.stringify(sp[1]) );
         }
-        
         rule_reversal=[];
-        let managed = [ 'min_birth', 'max_birth',
-        'min_death', 'max_death',
-        'min_lifer', 'max_lifer',
-        'cond' ]; // no reversals
-        if( use_full_rules ) {
-          for( var sp in rules[current_rule] ) {
-              if( managed.indexOf(sp) >= 0 ) continue;
-              rule_reversal.push([sp, eval(sp)]);
-              eval(sp + '=' + JSON.stringify(rules[current_rule][sp]) );
-          }
+        let managed = [ 'min_birth', 'max_birth', 'min_death', 'max_death', 'min_lifer', 'max_lifer', 'cond' ]; // no reversals
+        for( var sp in rules[current_rule] ) {
+            if( managed.indexOf(sp) >= 0 ) continue;
+            rule_reversal.push([sp, eval(sp)]);
+            eval(sp + '=' + JSON.stringify(rules[current_rule][sp]) );
         }
 
         countNeighbors();
@@ -1662,7 +1552,7 @@ function application() {
             for( k=0; k<fullW; k++ ) {
                 app_iter++;
                 if( cells[i][j][k] > 0 ) {
-                    cells[i][j][k] += (cells[i][j][k]*healing_factor*hf + healing_constant*hc);
+                    cells[i][j][k] += (cells[i][j][k]*healing_factor*hf + healing_constant*hc)*dx;
                     
                     if(experiment==3) {
                       cells[i][j][k] = cells[i][j][k] * 0.965 + (neighbors[i][j][k] / 26) * 0.035;
@@ -1697,7 +1587,7 @@ function application() {
 
 //    cell[1] -= amt*damage*(1-qRandom()*damage_entropy);
     
-            cells[i][j][k] -= x*damage*(1-qRandom()*damage_entropy);
+            cells[i][j][k] -= x*damage*(1-qRandom()*damage_entropy)*dx;
             if( cells[i][j][k] <= 0 ) {
                 cells[i][j][k]=0;
                 total_alive--;
@@ -1718,33 +1608,13 @@ function application() {
         }
     }
 
-    let fireset = new Set();
     if( life_per_tick != 0 || life_per_sec == 0 ) {
       for( v=0; v<lifers.length; v++ ) {
         [i,j,k] = lifers[v];
         if( cells[i][j][k] > 0 ) {
           cells[i][j][k]+=life_per_tick + life_per_sec*dx;
-          //fireset.push( [i,j,k] );
         }
         app_iter++;
-      }
-    }
-
-    function neighborize(i,j,k,amt) {
-      var x,y,z;
-
-      for( z=-1; z<2; z++ ) {
-        for( y=-1; y<2; y++ ) {
-          for( x=-1; x<2; x++ ) {
-            if( x == 0 && y == 0 && z == 0 ) continue;
-
-            if( i+z < 0 || i+z >= fullD ) continue;
-            if( j+y < 0 || j+y >= fullH ) continue;
-            if( k+x < 0 || k+x >= fullW ) continue;
-
-            neighbors[i+z][j+y][k+x]+=amt; 
-          }
-        }
       }
     }
 
@@ -1752,63 +1622,25 @@ function application() {
         [i,j,k] = births[v];
 
         total_alive++;
-        let found = ( cells[i][j][k] > 0 ) ? true : false;
-
         cells[i][j][k] = start_health;
         lifetime[i][j][k] = dtn;
 
-        if( !found ) {
-          fireset.add( i + "," + j + "," + k );
-          neighborize(i,j,k,1);
+        for( z=-1; z<2; z++ ) {
+            for( y=-1; y<2; y++ ) {
+                for( x=-1; x<2; x++ ) {
+                    if( x == 0 && y == 0 && z == 0 ) continue;
+
+                    if( i+z < 0 || i+z >= fullD ) continue;
+                    if( j+y < 0 || j+y >= fullH ) continue;
+                    if( k+x < 0 || k+x >= fullW ) continue;
+
+                    neighbors[i+z][j+y][k+x]++;                        
+                }
+            }
         }
 
         app_iter++;
     }
-    if( wires === null ) {
-      wires = [];
-    }
-    if( fireset.size > 0 )
-      wires.push(fireset);
-    if( wires.length > fire_length ) wires.shift();
-
-    for( var wire of wires ) {
-      let entries = wire.entries();
-      let sum=0, count=entries.length;
-      for( var coords of entries ) {
-        const [a,b,c] = coords[0].split(",");
-        
-        sum += cells[a][b][c];
-      }
-      let avg=sum/count;
-      if( avg < 0.5 ) {
-      console.log("dark wire");
-        for( var coords of entries ) {
-          const [a,b,c] = coords[0].split(",");
-
-          let found = ( cells[a][b][c] > 0 ) ? true : false;
-          if( found ) {
-            cells[a][b][c] = 0;
-            neighborize(a,b,c,-1);
-          }
-        }
-      } else {
-        if( avg < 1.0 )
-          avg = 1;
-
-        for( var coords of entries ) {
-          const [a,b,c] = coords[0].split(",");
-
-          let found = ( cells[a][b][c] > 0 ) ? true : false;
-          lifetime[a][b][c] = dtn;
-          cells[a][b][c] = avg;
-          if( !found )
-            neighborize(a,b,c,1);
-        }
-      }
-    }
-  	if( adversity > 0 ) {
-	  	entropy(total_alive*adversity);
-	  }
 
     // countNeighbors(); // theorhetically, this is unnecessary here...
     decideRule(false);
@@ -1878,28 +1710,20 @@ function negentropy(n) {
     countNeighbors();
 }
 function entropy(n) {
-    let i, j, k, z, x;
-    for( x=0; x<n; x++ ) {
-      let v = Math.round(qRandom() * (total_cells-1));
+    let i, j, k, z;
+    let dtn = new Date().getTime();
+    for( i=0; i<n; i++ ) {
+      let v = Math.round(qRandom() * (total_alive-1));
       
       let found=false;
       for( i=0; i<fullD; i++ ) {
-	if( v > fullH*fullW ) {
-	  v -= fullH*fullW;
-	  continue;
-	}
         for( j=0; j<fullH; j++ ) {
-          if( v > fullW ) {
-	    v -= fullW;
-            continue;
-	  }
           for( k=0; k<fullW; k++ ) {
+            if( cells[i][j][k] == 0 ) continue;
             v--;
             if( v == 0 ) {
-	      if( cells[i][j][k] != 0 ) {
-              	total_alive--;
-                cells[i][j][k] = 0;
-	      }
+              cells[i][j][k] = 0;
+              total_alive--;
               found=true;
               break;
             }
@@ -1908,6 +1732,7 @@ function entropy(n) {
         }
         if( found ) break;
       }
+      if( total_alive < 30 ) break;
     }
     countNeighbors();
 }
@@ -1961,10 +1786,7 @@ export function loadScript(id, cb)
     fetch(fileUrl)
       .then(function(response) {
         if (!response.ok) {
-          if( typeof cb != 'function' ) {
-            alert("Couldn't load resource.");
-    	    return null;
-          }
+          cb(response);
         } else {
           console.log("got response");
           return response.text(); // Parse the response as plain text
@@ -1983,8 +1805,7 @@ export function loadScript(id, cb)
       .catch(error => {
         console.log("error in parse");
         console.error(error);
-        if( typeof cb == 'function' )
-          cb(error);
+        cb(error);
       });
 }
 
@@ -2004,7 +1825,7 @@ function importPosn(exaobj, cb)
     start(); // prepares the grid
 
     total_alive = 0;
-    chosen_rules = 8;
+    chosen_rules = 1;
 
     for( var f of fields ) {
         if( !(f in exaobj) ) continue;
@@ -2067,7 +1888,6 @@ function importPosn(exaobj, cb)
         }
     }
     resizeScreen();
-    decideRule();
     showToast("agent data imported");
     if( typeof cb == 'function' ) cb();
 }
@@ -2253,15 +2073,15 @@ export function inKeys(e) {
             showToast("fpsMax="+fpsMax);
             break;
         case '+':
-            genereateRandom( total_cells * usefreq * 0.25 );
+            genereateRandom( total_cells * usefreq );
             refreshConfig(false);
             break;
         case '*':
-            negentropy( total_cells * usefreq * 0.5 );
+            negentropy( total_cells * usefreq * 4 );
             refreshConfig(false);
             break;
         case '-':
-            entropy( total_cells * usefreq * 3.0 );
+            entropy( total_cells * usefreq * 4 );
             refreshConfig(false);
             break;
         case 'r':
@@ -2269,35 +2089,19 @@ export function inKeys(e) {
             genereateRandom( total_cells * usefreq );
             refreshConfig(false);
             break;
-          case '@':
-            rules_stick=!rules_stick;
-            showToast("Rules are " + (rules_stick?"sticky":"reversible"));
-            decideRule();
-            break;
-          case '#':
-            use_full_rules=!use_full_rules;
-            if( use_full_rules )
-              showToast("Using full rulesets.");
-            else
-              showToast("Using essential rules only.");
-            break;
         case '0': case '1': case '2': case '3': case '4': case '5': case '6': case '7': case '8': case '9':
           let n = parseInt(e.key);
           if( n < rulesets.length ) {
             chosen_rules = n;
             showToast("Ruleset " + chosen_rules);
             rules = rulesets[chosen_rules];
-            decideRule(false);
-          } else {
-            alert("Ruleset " + n + " out of bounds.");
-	        }
+          }
           trackToCamera();
           break;
         case '\\':
             chosen_rules = (chosen_rules+1)%rulesets.length;
             showToast("Ruleset " + chosen_rules);
             rules = rulesets[chosen_rules];
-		    refreshConfig
             break;
           case '`':
             trackToCamera();
@@ -2306,25 +2110,16 @@ export function inKeys(e) {
             resetCamera();
             break;
         case '/':
-            chosen_rules = (chosen_rules-1);
-            if( chosen_rules < 0 ) chosen_rules = rulesets.length - 1;
+          chosen_rules = (chosen_rules-1);
+          if( chosen_rules < 0 ) chosen_rules = rulesets.length - 1;
             showToast("Ruleset " + chosen_rules);
             rules = rulesets[chosen_rules];
- 	    decideRule();
             break;
         case ';':
             setOpacity(0.86);
             setSizing(0.92);
             setSpacing(0.76);
             break;
-	case 'A':
-	    adversity = adversity * 1.33;
-	    showToast("Adversity: " + adversity);
-	    break;
-	case 'Z':
-	    adversity = adversity * 0.77;
-	    showToast("Adversity: " + adversity);
-	    break;
         case ',':
             setOpacity(0.9);
             setSizing(0.6);
@@ -2437,14 +2232,9 @@ export function inKeys(e) {
         case 'z':
             silent = !silent;
             break;
-        case ' ':
+        case ' ': case 'p':
             pause();
             break;
-        case 'p':
-            zeroGroundBalance = !zeroGroundBalance;
-            showToast("Zero Ground Balance: " + (zeroGroundBalance?'marks':'seethru'));
-             updateAllInstances();
-             break;
         case 'f':
             fade_toning = !fade_toning;
             showToast("Fade toning: " + fade_toning);

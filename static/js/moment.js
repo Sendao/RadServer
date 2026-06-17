@@ -4,29 +4,36 @@ import { bin_decode, bin_encode } from '/js/binary.js';
 
 export let paused=false, running=false, gravTimeout=45, gravTimer=-1;
 export var neighbors = null, cells = null, lifetime = null;
-export var wires = null;
+export var forces = null;
+export var wires = [];
 export var posns = null;
 
-var usefreq=0.1;
-let total_cells=68*68*68;
+var usefreq=0.25;
+let startup_size = 48;
+let total_cells= startup_size * startup_size * startup_size;
 let silent=false;
 let running_cells = false;
 let use_full_rules = true;
 let rules_stick = true;
 
-var start_health = 10; // 10
+var start_health = 100; // 10
 let max_health = 1000; // 10000
-let life_per_tick = 0;
-let life_per_sec = 40; // 400
-let damage = 9;
+let life_per_tick = 10;
+let life_per_sec = 0; // 400
+let damage = 30;
 let healing_constant = 0;
 let healing_factor = 0; // 0.01
-let damage_entropy = 0.2;
-let adversity = 0.1;
+let damage_entropy = 0.001;
+let adversity = 0.005;
 let chosen_fov = 67;
-let neighbor_range = 1;
-let rule_mult = 1;
-let zeroGroundBalance = false;
+let neighbor_range = 4;
+let qtzero = new THREE.Quaternion(0,0,0,1);
+export let rule_mult = 0;
+let fire_length = 50;
+let network_strength = 3;
+let force_multiplier = 1;
+let zeroGroundBalance = true;
+const maxScaling = 10;
 
 // <= and >=
 
@@ -37,24 +44,27 @@ let chosen_rules = 0;
 // neighbors <= min_death || neighbors >= max_death // they die outside the death border
 // neighbors >= min_lifer && neighbors <= min_lifer // they live inside the life border
 
+
+function setRuleMult()
+{
+  rule_mult=-1;
+  for( var e = -neighbor_range; e <= neighbor_range; e++ ) {
+    for( var f = -neighbor_range; f <= neighbor_range; f++ ) {
+      for( var g = -neighbor_range; g <= neighbor_range; g++ ) {
+        rule_mult++;
+      }
+    }
+  } 
+}
 export var rulesets = [
 [
   { 
-    cond: { above: 100000 },
-    min_birth: 6, max_birth: 8,
-    min_death: 2, max_death: 9,
-    min_lifer: 3, max_lifer: 8
-},
-{ 
-    cond: { above: 50000 },
-    min_birth: 6, max_birth: 9,
-    min_death: 2, max_death: 10,
-    min_lifer: 3, max_lifer: 8
-},
- { // rescue rule (<5:rel000 cells)
-    min_birth: 6, max_birth: 10,
-    min_death: 2, max_death: 11,
-    min_lifer: 3, max_lifer: 8
+    min_birth: 0.25, max_birth: 0.3,
+    min_death: 0.25, max_death: 0.45,
+    min_lifer: 0.25, max_lifer: 0.33,
+    //min_birth: 0.033, max_birth: 0.05,
+    //min_death: 0, max_death: 0.07,
+    //min_lifer: 0, max_lifer: 0.02,
 }], //1:
 [
 {
@@ -93,10 +103,10 @@ export function restartScreen() {
     animate();
 }
 
-
 let last_frame = 0;
 
-let current_rule=9, current_rules = '9';
+let current_mult=0;
+let current_rule=false, current_rules = '9';
 let camera_vel = [0,0,0];
 let camera_tgt_vel = [0,0,0];
 let camera_dist = 0;
@@ -124,11 +134,11 @@ let colorpick = 3;
 export var colorBal = colorsets[colorpick][1];
 export var filterBal = colorsets[colorpick][2];
 
-export let opacity = 0.5; // 0.86;
-export let sizing = 0.9; // 0.6 // 0.92;
-export let spacing = 0.8; // 1.65;
+export let opacity = 0.97; // 0.86;
+export let sizing = 1.0; // 0.6 // 0.92;
+export let spacing = 1.2; // 1.65;
 
-let fullW=68, fullH=68, fullD=68;
+let fullW=startup_size, fullH=startup_size, fullD=startup_size;
 function livingBorders()
 {
   var min_x, max_x, min_y, max_y, min_z, max_z;
@@ -142,9 +152,9 @@ function livingBorders()
   max_z = 0;
     
   for( z=0; z<fullD; z++ ) {
-    for( x=0; x<fullW; x++ ) {
-      for( y=0; y<fullH; y++ ) {
-        if( cells[z][x][y] != 0 ) {
+    for( y=0; y<fullH; y++ ) {
+      for( x=0; x<fullW; x++ ) {
+        if( cells[z][y][x] != 0 ) {
           min_x = Math.min(min_x,x);
           min_y = Math.min(min_y,y);
           min_z = Math.min(min_z,z);
@@ -878,6 +888,7 @@ function updateAllInstances(from_scratch=false)
 
     let lc_count=0, nc_count=0;
     let additionalAirie = new Array();
+                let fax = (start_health / max_health) * 0.01;
 
     for( i=0; i<fullD; i++ ) {
         for( j=0; j<fullW; j++ ) {
@@ -909,6 +920,17 @@ function updateAllInstances(from_scratch=false)
 
                 life = dtn - lifetime[i][j][k];
                 z = life;
+                let scalev = ( 0.01*fax*factor + 0.1*life );
+                if( scalev < 0.01 ) scalev=0.01;
+                //if( scalev > 1 ) scalev = Math.sqrt(scalev);
+//            scalev = 1+Math.log(scalev);
+                if( scalev > maxScaling ) scalev = maxScaling;
+        
+                scalev *= sizing;
+                instances.setMatrixAt( i*oneframe + j*fullW + k , new THREE.Matrix4().compose(
+                 new THREE.Vector3( i*spacing, j*spacing, k*spacing ),
+                 qtzero,
+                 new THREE.Vector3(scalev,scalev,scalev) ) );
                 
                 z -= parseInt(z/255)*255;
                 factor -= parseInt(factor/255)*255;
@@ -1016,7 +1038,7 @@ function updateAllInstances(from_scratch=false)
                     nc_count++;
                 }
 
-                instances.setMatrixAt( i*oneframe + j*fullW + k, new THREE.Matrix4().makeTranslation( i*spacing, j*spacing, k*spacing ) );
+                //instances.setMatrixAt( i*oneframe + j*fullW + k, new THREE.Matrix4().makeTranslation( i*spacing, j*spacing, k*spacing ) );
             }
         }
     }
@@ -1033,6 +1055,7 @@ function updateAllInstances(from_scratch=false)
 }
 
 export function start() {
+    setRuleMult();
     console.log("start()");
     neighbors = new Array(fullD);
     cells = new Array(fullD);
@@ -1062,9 +1085,11 @@ function countNeighbors() {
     var i, j, k;
     var z, y, x;
 
+    neighbors = new Array(fullD);
     for( i=0; i<fullD; i++ ) {
-        for( j=0; j<fullW; j++ ) {
-            neighbors[i][j] = new Array(fullH).fill(0);
+        neighbors[i] = new Array(fullH);
+        for( j=0; j<fullH; j++ ) {
+            neighbors[i][j] = new Array(fullW).fill(0);
         }
     }
 
@@ -1075,18 +1100,18 @@ function countNeighbors() {
                 if( cells[i][j][k] <= 0 ) continue;
                 total_alive++;
 
-                let zm = i+neighbor_range+1, xm = j+neighbor_range+1, ym = k+neighbor_range+1;
+                let zm = i+neighbor_range, xm = j+neighbor_range, ym = k+neighbor_range;
                 let xmn = j-neighbor_range, ymn = k-neighbor_range;
-                for( z=i-neighbor_range; z<zm; z++ ) {
-                  for( y=ymn; y<ym; y++ ) {
-                    for( x=xmn; x<xm; x++ ) {
+                for( z=i-neighbor_range; z<=zm; z++ ) {
+                  for( y=ymn; y<=ym; y++ ) {
+                    for( x=xmn; x<=xm; x++ ) {
                       if( x == j && y == k && z == i ) continue;
                       
                       if( z < 0 || z >= fullD ) continue;
                       if( x < 0 || x >= fullW ) continue;
                       if( y < 0 || y >= fullH ) continue;
 
-                      neighbors[z][x][y]++;
+                      neighbors[z][y][x]++;
                     }
                   }
                 }
@@ -1191,6 +1216,12 @@ function updatePixel(dtn,i,j,k,n=null)
         if( scalev > maxScaling ) scalev = maxScaling;
         
         scalev *= sizing;
+        /*
+        instances.setMatrixAt( n, new THREE.Matrix4().compose(
+            new THREE.Vector3( i*spacing, j*spacing, k*spacing ),
+            qtzero,
+            new THREE.Vector3(scalev,scalev,scalev) ) );
+            */
         positions[n] = [i,j,k];
 
     let p = i + "," + j + "," + k;
@@ -1306,7 +1337,7 @@ function finishResizeScreen()
 
 
 
-var min_lifer, max_lifer, min_birth, max_birth, min_death, max_death;
+export var min_lifer, max_lifer, min_birth, max_birth, min_death, max_death;
 
 function decideRule(automatic=false)
 {
@@ -1315,10 +1346,12 @@ function decideRule(automatic=false)
     
     if( imported_static_rules ) return;
 
-    if( typeof min_death == 'undefined' ) changed=true;
+    if( automatic || typeof min_death == 'undefined' ) {
+      current_rule=0;
+      changed=true;
+    }
 
     if( total_alive <= 0 ) {
-        //console.log("total_alive=" + total_alive);
         countNeighbors();
     }
     if( total_alive == 0 ) {
@@ -1340,8 +1373,9 @@ function decideRule(automatic=false)
             }
         }
         if( found ) {
-            if( current_rule != i ) {
+            if( current_rule != i || current_mult != rule_mult ) {
                 current_rule=i;
+                console.log("i=" + i);
                 changed=true;
             }
             break;
@@ -1349,12 +1383,15 @@ function decideRule(automatic=false)
     }
 
     if( changed ) {
+        current_mult = rule_mult;
         min_birth = rules[current_rule].min_birth*rule_mult;
         max_birth = rules[current_rule].max_birth*rule_mult;
         min_lifer = rules[current_rule].min_lifer*rule_mult;
         max_lifer = rules[current_rule].max_lifer*rule_mult;
         min_death = rules[current_rule].min_death*rule_mult;
         max_death = rules[current_rule].max_death*rule_mult;
+
+        console.log({min_birth,max_birth});
 
         if( !rules_stick ) {
           for( var sp of rule_reversal ) {
@@ -1384,6 +1421,81 @@ function decideRule(automatic=false)
     }
 }
 
+function setupForces()
+{
+  forces = new Array(fullD);
+  for( var i=0; i<fullD; i++ ) {
+    forces[i] = new Array(fullH);
+    for( var j=0; j<fullH; j++ ) {
+      forces[i][j] = new Array(fullW);
+      for( var k=0; k<fullW; k++ ) {
+        forces[i][j][k] = [0,0,0];
+      }
+    }
+  }
+}
+
+var affected=null;
+function pushAway(i,j,k, f, remainingDepth=network_strength)
+{
+  var iz,jy,kx;
+  let first = ( affected == null );
+
+  if( first ) {
+    affected = new Set();
+  }
+  if( forces == null ) setupForces();
+
+  let hits=[];
+  let push=remainingDepth;
+
+  for( iz=-1; iz<=1; iz++ ) {
+    if( iz+i < 0 || iz+i >= fullD ) continue;
+    for( jy=-1; jy<=1; jy++ ) {
+      if( jy+j < 0 || jy+j >= fullH ) continue;
+      for( kx=-1; kx<=1; kx++ ) {
+        if( kx+k < 0 || kx+k >= fullW ) continue;
+        let name = (i+iz) + "_" + (j+jy) + "_" + (k+kx);
+        if( affected.has(name) ) continue;
+        // only first-order affects
+        affected.add(name);
+
+        if( iz == 0 && jy == 0 && kx == 0 ) continue;
+        if( cells[i+iz][j+jy][k+kx] == 0 ) continue;
+        // push that cell away
+
+        var p;
+        if( forces[i+iz][j+jy][k+kx] === null ) {
+          p=forces[i+iz][j+jy][k+kx] = [
+            iz*push,
+            jy*push,
+            kx*push ];
+        } else {
+          p=forces[i+iz][j+jy][k+kx];
+          p[0] += iz*push;
+          p[1] += jy*push;
+          p[2] += kx*push;
+        }
+
+        // spread the effect to untouched cells
+        if( remainingDepth > 1 )
+          hits.push([i+iz,j+jy,k+kx]);
+      }
+    }
+  }
+  for( const hit of hits ) {
+    iz = hit[0];
+    jy = hit[1];
+    kx = hit[2];
+    pushAway(iz,jy,kx, f, remainingDepth-1);
+  }
+
+  if( first ) {
+    affected = null;
+  }
+}
+
+
 
 
 //var min_birth = 14, max_birth = 19;
@@ -1405,7 +1517,7 @@ function application() {
 
     decideRule();
 
-    let births = [], deaths = [], lifers = [];
+    let births = [], deaths = [], lifers = [], births2 = [];
     let mdc=0;
     let hc = 0.25 + qRandom(0.5), hf = 0.25 + qRandom(0.5);
     let dtn = new Date().getTime()/1000;
@@ -1448,6 +1560,74 @@ function application() {
 
     app_state = 1;
 
+    function neighborize(i,j,k,amt)
+    {
+                var x,y,z;
+                var ymn = -neighbor_range, xmn = -neighbor_range;
+                var ymx = neighbor_range, zmx = neighbor_range, xmx = neighbor_range;
+                for( z=-neighbor_range; z<=zmx; z++ ) {
+                    for( y=ymn; y<=ymx; y++ ) {
+                        for( x=xmn; x<=xmx; x++ ) {
+                            if( x == 0 && y == 0 && z == 0 ) continue;
+
+                            if( i+z < 0 || i+z >= fullD ) continue;
+                            if( j+y < 0 || j+y >= fullH ) continue;
+                            if( k+x < 0 || k+x >= fullW ) continue;
+
+                            neighbors[i+z][j+y][k+x]+=amt;
+                        }
+                    }
+                }
+    }
+
+    function norm3(arr)
+    {
+      let sum = Math.abs(arr[0])+Math.abs(arr[1])+Math.abs(arr[2]);
+      if( sum == 0 ) return [0,0,0];
+      let avg = sum/3;
+      return [ arr[0]/avg, arr[1]/avg, arr[2]/avg ];
+    }
+
+    if( forces != null ) {
+          var l,m,n;
+    for( i=0; i<fullD; i++ ) {
+      for( j=0; j<fullH; j++ ) {
+        for( k=0; k<fullW; k++ ) {
+          const f = forces[i][j][k];//norm3(forces[i][j][k]);
+          
+          if( f === null ) continue;
+
+          if( f[0] > 0 ) l = i+1;
+          else if( f[0] < 0 ) l = i-1;
+          else l = i;
+
+          if( f[1] > 0 ) m = j+1;
+          else if( f[1] < 0 ) m = j-1;
+          else m = j;
+
+          if( f[2] > 0 ) n = k+1;
+          else if( f[2] < 0 ) n = k-1;
+          else n = k;
+
+          if( l < 0 ) l = 0;
+          if( m < 0 ) m = 0;
+          if( n < 0 ) n = 0;
+
+          if( l >= fullD ) l=fullD-1;
+          if( m >= fullH ) m=fullH-1;
+          if( n >= fullW ) n=fullW-1;
+
+          if( i == l && j == m && k == n ) continue;
+
+          if( cells[l][m][n] == 0 ) {
+            births2.push( [l,m,n] );
+            forces[i][j][k] = null;
+          }
+        }
+      }
+    }
+    }
+
     for( v=0; v<deaths.length; v++ ) {
         var x;
         [i,j,k,x] = deaths[v];
@@ -1461,23 +1641,12 @@ function application() {
             if( cells[i][j][k] <= 0 ) {
                 cells[i][j][k]=0;
                 total_alive--;
-                for( z=-1; z<2; z++ ) {
-                    for( y=-1; y<2; y++ ) {
-                        for( x=-1; x<2; x++ ) {
-                            if( x == 0 && y == 0 && z == 0 ) continue;
-
-                            if( i+z < 0 || i+z >= fullD ) continue;
-                            if( j+y < 0 || j+y >= fullH ) continue;
-                            if( k+x < 0 || k+x >= fullW ) continue;
-
-                            neighbors[i+z][j+y][k+x]--;
-                        }
-                    }
-                }
+                neighborize(i,j,k,-1);
             }
         }
     }
 
+    let fireset = new Set();
     if( life_per_tick != 0 || life_per_sec == 0 ) {
       for( v=0; v<lifers.length; v++ ) {
         [i,j,k] = lifers[v];
@@ -1488,32 +1657,87 @@ function application() {
       }
     }
 
+    function birthCell(i,j,k)
+    {
+      total_alive++;
+      cells[i][j][k] = start_health;
+      lifetime[i][j][k] = dtn;
+      var p = i + "," + j + "," + k, found=false;
+      for( var q=0; q<wires.length; q++ ) {
+        if( wires[q].has(p) ) {
+          found=true;
+          break;
+        }
+      }
+      if( !found )
+        fireset.add( p );
+
+      neighborize(i,j,k,1);
+    }
+
     for( v=0; v<births.length; v++ ) {
         [i,j,k] = births[v];
 
-        total_alive++;
-        cells[i][j][k] = start_health;
-        lifetime[i][j][k] = dtn;
-
-        for( z=-1; z<2; z++ ) {
-            for( y=-1; y<2; y++ ) {
-                for( x=-1; x<2; x++ ) {
-                    if( x == 0 && y == 0 && z == 0 ) continue;
-
-                    if( i+z < 0 || i+z >= fullD ) continue;
-                    if( j+y < 0 || j+y >= fullH ) continue;
-                    if( k+x < 0 || k+x >= fullW ) continue;
-
-                    neighbors[i+z][j+y][k+x]++;                        
-                }
-            }
-        }
-
+        if( cells[i][j][k] > 0 ) continue;
+        birthCell(i,j,k);
+        pushAway(i,j,k, dx);
         app_iter++;
     }
-	if( adversity > 0 ) {
-		entropy(total_alive*adversity);
-	}
+    for( v=0; v<births2.length; v++ ) {
+      [i,j,k] = births2[v];
+
+      if( cells[i][j][k] > 0 ) continue;
+      birthCell(i,j,k);
+      app_iter++;
+    }
+
+
+	  if( adversity > 0 ) {
+		  entropy(total_alive*adversity);
+	  }
+    if( wires === null ) wires = [];
+    if( fireset.size > 1 )
+      wires.push(fireset);
+    if( wires.length > fire_length ) wires.shift();
+
+
+
+    for( var wire of wires ) {
+      let entries = wire.entries();
+      let sum=0, count=entries.length;
+      for( var coords of entries ) {
+        const [a,b,c] = coords[0].split(",");
+
+        sum += cells[a][b][c];
+      }
+      let avg = sum/count;
+      if( avg < 0.5 ) { /*
+        for( var coords of entries ) {
+          const [a,b,c] = coords[0].split(",");
+
+          let found = ( cells[a][b][c] > 0 ) ? true : false;
+          if( found ) {
+            cells[a][b][c] = 0;
+            neighborize(a,b,c,-1);
+          }
+        } */
+      } else {
+        if( avg < 1.0 )
+          avg = 1.0;
+
+        for( var coords of entries ) {
+          const [a,b,c] = coords[0].split(",");
+
+          let found = ( cells[i][j][k] > 0 );
+          lifetime[a][b][c] = dtn;
+          cells[a][b][c] = avg;
+
+          if( !found )
+            neighborize(a,b,c,1);
+        }
+      }
+    }
+
 
     // countNeighbors(); // theorhetically, this is unnecessary here...
     decideRule(false);
@@ -1971,26 +2195,32 @@ export function inKeys(e) {
             break;
         case 'W':
             neighbor_range++;
+            setRuleMult();
+            decideRule(true);
             showToast("Neighbor range: " + neighbor_range);
             break;
         case 'S':
             neighbor_range--;
+            setRuleMult();
+            decideRule(true);
             showToast("Neighbor range: " + neighbor_range);
             break;
         case 'A':
             rule_mult--;
             if( rule_mult == 0 ) rule_mult = -1;
+            decideRule(true);
             showToast("Rule multiplier: " + rule_mult);
             break;
         case 'D':
             rule_mult++;
             if( rule_mult == 0 ) rule_mult = 1;
+            decideRule(true);
             showToast("Rule multiplier: " + rule_mult);
             break;
         case 'r':
             start();
             genereateRandom( total_cells * usefreq );
-            updateInstances();
+            updateAllInstances();
             refreshConfig(false);
             break;
           case '@':
@@ -2040,11 +2270,11 @@ export function inKeys(e) {
             setSizing(0.92);
             setSpacing(0.76);
             break;
-	case 'A':
+	case 'Z':
 	    adversity = adversity * 1.33;
 	    showToast("Adversity: " + adversity);
 	    break;
-	case 'Z':
+	case 'X':
 	    adversity = adversity * 0.77;
 	    showToast("Adversity: " + adversity);
 	    break;
